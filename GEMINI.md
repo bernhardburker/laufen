@@ -1,5 +1,8 @@
 # Development & Quality Guidelines
 
+## Language & Coding Conventions
+- **English Only for Code & Tests**: All source code, scripts, variable/function/class names, code comments, docstrings, git commit messages, Gherkin feature files, step definitions, test drivers, and technical documentation must be written in **English**, even if the chat conversation is conducted in German or another language.
+
 ## Testing Policy & Scope
 - **Scope**: Mandatory automated tests for all scripts, CLI tools, background automatisms, data pipelines, and platform integrations (Garmin, Intervals.icu, Strava).
 - **Existing Code**: Whenever existing automatisms or scripts are touched, modified, or refactored, corresponding tests must be added or updated.
