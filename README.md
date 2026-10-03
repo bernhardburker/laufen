@@ -141,9 +141,21 @@ Das Projekt prüft Umgebungsvariablen in folgender Reihenfolge:
 # Option A: Falls INTERVALS_API_KEY via pass verwaltet wird
 export INTERVALS_API_KEY=$(pass show api/intervals.icu)
 
-# Option B: Konfiguration über .env-Datei (z. B. auf Workstations ohne pass)
-cp .env.example .env
-# .env mit Garmin-, Strava- und ggf. Intervals-Zugangsdaten befüllen
+### 3. Aktivitäten von Intervals.icu abrufen
+```bash
+# Lädt standardmäßig alle historischen Aktivitäten nach data/intervals_activities.json herunter
+python3 src/integrations/download_intervals.py
+
+# Optional: Nur Einheiten ab einem bestimmten Datum
+python3 src/integrations/download_intervals.py --oldest 2026-09-01
+
+# Optional: Jede Aktivität zusätzlich als separate JSON-Datei unter data/activities/ ablegen
+python3 src/integrations/download_intervals.py --save-individual
+```
+
+### 4. Tests ausführen
+```bash
+pytest tests/
 ```
 
 ---

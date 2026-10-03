@@ -33,8 +33,7 @@ tokens.json
 garmin_tokens/
 
 # Data & Cache
-data/cache/
-data/raw/
+data/
 *.fit
 *.tcx
 *.gpx
