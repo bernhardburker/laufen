@@ -1,0 +1,226 @@
+import json
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any, Dict, List
+
+import pytest
+from pytest_bdd import given, parsers, scenarios, then, when
+
+# 1. Bind Gherkin scenarios
+scenarios("generate_dashboard.feature")
+
+
+# 2. Test Driver
+class DashboardGeneratorDriver:
+    def __init__(self, workspace_root: Path, tmp_path: Path):
+        self.workspace_root = workspace_root
+        self.tmp_path = tmp_path
+        self.input_file = tmp_path / "test_activities.json"
+        self.output_file = tmp_path / "index.html"
+        self.template_file = workspace_root / "templates" / "dashboard.html"
+        self.process_result: subprocess.CompletedProcess | None = None
+
+    def write_dataset(self, data: List[Dict[str, Any]]) -> None:
+        with open(self.input_file, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+
+    def prepare_dataset_with_runs(self) -> None:
+        activities = [
+            {
+                "id": "run-001",
+                "type": "Run",
+                "name": "Morning Easy Run",
+                "start_date_local": "2026-09-02T07:00:00",
+                "distance": 6000.0,
+                "moving_time": 2160,  # 36m (6:00/km)
+                "average_heartrate": 140,
+                "max_heartrate": 152,
+                "icu_training_load": 45,
+                "icu_hr_zone_times": [600, 1200, 300, 60, 0, 0, 0],
+            },
+            {
+                "id": "run-002",
+                "type": "Run",
+                "name": "Sunday Long Run",
+                "start_date_local": "2026-09-06T08:30:00",
+                "distance": 10000.0,
+                "moving_time": 3600,  # 60m (6:00/km)
+                "average_heartrate": 145,
+                "max_heartrate": 158,
+                "icu_training_load": 75,
+                "icu_hr_zone_times": [600, 2400, 500, 100, 0, 0, 0],
+            },
+            {
+                "id": "run-003",
+                "type": "Run",
+                "name": "Interval 4x1000m",
+                "start_date_local": "2026-09-09T18:00:00",
+                "distance": 8000.0,
+                "moving_time": 2560,  # ~5:20/km
+                "average_heartrate": 160,
+                "max_heartrate": 178,
+                "icu_training_load": 65,
+                "icu_hr_zone_times": [200, 300, 1000, 800, 260, 0, 0],
+            },
+        ]
+        self.write_dataset(activities)
+
+    def prepare_empty_dataset(self) -> None:
+        activities = [
+            {"id": "ride-001", "type": "Ride", "distance": 25000.0, "moving_time": 3600},
+            {"id": "walk-001", "type": "Walk", "distance": 3000.0, "moving_time": 2400},
+        ]
+        self.write_dataset(activities)
+
+    def remove_input_file(self) -> None:
+        if self.input_file.exists():
+            self.input_file.unlink()
+
+    def run_generator(
+        self,
+        template_path: Path | None = None,
+        input_path: Path | None = None,
+        extra_args: List[str] | None = None,
+    ) -> None:
+        target_template = template_path if template_path is not None else self.template_file
+        target_input = input_path if input_path is not None else self.input_file
+
+        cmd = [
+            sys.executable,
+            str(self.workspace_root / "src" / "visualization" / "generate_dashboard.py"),
+            "--input",
+            str(target_input),
+            "--template",
+            str(target_template),
+            "--output",
+            str(self.output_file),
+        ]
+        if extra_args:
+            cmd.extend(extra_args)
+
+        self.process_result = subprocess.run(
+            cmd,
+            cwd=self.workspace_root,
+            capture_output=True,
+            text=True,
+        )
+
+    def assert_exit_code(self, expected_code: int) -> None:
+        assert self.process_result is not None
+        assert self.process_result.returncode == expected_code, (
+            f"Expected exit code {expected_code}, got {self.process_result.returncode}.\n"
+            f"STDOUT:\n{self.process_result.stdout}\n"
+            f"STDERR:\n{self.process_result.stderr}"
+        )
+
+    def assert_exit_code_non_zero(self) -> None:
+        assert self.process_result is not None
+        assert self.process_result.returncode != 0, (
+            f"Expected non-zero exit code, got 0.\nSTDOUT:\n{self.process_result.stdout}"
+        )
+
+    def assert_output_contains(self, text: str) -> None:
+        assert self.process_result is not None
+        combined = (self.process_result.stdout or "") + (self.process_result.stderr or "")
+        assert text.lower() in combined.lower(), f"Expected '{text}' in output:\n{combined}"
+
+    def assert_output_html_exists(self) -> None:
+        assert self.output_file.exists(), f"Output HTML file does not exist: {self.output_file}"
+        assert self.output_file.stat().st_size > 0, "Output HTML file is empty"
+
+    def assert_html_contains_kpis(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        # 6km + 10km + 8km = 24.00 km total
+        assert "24.0" in content, f"Expected total distance '24.0' in HTML:\n{content[:500]}"
+        assert "3 runs" in content.lower() or "3" in content
+        assert "Morning Easy Run" in content
+        assert "Sunday Long Run" in content
+
+    def assert_html_embeds_data(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "iso_week" in content
+        assert "total_distance_km" in content
+        assert "run-001" in content
+
+    def assert_html_displays_empty_state(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert (
+            "no running activities" in content.lower()
+            or "0.0" in content
+            or "0 runs" in content.lower()
+        )
+
+
+# 3. Fixture injecting the Driver
+@pytest.fixture
+def driver(tmp_path: Path) -> DashboardGeneratorDriver:
+    workspace_root = Path(__file__).resolve().parent.parent
+    return DashboardGeneratorDriver(workspace_root, tmp_path)
+
+
+# 4. Step Definitions
+@given("an activities dataset with multiple running activities")
+def given_dataset_with_runs(driver: DashboardGeneratorDriver):
+    driver.prepare_dataset_with_runs()
+
+
+@given("an activities dataset with no running activities")
+def given_dataset_without_runs(driver: DashboardGeneratorDriver):
+    driver.prepare_empty_dataset()
+
+
+@given("the activities dataset file does not exist")
+def given_dataset_not_found(driver: DashboardGeneratorDriver):
+    driver.remove_input_file()
+
+
+@given("the standard dashboard template is available")
+def given_template_available(driver: DashboardGeneratorDriver):
+    assert driver.template_file.exists(), f"Template not found at {driver.template_file}"
+
+
+@when("the dashboard generator is executed")
+def when_generator_executed(driver: DashboardGeneratorDriver):
+    driver.run_generator()
+
+
+@when("the dashboard generator is executed with a non-existent template")
+def when_generator_executed_missing_template(driver: DashboardGeneratorDriver):
+    missing_template = driver.tmp_path / "non_existent_template.html"
+    driver.run_generator(template_path=missing_template)
+
+
+@then(parsers.parse("the process exits with code {code:d}"))
+def then_process_exits_with_code(driver: DashboardGeneratorDriver, code: int):
+    driver.assert_exit_code(code)
+
+
+@then("the process exits with an error")
+def then_process_exits_with_error(driver: DashboardGeneratorDriver):
+    driver.assert_exit_code_non_zero()
+
+
+@then(parsers.parse('the error output mentions "{keyword}"'))
+def then_error_mentions_keyword(driver: DashboardGeneratorDriver, keyword: str):
+    driver.assert_output_contains(keyword)
+
+
+@then("the output HTML file is created")
+def then_html_file_created(driver: DashboardGeneratorDriver):
+    driver.assert_output_html_exists()
+
+
+@then("the output HTML contains the rendered KPI metrics")
+def then_html_contains_kpi_metrics(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_kpis()
+
+
+@then("the output HTML embeds the weekly trends and activities data")
+def then_html_embeds_data(driver: DashboardGeneratorDriver):
+    driver.assert_html_embeds_data()
+
+
+@then("the output HTML displays the empty state message")
+def then_html_displays_empty_state(driver: DashboardGeneratorDriver):
+    driver.assert_html_displays_empty_state()

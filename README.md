@@ -81,17 +81,22 @@ Statt "einfach loszulaufen" können Einheiten vorgeplant werden:
 
 ```text
 laufen/
+├── .github/workflows/        # CI/CD pipelines & GitHub Pages deployment
+│   └── deploy-pages.yml      # Automated sync and GitHub Pages deployment workflow
 ├── .env.example              # Vorlage für Zugangsdaten
 ├── .gitignore                # Ausschluss von FIT-Dateien, Tokens & Cache
 ├── README.md                 # Projektdokumentation
 ├── config/                   # Persönliche Werte (MaxHF, Ruhepuls, Zonen)
 │   └── athlete.json          # Zonen, LTHR, HF-Bereiche, Pace-Ziele
+├── templates/                # Visual dashboard templates
+│   └── dashboard.html        # Responsive HTML5 & Chart.js dashboard template
 ├── workouts/                 # Strukturierte Trainingsvorlagen
 │   ├── intervals/            # Textbasierte Workouts (Intervals.icu Syntax)
 │   └── garmin/               # JSON-Workouts für Garmin Connect
-└── src/                      # Skripte für Analyse & Sync
+└── src/                      # Skripte für Analyse, Sync & Visualisierung
     ├── integrations/         # Schnittstellen (Garmin, Intervals, Strava)
-    ├── analysis/             # Einfache Auswertungen (Pace vs. HF, Zonen-Zeiten)
+    ├── analysis/             # Trends & Zonen-Auswertungen (Pace vs. HF, Z1/Z2)
+    ├── visualization/        # Dynamische HTML-Dashboard-Generierung
     └── planner/              # Workout-Erstellung & Upload
 ```
 
@@ -140,6 +145,7 @@ Das Projekt prüft Umgebungsvariablen in folgender Reihenfolge:
 ```bash
 # Option A: Falls INTERVALS_API_KEY via pass verwaltet wird
 export INTERVALS_API_KEY=$(pass show api/intervals.icu)
+```
 
 ### 3. Aktivitäten von Intervals.icu abrufen
 ```bash
@@ -177,21 +183,52 @@ python3 src/planner/schedule_workout.py --type tempo_run --warmup 8m --duration 
 python3 src/planner/schedule_workout.py --dry-run --type intervals --reps 5 --work 1km --recovery 2m30s --target "Z4 HR" --date tomorrow
 ```
 
-### 6. Tests ausführen
+### 6. Interaktives HTML-Dashboard lokal generieren
+```bash
+# Erstellt ein responsives HTML-Dashboard aus dem Template unter templates/dashboard.html
+python3 src/visualization/generate_dashboard.py
+
+# Optional: Spezifischen Ein- oder Ausgabepfad wählen
+python3 src/visualization/generate_dashboard.py \
+  --input data/intervals_activities.json \
+  --template templates/dashboard.html \
+  --output dist/index.html \
+  --weeks 12
+```
+
+### 7. Tests ausführen
 ```bash
 pytest tests/
 ```
 
 ---
 
-## 8. Sicherheitshinweise
+## 8. Automatischer Sync & GitHub Pages Deployment
+
+Das Projekt enthält einen automatisierten GitHub Actions Workflow (`.github/workflows/deploy-pages.yml`):
+- **Manueller Trigger**: Im GitHub Repository unter *Actions* &rarr; *Deploy Dashboard to GitHub Pages* &rarr; *Run workflow* kann der Sync und das Deployment jederzeit manuell ausgelöst werden.
+- **Täglicher Automatismus**: Jeden Morgen um 05:00 UTC wird der Workflow automatisch ausgeführt.
+- **Automatisches Redeployment**: Bei Commits auf `main`, die Template- oder Visualisierungs-Code ändern.
+
+### Setup für GitHub Pages
+1. **Repository Secret anlegen**:
+   - Gehe zu GitHub &rarr; *Settings* &rarr; *Secrets and variables* &rarr; *Actions*.
+   - Füge `INTERVALS_API_KEY` (und optional `INTERVALS_ATHLETE_ID`) als Repository Secret hinzu.
+2. **GitHub Pages aktivieren**:
+   - Gehe zu GitHub &rarr; *Settings* &rarr; *Pages*.
+   - Wähle unter *Build and deployment* &rarr; *Source*: **GitHub Actions**.
+   - Nach dem ersten Workflow-Lauf ist das Dashboard unter `https://<username>.github.io/<repo>/` erreichbar.
+
+---
+
+## 9. Sicherheitshinweise
 
 - Die `.env`-Datei und Token-Verzeichnisse (`garmin_tokens/`, `tokens.json`) dürfen **niemals** im Git-Repository committet werden.
 - Alle sensiblen Keys werden ausschließlich über Umgebungsvariablen geladen.
 
 ---
 
-## 9. Anhang: Erweiterte Metriken (Späterer Ausblick)
+## 10. Anhang: Erweiterte Metriken (Späterer Ausblick)
 
 > [!NOTE]
 > Sobald die Routine und die Grundlagen sitzen, können tiefergehende Modelle hinzugenommen werden:
