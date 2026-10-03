@@ -107,10 +107,18 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Credentials hinterlegen
+### 2. Credentials & Umgebungsvariablen hinterlegen
+Das Projekt prüft Umgebungsvariablen in folgender Reihenfolge:
+1. **System-/Shell-Umgebungsvariable** (z. B. geladen via `pass` in `~/.bashrc` oder `~/.zshrc`).
+2. **Lokale `.env`-Datei** im Projektverzeichnis.
+
 ```bash
+# Option A: Falls INTERVALS_API_KEY via pass verwaltet wird
+export INTERVALS_API_KEY=$(pass show api/intervals.icu) # bzw. entsprechender pass-Pfad
+
+# Option B: Konfiguration über .env-Datei (z. B. auf Workstations ohne pass)
 cp .env.example .env
-# .env mit eigenen API-Tokens/Zugangsdaten befüllen
+# .env mit Garmin-, Strava- und ggf. Intervals-Zugangsdaten befüllen
 ```
 
 ---
