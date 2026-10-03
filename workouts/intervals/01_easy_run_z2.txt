@@ -1,0 +1,11 @@
+# 45 Min Grundlagenlauf (Zone 2)
+# Ziel: Puls strikt in Zone 2 halten
+
+Warmup
+- 10m Z1 HR
+
+Main Set
+- 30m Z2 HR
+
+Cooldown
+- 5m Z1 HR

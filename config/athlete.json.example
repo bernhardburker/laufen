@@ -1,0 +1,23 @@
+{
+  "athlete": {
+    "name": "Runner",
+    "heart_rate": {
+      "resting_hr": 55,
+      "max_hr": 185,
+      "lthr": 168,
+      "zones": {
+        "z1_recovery": {"min": 0, "max": 120, "description": "Aktive Erholung / Regeneration"},
+        "z2_aerobic": {"min": 121, "max": 142, "description": "Grundlagenausdauer 1 (Talk Test)"},
+        "z3_tempo": {"min": 143, "max": 158, "description": "Zügiger Dauerlauf"},
+        "z4_threshold": {"min": 159, "max": 172, "description": "Schwellenbereich"},
+        "z5_anaerobic": {"min": 173, "max": 200, "description": "Maximaler Bereich / VO2max"}
+      }
+    },
+    "pace_targets_min_per_km": {
+      "easy_run": "06:30 - 07:00",
+      "long_run": "06:40 - 07:15",
+      "tempo_run": "05:45 - 06:00",
+      "intervals_1k": "05:00 - 05:20"
+    }
+  }
+}

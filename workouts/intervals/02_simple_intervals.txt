@@ -1,0 +1,12 @@
+# 4x 800m Intervalle
+# Belastung in Z4/Z5 oder zügiger Pace, Trabpause in Z1
+
+Warmup
+- 10m Z1-Z2 HR
+
+4x
+- 800m Z4 HR
+- 2m Recovery 50% HR
+
+Cooldown
+- 10m Z1 HR
