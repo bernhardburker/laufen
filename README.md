@@ -153,7 +153,16 @@ python3 src/integrations/download_intervals.py --oldest 2026-09-01
 python3 src/integrations/download_intervals.py --save-individual
 ```
 
-### 4. Tests ausführen
+### 4. Wöchentliche Trends & Zonen-Disziplin auswerten
+```bash
+# Wöchentliche Zusammenfassung (Distanz, Pace, HF, Z1-Z2-Anteil, Aerobe Effizienz)
+python3 src/analysis/trends.py
+
+# Optional: Als maschinenlesbares JSON ausgeben
+python3 src/analysis/trends.py --json
+```
+
+### 5. Tests ausführen
 ```bash
 pytest tests/
 ```
