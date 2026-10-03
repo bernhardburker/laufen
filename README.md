@@ -162,7 +162,22 @@ python3 src/analysis/trends.py
 python3 src/analysis/trends.py --json
 ```
 
-### 5. Tests ausführen
+### 5. Workouts erstellen & terminieren (Intervals.icu & Garmin)
+```bash
+# Easy Run (z. B. 45 min Zone 2 für morgen)
+python3 src/planner/schedule_workout.py --type easy_run --duration 45m --date tomorrow
+
+# Intervalltraining (4x 1.000m schnell, 2 min Trabpause)
+python3 src/planner/schedule_workout.py --type intervals --reps 4 --work 1km --recovery 2m --target "Z4 HR" --date tomorrow
+
+# Schwellenlauf (8 min Warmup, 20 min Schwelle, 10 min Auslaufen)
+python3 src/planner/schedule_workout.py --type tempo_run --warmup 8m --duration 20m --cooldown 10m --target "Z4 HR" --date tomorrow
+
+# Vorschau ohne Upload (Dry-Run)
+python3 src/planner/schedule_workout.py --dry-run --type intervals --reps 5 --work 1km --recovery 2m30s --target "Z4 HR" --date tomorrow
+```
+
+### 6. Tests ausführen
 ```bash
 pytest tests/
 ```

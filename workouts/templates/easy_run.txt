@@ -1,0 +1,8 @@
+Warmup
+- {warmup} Z1 HR
+
+Main Set
+- {main} {target}
+
+Cooldown
+- {cooldown} Z1 HR

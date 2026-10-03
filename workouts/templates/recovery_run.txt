@@ -1,0 +1,2 @@
+Recovery Run
+- {duration} {target}

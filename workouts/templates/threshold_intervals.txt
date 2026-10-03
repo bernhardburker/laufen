@@ -1,0 +1,9 @@
+Warmup
+- {warmup} Z1-Z2 HR
+
+{reps}x
+- {work} {work_target}
+- {recovery} Recovery {recovery_target}
+
+Cooldown
+- {cooldown} Z1 HR
