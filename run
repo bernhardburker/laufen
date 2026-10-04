@@ -32,6 +32,7 @@ Usage: ./run <command> [arguments...]
 
 Commands:
   sync              Download activities from Intervals.icu
+  upload [ARGS...]  Upload activity files from export directory to Intervals.icu
   sync-profile      Sync athlete profile & HR zones from Intervals.icu
   report            Display combined recent runs & weekly trends
   runs              Display recent running activities table
@@ -66,6 +67,9 @@ shift || true
 case "$COMMAND" in
   sync)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_intervals.py" "$@"
+    ;;
+  upload)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/upload_activities.py" "$@"
     ;;
   sync-profile)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/sync_athlete.py" "$@"
