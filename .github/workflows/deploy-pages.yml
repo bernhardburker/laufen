@@ -47,12 +47,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python (GitHub-hosted fallback)
-        uses: actions/setup-python@v5
-        continue-on-error: true
-        with:
-          python-version: '3.13'
-
       - name: Initialize environment and install dependencies
         run: |
           chmod +x ./init.sh
