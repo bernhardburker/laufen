@@ -57,6 +57,7 @@ Feature: Generate visual HTML dashboard from running activities
     And the output HTML contains interactive date range filter buttons
     And the output HTML contains sortable table columns and pagination controls
     And the output HTML displays the data source transparency notice
+    And the output HTML contains responsive layout styling for date range filters
 
   Scenario: Dashboard volume chart retains forecast progression across date range filters
     Given an activities dataset with multiple running activities

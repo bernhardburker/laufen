@@ -257,6 +257,11 @@ class DashboardGeneratorDriver:
         assert "showForecast" in content
         assert "currentRange !== 'custom'" in content
 
+    def assert_html_contains_responsive_filters(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "flex-wrap: wrap" in content
+        assert "@media (max-width: 768px)" in content
+
 
 # 3. Fixture injecting the Driver
 @pytest.fixture
@@ -380,6 +385,11 @@ def then_html_contains_table_controls(driver: DashboardGeneratorDriver):
 @then("the output HTML displays the data source transparency notice")
 def then_html_displays_datasource_notice(driver: DashboardGeneratorDriver):
     driver.assert_html_contains_datasource_notice()
+
+
+@then("the output HTML contains responsive layout styling for date range filters")
+def then_html_contains_responsive_filters(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_responsive_filters()
 
 
 @then("the output HTML volume chart preserves forecast visualization across date filters")
