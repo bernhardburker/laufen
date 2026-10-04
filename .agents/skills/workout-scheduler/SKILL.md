@@ -23,6 +23,7 @@ Before proposing or finalizing a workout, inspect the athlete's recent training 
      ```bash
      python3 src/integrations/download_intervals.py --oldest <date-30-days-ago>
      ```
+   - Run `python3 src/analysis/recent_runs.py` (shows recent 10 runs by default) to inspect individual runs (date, distance, pace, HR, load).
    - Run `python3 src/analysis/trends.py --json` to get weekly volume, average pace, average HR, and `z1_z2_pct`.
 2. **Identify Training Balance & Gaps**:
    - **Aerobic Base (80/20 Rule)**: Check `z1_z2_pct`. If `< 70-80%`, the runner is spending too much time in the "grey zone" (Zone 3/4) and lacks low-intensity Zone 2 base building.
@@ -32,20 +33,19 @@ Before proposing or finalizing a workout, inspect the athlete's recent training 
      - *Threshold / Schwellenlauf* (sustained tempo e.g. 20–30m Z4, 3x 10m)
      - *Long Run* (extended duration e.g. > 60–75m in Z2)
      - *Recovery / Easy Run* (low HR, strictly Z1/Z2)
-3. **Calibrate Individual Pace Corridors**:
-   - Calibrate target paces using actual continuous run performances:
-     - **Short Intervals (e.g. 1m reps)**: ~30–45 s/km faster than threshold pace.
-     - **Long Intervals (e.g. 1km reps)**: ~15–25 s/km faster than threshold pace (5k race pace).
-     - **Threshold / Tempo**: Sustainable 1-hour race pace (near LTHR).
-     - **Easy / Recovery**: 60–90 s/km slower than threshold pace, keeping HR strictly in Z1/Z2.
+3. **Calibrate Target Modality (Pace vs. Heart Rate)**:
+   - **Strict Separation Principle**: Never mix Pace and Heart Rate targets in the same workout or estimate target paces for heart-rate guided runs:
+     - **Zone- / HR-guided Sessions (Easy Run, Recovery, Long Run, Warmup/Cooldown)**: Guided **exclusively by Heart Rate** (e.g. `Z2 HR` or `Z1-Z2 HR`). **Never prescribe, estimate, or suggest a target pace** (e.g. do NOT say "ca. 7:00 /km"). Pace is purely an outcome and varies widely with fatigue, weather, terrain, and individual cardiac drift. Prescribing a pace alongside an HR target leads to overpacing and ruins the aerobic stimulus. The athlete must run as slowly as needed (or walk) to keep heart rate in the target zone.
+     - **Short Intervals & Speed Reps (< 2 min)**: Guided **exclusively by Pace** (e.g. `05:10-05:25/km Pace`). Heart rate suffers from cardiac lag during short intervals and cannot respond quickly enough. Calibrate short interval pace ~30–45 s/km faster than threshold pace.
+     - **Threshold / Long Intervals (e.g. 1km reps or 3x 10m)**: Choose EITHER a defined threshold pace corridor (~15–25 s/km faster than threshold pace for 5k/10k pace) OR threshold heart rate (`Z4 HR`), never both.
 
 ### Step 2: Interactive Dialogue with Athlete
 Engage with the user to co-create the best training session:
-1. **Brief Observation**: State what they have recently done and what stimulus is currently missing (e.g., *"Deine letzten Läufe waren fast alle im Schwellenbereich (Z3/Z4). Dir fehlt aktuell Grundlagenausdauer in Zone 2, aber wenn du Intervalle laufen willst, passen 10x 1m ideal..."*).
+1. **Brief Observation**: State what they have recently done and what stimulus is currently missing (e.g., *"Deine letzten Läufe waren fast alle im Schwellenbereich (Z3/Z4). Dir fehlt aktuell Grundlagenausdauer in Zone 2..."*).
 2. **Propose Calibrated Workout Options**:
-   - Suggest specific target pace corridors (e.g., `05:10-05:25/km Pace`) rather than just raw bpm, explaining how the Garmin watch gauge and vibration alerts will guide them.
-   - For short intervals (< 2 min), always recommend **Pace targets** over Heart Rate due to cardiac lag. For easy runs and warmup/cooldown, recommend **HR targets** (Z1/Z2 HR).
-3. **Confirm & Adjust**: Let the athlete confirm or refine the pace, duration, or date.
+   - **For HR-guided sessions (Zone 2, Easy, Recovery)**: Propose target zones strictly as HR (`Z2 HR` or `Z1-Z2 HR`, e.g. `< 148 bpm`). **DO NOT mention or suggest target paces**. Make clear that pace is completely secondary and will adjust naturally.
+   - **For Pace-guided sessions (Short Intervals < 2 min, VO2max)**: Propose specific target pace corridors (e.g. `05:10-05:25/km Pace`) rather than heart rate, explaining how the Garmin speedometer gauge and vibration alerts will guide them.
+3. **Confirm & Adjust**: Let the athlete confirm or refine the duration, target zone/pace, or date.
 
 ### Step 3: Schedule the Workout
 Once agreed, schedule the workout via `src/planner/schedule_workout.py`.
@@ -126,7 +126,10 @@ python3 src/planner/schedule_workout.py \
 * **Step Prompts / Cues**: Add quoted text after step, e.g. `- 1m 05:15/km Pace "Schnell laufen"`.
 
 > [!IMPORTANT]
-> Do not mix Pace targets and Heart Rate targets in the same work intervals on Garmin watches, as Garmin displays either the Pace gauge or the HR gauge.
+> **Strict Separation: Never Mix or Prescribe Pace for HR-Based Runs!**
+> - When a workout is guided by **Heart Rate** (`Z2 HR`, `Z1-Z2 HR`, Easy Run, Recovery): **DO NOT provide, estimate, or suggest a target pace** in proposals or workout steps. Prescribing a pace alongside an HR target leads to overpacing and conflicts (e.g., running at 7:00 /km may easily exceed Zone 2). The athlete must regulate speed exclusively by HR, walking if necessary.
+> - When a workout is guided by **Pace** (Short Intervals, VO2max): Prescribe **strictly Pace corridors** due to cardiac lag. Do not set HR targets for short work reps.
+> - Garmin watches display either the Pace speedometer gauge OR the Heart Rate zone gauge. They cannot display both simultaneously for the same step.
 
 ---
 

@@ -27,10 +27,31 @@ tests/
 └── README.md             # Architecture documentation and implementation examples
 ```
 
+## Environment, Python & Executable Paths
+- **Initialization**: Run `./init.sh` to inspect the system and export paths to `.paths.env` and `.paths.json`.
+- **Python & Pytest Executables**:
+  - Direct execution: `.venv/bin/python` and `.venv/bin/pytest`
+  - Shell activation: `source .paths.env` (prepends `.venv/bin` to `$PATH`)
+  - Exported variables in `.paths.env`: `$PYTHON_EXEC`, `$PYTEST_EXEC`, `$PIP_EXEC`, `$WORKSPACE_ROOT`, `$VIRTUAL_ENV`
+  - Machine-readable paths: `.paths.json`
+- **Never invoke bare `python` or `pytest`** without sourcing `.paths.env` or using `.venv/bin/` because system `$PATH` does not include `.venv/bin` by default.
+
+## Task Runner & CLI Interface
+- **Central Runner**: Use `./run <command>` for common tasks:
+  - `./run sync`: Fetch activities from Intervals.icu
+  - `./run sync-profile`: Fetch athlete profile & calibrated HR zones to `config/athlete.json`
+  - `./run report`: Show terminal summary of recent runs & weekly trends
+  - `./run dashboard`: Generate HTML dashboard (`dist/index.html`)
+  - `./run preview [PORT]`: Build dashboard and launch local webserver (default port 8080)
+  - `./run plan`: Schedule workouts to Intervals.icu
+  - `./run test`: Run the BDD test suite
+  - `./run init`: Run system initialization
+
 ## Verification
 - Whenever scripts or automatisms are created or edited, execute and pass the test suite before completing the task:
   ```bash
-  pytest tests/
+  ./run test
+  # or: .venv/bin/pytest tests/
   ```
 
 ---

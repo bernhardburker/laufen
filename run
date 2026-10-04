@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# run - Central Task Runner & CLI for Laufen Management Hub
+# ==============================================================================
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE_ROOT="$SCRIPT_DIR"
+
+# Ensure environment paths are available
+if [[ -f "$WORKSPACE_ROOT/.paths.env" ]]; then
+  # shellcheck source=/dev/null
+  source "$WORKSPACE_ROOT/.paths.env"
+elif [[ -x "$WORKSPACE_ROOT/init.sh" ]]; then
+  "$WORKSPACE_ROOT/init.sh" --quiet
+  if [[ -f "$WORKSPACE_ROOT/.paths.env" ]]; then
+    # shellcheck source=/dev/null
+    source "$WORKSPACE_ROOT/.paths.env"
+  fi
+fi
+
+PYTHON_EXEC="${PYTHON_EXEC:-$WORKSPACE_ROOT/.venv/bin/python}"
+PYTEST_EXEC="${PYTEST_EXEC:-$WORKSPACE_ROOT/.venv/bin/pytest}"
+
+show_help() {
+  cat <<'EOF'
+======================================================================
+  Lauf- & Trainingsmanagement-Hub - Task Runner
+======================================================================
+Usage: ./run <command> [arguments...]
+
+Commands:
+  sync              Download activities from Intervals.icu
+  sync-profile      Sync athlete profile & HR zones from Intervals.icu
+  report            Display combined recent runs & weekly trends
+  runs              Display recent running activities table
+  trends            Display weekly trends, volume & zone discipline
+  dashboard         Generate HTML dashboard (dist/index.html)
+  preview [PORT]    Build dashboard and launch local webserver (default: 8080)
+  plan [ARGS...]    Create or schedule structured workouts to Intervals.icu
+  test [ARGS...]    Run the automated BDD test suite
+  init [ARGS...]    Inspect system and update environment paths (.paths.env)
+  help              Show this help menu
+
+Examples:
+  ./run sync
+  ./run sync-profile
+  ./run report
+  ./run dashboard
+  ./run preview 8080
+  ./run plan --type easy_run --duration 45m --date tomorrow
+  ./run test
+======================================================================
+EOF
+}
+
+if [[ $# -eq 0 ]]; then
+  show_help
+  exit 0
+fi
+
+COMMAND="$1"
+shift || true
+
+case "$COMMAND" in
+  sync)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_intervals.py" "$@"
+    ;;
+  sync-profile)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/sync_athlete.py" "$@"
+    ;;
+  report)
+    echo "======================================================================"
+    echo "  Lauf- & Trainings-Report"
+    echo "======================================================================"
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/recent_runs.py" --limit 5 "$@"
+    echo ""
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/trends.py" "$@"
+    ;;
+  runs)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/recent_runs.py" "$@"
+    ;;
+  trends)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/trends.py" "$@"
+    ;;
+  dashboard)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/visualization/generate_dashboard.py" "$@"
+    ;;
+  preview)
+    PORT="${1:-8080}"
+    echo "[INFO] Building dashboard..."
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/visualization/generate_dashboard.py"
+    echo "======================================================================"
+    echo "  Local Dashboard Preview"
+    echo "  URL: http://localhost:$PORT"
+    echo "  Press Ctrl+C to terminate the preview server"
+    echo "======================================================================"
+    exec "$PYTHON_EXEC" -m http.server "$PORT" --directory "$WORKSPACE_ROOT/dist"
+    ;;
+  plan)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/planner/schedule_workout.py" "$@"
+    ;;
+  test)
+    exec "$PYTEST_EXEC" "$WORKSPACE_ROOT/tests" "$@"
+    ;;
+  init)
+    exec "$WORKSPACE_ROOT/init.sh" "$@"
+    ;;
+  help|-h|--help)
+    show_help
+    exit 0
+    ;;
+  *)
+    echo "Error: Unknown command '$COMMAND'" >&2
+    echo "Run './run help' to see all available commands." >&2
+    exit 1
+    ;;
+esac

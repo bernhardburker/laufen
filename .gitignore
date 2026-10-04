@@ -27,6 +27,9 @@ ENV/
 # Environment & Secrets
 .env
 .env.local
+.paths.env
+.paths.json
+.env.paths
 *.secret
 credentials.json
 tokens.json

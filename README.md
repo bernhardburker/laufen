@@ -126,79 +126,58 @@ laufen/
 
 ---
 
-## 7. Setup & Schnellstart
+## 7. Setup & Task Runner (`./run`)
 
-### 1. Repository klonen & Virtual Environment aufsetzen
+### 1. Repository klonen & System initialisieren
 ```bash
 git clone <repository-url>
 cd laufen
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+
+# System prüfen, .venv bereitstellen & Pfade (.paths.env, .paths.json) generieren:
+./init.sh
+
+# Optional: Pfade in der aktuellen Shell aktivieren:
+source .paths.env
 ```
 
-### 2. Credentials & Umgebungsvariablen hinterlegen
-Das Projekt prüft Umgebungsvariablen in folgender Reihenfolge:
-1. **System-/Shell-Umgebungsvariable** (z. B. geladen via `pass` in `~/.bashrc` oder `~/.zshrc`).
-2. **Lokale `.env`-Datei** im Projektverzeichnis.
+### 2. Der zentrale CLI-Runner (`./run`)
+Alle Kernaufgaben lassen sich direkt über `./run` steuern:
 
+| Befehl | Beschreibung |
+| :--- | :--- |
+| `./run sync-profile` | Athletenprofil & Herzfrequenzzonen von Intervals.icu nach `config/athlete.json` laden |
+| `./run sync` | Aktivitäten von Intervals.icu nach `data/intervals_activities.json` abrufen |
+| `./run report` | Wöchentliche Trends & letzte Läufe im Terminal anzeigen |
+| `./run runs` | Tabelle der letzten Läufe (Distanz, Pace, HF, Z1-Z2-Anteil) |
+| `./run trends` | Wöchentliche Auswertung (Volumen, Z1-Z2-Disziplin, Aerobe Effizienz) |
+| `./run dashboard` | HTML-Dashboard generieren (`dist/index.html`) |
+| `./run preview [PORT]` | Dashboard bauen und lokalen Webserver starten (Standard: Port 8080) |
+| `./run plan [ARGS]` | Strukturiertes Workout planen (Intervals.icu & Garmin) |
+| `./run test` | Automatisierte BDD-Testsuite (`pytest tests/`) ausführen |
+| `./run help` | Hilfe und alle Parameter auflisten |
+
+### 3. Beispiele für den Trainingsalltag
 ```bash
-# Option A: Falls INTERVALS_API_KEY via pass verwaltet wird
-export INTERVALS_API_KEY=$(pass show api/intervals.icu)
-```
+# 1. Zonen und Profil initial synchronisieren
+./run sync-profile
 
-### 3. Aktivitäten von Intervals.icu abrufen
-```bash
-# Lädt standardmäßig alle historischen Aktivitäten nach data/intervals_activities.json herunter
-python3 src/integrations/download_intervals.py
+# 2. Neueste Aktivitäten herunterladen
+./run sync
 
-# Optional: Nur Einheiten ab einem bestimmten Datum
-python3 src/integrations/download_intervals.py --oldest 2026-09-01
+# 3. Schneller Terminal-Report
+./run report
 
-# Optional: Jede Aktivität zusätzlich als separate JSON-Datei unter data/activities/ ablegen
-python3 src/integrations/download_intervals.py --save-individual
-```
+# 4. Lokale Dashboard-Vorschau starten
+./run preview 8080
 
-### 4. Wöchentliche Trends & Zonen-Disziplin auswerten
-```bash
-# Wöchentliche Zusammenfassung (Distanz, Pace, HF, Z1-Z2-Anteil, Aerobe Effizienz)
-python3 src/analysis/trends.py
+# 5. Morgen einen 45 min Grundlagenlauf (Z2) einplanen
+./run plan --type easy_run --duration 45m --date tomorrow
 
-# Optional: Als maschinenlesbares JSON ausgeben
-python3 src/analysis/trends.py --json
-```
+# 6. Intervalltraining (4x 1.000m Z4 mit 2 min Trabpause) terminieren
+./run plan --type intervals --reps 4 --work 1km --recovery 2m --target "Z4 HR" --date tomorrow
 
-### 5. Workouts erstellen & terminieren (Intervals.icu & Garmin)
-```bash
-# Easy Run (z. B. 45 min Zone 2 für morgen)
-python3 src/planner/schedule_workout.py --type easy_run --duration 45m --date tomorrow
-
-# Intervalltraining (4x 1.000m schnell, 2 min Trabpause)
-python3 src/planner/schedule_workout.py --type intervals --reps 4 --work 1km --recovery 2m --target "Z4 HR" --date tomorrow
-
-# Schwellenlauf (8 min Warmup, 20 min Schwelle, 10 min Auslaufen)
-python3 src/planner/schedule_workout.py --type tempo_run --warmup 8m --duration 20m --cooldown 10m --target "Z4 HR" --date tomorrow
-
-# Vorschau ohne Upload (Dry-Run)
-python3 src/planner/schedule_workout.py --dry-run --type intervals --reps 5 --work 1km --recovery 2m30s --target "Z4 HR" --date tomorrow
-```
-
-### 6. Interaktives HTML-Dashboard lokal generieren
-```bash
-# Erstellt ein responsives HTML-Dashboard aus dem Template unter templates/dashboard.html
-python3 src/visualization/generate_dashboard.py
-
-# Optional: Spezifischen Ein- oder Ausgabepfad wählen
-python3 src/visualization/generate_dashboard.py \
-  --input data/intervals_activities.json \
-  --template templates/dashboard.html \
-  --output dist/index.html \
-  --weeks 12
-```
-
-### 7. Tests ausführen
-```bash
-pytest tests/
+# 7. Tests prüfen
+./run test
 ```
 
 ---
