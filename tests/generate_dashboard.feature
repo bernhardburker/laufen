@@ -58,3 +58,10 @@ Feature: Generate visual HTML dashboard from running activities
     And the output HTML contains sortable table columns and pagination controls
     And the output HTML displays the data source transparency notice
 
+  Scenario: Dashboard volume chart retains forecast progression across date range filters
+    Given an activities dataset with multiple running activities
+    And the standard dashboard template is available
+    When the dashboard generator is executed
+    Then the process exits with code 0
+    And the output HTML volume chart preserves forecast visualization across date filters
+

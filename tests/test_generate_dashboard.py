@@ -250,6 +250,13 @@ class DashboardGeneratorDriver:
         assert "Datenquellen-Hinweis" in content
         assert "Strava" in content
 
+    def assert_volume_chart_preserves_forecast_across_filters(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "chartWeeklyVolume" in content
+        assert "stack: 'distance'" in content
+        assert "showForecast" in content
+        assert "currentRange !== 'custom'" in content
+
 
 # 3. Fixture injecting the Driver
 @pytest.fixture
@@ -373,5 +380,10 @@ def then_html_contains_table_controls(driver: DashboardGeneratorDriver):
 @then("the output HTML displays the data source transparency notice")
 def then_html_displays_datasource_notice(driver: DashboardGeneratorDriver):
     driver.assert_html_contains_datasource_notice()
+
+
+@then("the output HTML volume chart preserves forecast visualization across date filters")
+def then_html_volume_chart_preserves_forecast(driver: DashboardGeneratorDriver):
+    driver.assert_volume_chart_preserves_forecast_across_filters()
 
 

@@ -1351,7 +1351,10 @@
           const histLoads = trendList.map(t => t.total_load);
 
           const volumeForecastList = forecast.volume_forecast || [];
-          const showForecast = (currentRange === 'all' || currentRange === '12w');
+          const maxDataDate = (activities.length > 0)
+            ? activities.map(r => (r.date || '').substring(0, 10)).filter(Boolean).sort().pop()
+            : null;
+          const showForecast = (currentRange !== 'custom') || (!customEndDate || (maxDataDate && customEndDate >= maxDataDate));
           const forecastLabels = showForecast ? volumeForecastList.map(vf => vf.iso_week + ' (Progn.)') : [];
           const forecastDistances = showForecast ? volumeForecastList.map(vf => vf.projected_distance_km) : [];
           const forecastLoads = showForecast ? volumeForecastList.map(vf => vf.projected_load) : [];
@@ -1742,16 +1745,17 @@
                 data: distActualData,
                 backgroundColor: 'rgba(56, 189, 248, 0.75)',
                 borderRadius: 6,
+                stack: 'distance',
                 yAxisID: 'y',
               },
               {
                 label: 'Prognose-Distanz (km)',
                 data: distForecastData,
-                backgroundColor: 'rgba(56, 189, 248, 0.25)',
+                backgroundColor: 'rgba(56, 189, 248, 0.35)',
                 borderColor: '#38bdf8',
-                borderWidth: 1.5,
-                borderDash: [4, 4],
+                borderWidth: 2,
                 borderRadius: 6,
+                stack: 'distance',
                 yAxisID: 'y',
               },
               {
@@ -1795,6 +1799,10 @@
               }
             },
             scales: {
+              x: {
+                stacked: true,
+                grid: { display: false }
+              },
               y: {
                 type: 'linear',
                 position: 'left',
