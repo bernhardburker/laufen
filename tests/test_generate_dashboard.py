@@ -151,6 +151,25 @@ class DashboardGeneratorDriver:
             or "0 runs" in content.lower()
         )
 
+    def assert_html_contains_german_ui(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "Gesamtdistanz" in content
+        assert "Ø Gesamt-Pace" in content or "Pace" in content
+        assert "Grundlagen-Disziplin" in content
+        assert "Letzte Aktivitäten" in content
+
+    def assert_html_contains_summary_and_recommendations(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "Trainings-Status" in content or "Handlungsempfehlungen" in content
+        assert "recommendations" in content.lower() or "handlungsempfehlungen" in content.lower()
+
+    def assert_html_contains_forecasts(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "forecastData" in content or "Wettkampf-" in content
+        assert "5 km" in content
+        assert "Halbmarathon" in content
+        assert "predictions" in content
+
 
 # 3. Fixture injecting the Driver
 @pytest.fixture
@@ -224,3 +243,19 @@ def then_html_embeds_data(driver: DashboardGeneratorDriver):
 @then("the output HTML displays the empty state message")
 def then_html_displays_empty_state(driver: DashboardGeneratorDriver):
     driver.assert_html_displays_empty_state()
+
+
+@then("the output HTML contains German navigation and KPI headers")
+def then_html_contains_german_ui(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_german_ui()
+
+
+@then("the output HTML contains training summary and coaching recommendations")
+def then_html_contains_summary(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_summary_and_recommendations()
+
+
+@then("the output HTML embeds race time predictions and volume forecast data")
+def then_html_contains_forecasts(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_forecasts()
+

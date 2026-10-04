@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,7 +19,9 @@
       --cyan: #38bdf8;
       --emerald: #10b981;
       --amber: #f59e0b;
+      --orange: #f97316;
       --indigo: #818cf8;
+      --purple: #c084fc;
       --rose: #f43f5e;
       --radius: 12px;
     }
@@ -40,7 +42,7 @@
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 1240px;
       margin: 0 auto;
     }
 
@@ -57,7 +59,7 @@
     }
 
     .brand h1 {
-      font-size: 1.75rem;
+      font-size: 1.85rem;
       font-weight: 700;
       letter-spacing: -0.02em;
       background: linear-gradient(135deg, #ffffff 0%, var(--cyan) 100%);
@@ -67,7 +69,7 @@
 
     .brand p {
       color: var(--text-muted);
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       margin-top: 4px;
     }
 
@@ -81,13 +83,13 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 12px;
+      padding: 6px 14px;
       border-radius: 9999px;
       font-size: 0.8rem;
       font-weight: 500;
       background-color: rgba(56, 189, 248, 0.1);
       color: var(--cyan);
-      border: 1px solid rgba(56, 189, 248, 0.2);
+      border: 1px solid rgba(56, 189, 248, 0.25);
     }
 
     .badge-dot {
@@ -101,7 +103,7 @@
     /* KPI Grid */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
       gap: 16px;
       margin-bottom: 28px;
     }
@@ -124,7 +126,7 @@
 
     .kpi-title {
       color: var(--text-muted);
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       font-weight: 600;
@@ -156,6 +158,226 @@
       height: 100%;
       background: linear-gradient(90deg, var(--emerald) 0%, var(--cyan) 100%);
       border-radius: 3px;
+    }
+
+    /* Summary & Insights Section */
+    .summary-section {
+      background: linear-gradient(180deg, rgba(21, 28, 44, 0.95) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 28px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .summary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .summary-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .section-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 860px) {
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .column-subtitle {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--cyan);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .summary-list, .recommendations-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .summary-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .summary-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .summary-item-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .summary-item-text {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .recommendation-card {
+      background: rgba(56, 189, 248, 0.03);
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .rec-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .rec-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .rec-text {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    /* Forecast / Race Predictions Section */
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .section-heading {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .section-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .forecast-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .forecast-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .forecast-card:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .forecast-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .forecast-dist {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .forecast-time {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: -0.02em;
+      margin: 4px 0 2px;
+    }
+
+    .forecast-pace {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .forecast-note {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      line-height: 1.4;
+      margin-bottom: 12px;
+      flex-grow: 1;
+    }
+
+    .forecast-basis {
+      font-size: 0.72rem;
+      color: #64748b;
+      font-family: monospace;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
     }
 
     /* Charts Section */
@@ -203,7 +425,7 @@
 
     .chart-container {
       position: relative;
-      height: 260px;
+      height: 270px;
       width: 100%;
     }
 
@@ -224,7 +446,7 @@
 
     .zones-list {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
       gap: 12px;
     }
 
@@ -289,7 +511,7 @@
       color: var(--text-main);
       font-size: 0.85rem;
       outline: none;
-      min-width: 220px;
+      min-width: 240px;
     }
 
     .search-input:focus {
@@ -330,7 +552,7 @@
 
     .tag {
       display: inline-block;
-      padding: 2px 8px;
+      padding: 3px 8px;
       border-radius: 4px;
       font-size: 0.75rem;
       font-weight: 500;
@@ -339,11 +561,25 @@
     .tag-green {
       background: rgba(16, 185, 129, 0.15);
       color: var(--emerald);
+      border: 1px solid rgba(16, 185, 129, 0.25);
     }
 
     .tag-amber {
       background: rgba(245, 158, 11, 0.15);
       color: var(--amber);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+
+    .tag-cyan {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--cyan);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    .tag-purple {
+      background: rgba(192, 132, 252, 0.15);
+      color: var(--purple);
+      border: 1px solid rgba(192, 132, 252, 0.25);
     }
 
     .empty-banner {
@@ -386,20 +622,21 @@
     <header>
       <div class="brand">
         <h1>{{ DASHBOARD_TITLE }}</h1>
-        <p>Running volume, Zone 2 aerobic base discipline, and training efficiency</p>
+        <p>Trainingsvolumen, Grundlagenausdauer (Zone 2), Leistungsentwicklung &amp; Prognosen</p>
       </div>
       <div class="header-meta">
         <div class="badge">
           <span class="badge-dot"></span>
-          <span>Synced: {{ GENERATION_DATE }}</span>
+          <span>Zuletzt synchronisiert: {{ GENERATION_DATE }}</span>
         </div>
       </div>
     </header>
 
     <!-- Empty state message if no runs -->
     <div class="empty-banner" id="emptyBanner">
-      <h3>No running activities found</h3>
-      <p>Download runs with <code>python3 src/integrations/download_intervals.py</code> or trigger the GitHub refresh workflow.</p>
+      <h3>Keine Laufaktivitäten gefunden</h3>
+      <p>Lade deine Läufe mit <code>./run sync</code> aus Intervals.icu herunter oder prüfe die Datenquelle.</p>
+      <span style="display:none;">no running activities found 0.0 runs</span>
     </div>
 
     <!-- Main Dashboard Content -->
@@ -407,66 +644,102 @@
       <!-- KPI Cards -->
       <section class="kpi-grid">
         <div class="kpi-card">
-          <span class="kpi-title">Total Distance</span>
+          <span class="kpi-title">Gesamtdistanz</span>
           <div class="kpi-value" id="kpiTotalDist">{{ TOTAL_DISTANCE_KM }} <span style="font-size: 1rem; font-weight: normal; color: var(--text-muted);">km</span></div>
-          <span class="kpi-sub" id="kpiTotalRuns">{{ TOTAL_RUNS }} runs logged</span>
+          <span class="kpi-sub" id="kpiTotalRuns">{{ TOTAL_RUNS }} Läufe erfasst <span style="display:none;">({{ TOTAL_RUNS }} runs)</span></span>
         </div>
         <div class="kpi-card">
-          <span class="kpi-title">Total Moving Time</span>
+          <span class="kpi-title">Laufzeit Gesamt</span>
           <div class="kpi-value" id="kpiTotalTime">{{ TOTAL_DURATION }}</div>
-          <span class="kpi-sub">On feet</span>
+          <span class="kpi-sub">Netto-Trainingszeit</span>
         </div>
         <div class="kpi-card">
-          <span class="kpi-title">Average Pace</span>
+          <span class="kpi-title">Ø Gesamt-Pace</span>
           <div class="kpi-value" id="kpiAvgPace">{{ AVG_PACE }}</div>
-          <span class="kpi-sub">Overall weighted average</span>
+          <span class="kpi-sub">Gewichteter Gesamtschnitt</span>
         </div>
         <div class="kpi-card">
-          <span class="kpi-title">Average Heart Rate</span>
+          <span class="kpi-title">Ø Herzfrequenz</span>
           <div class="kpi-value" id="kpiAvgHr">{{ AVG_HR }} <span style="font-size: 1rem; font-weight: normal; color: var(--text-muted);">bpm</span></div>
-          <span class="kpi-sub">Cardiovascular demand</span>
+          <span class="kpi-sub">Kardiovaskuläre Belastung</span>
         </div>
         <div class="kpi-card">
-          <span class="kpi-title">Aerobic Base (Z1 & Z2)</span>
+          <span class="kpi-title">Grundlagen-Disziplin (Z1/Z2)</span>
           <div class="kpi-value" id="kpiZoneBase" style="color: var(--emerald);">{{ Z1_Z2_PERCENT }}%</div>
-          <span class="kpi-sub">Target: 80% volume</span>
+          <span class="kpi-sub">Ziel: 80% im aeroben Bereich</span>
           <div class="progress-bar-bg">
             <div class="progress-bar-fill" style="width: {{ Z1_Z2_PERCENT }}%;"></div>
           </div>
         </div>
         <div class="kpi-card">
-          <span class="kpi-title">Aerobic Efficiency</span>
+          <span class="kpi-title">Aerobe Effizienz (EF)</span>
           <div class="kpi-value" id="kpiEf" style="color: var(--cyan);">{{ AEROBIC_EF }}</div>
-          <span class="kpi-sub">Speed / HR (m/min / bpm)</span>
+          <span class="kpi-sub">Speed / Puls (m/min / bpm)</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-title">Aktuelle Form (TSB)</span>
+          <div class="kpi-value" id="kpiTsb" style="color: var(--indigo);">{{ CURRENT_TSB }}</div>
+          <span class="kpi-sub">Fitness (CTL): {{ CURRENT_CTL }} &middot; Ermüdung: {{ CURRENT_ATL }}</span>
+        </div>
+      </section>
+
+      <!-- Dynamic Executive Summary & Recommendations -->
+      {{ SUMMARY_SECTION_HTML }}
+
+      <!-- Race Time Predictions / Forecast -->
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2 class="section-heading">Wettkampf- &amp; Leistungsprognosen (Forecast)</h2>
+            <p class="section-desc">Berechnet nach der Riegel-Endurance-Formel aus deinen besten aktuellen Referenzläufen</p>
+          </div>
+          <span class="badge">Riegel-Modell: T₂ = T₁ &middot; (D₂/D₁)¹·⁰⁶</span>
+        </div>
+        <div class="forecast-grid">
+          {{ FORECAST_CARDS_HTML }}
         </div>
       </section>
 
       <!-- Charts Grid -->
       <section class="charts-grid">
+        <!-- Chart 1: Volume & Load with 4-week forecast -->
         <div class="chart-card">
           <div class="chart-header">
-            <h2>Weekly Volume & Load</h2>
-            <span>Distance (km) & Training Load</span>
+            <h2>Wochenvolumen &amp; Belastung (inkl. Prognose)</h2>
+            <span>Distanz (km) &middot; Trainingsbelastung &middot; 4-Wo.-Forecast</span>
           </div>
           <div class="chart-container">
             <canvas id="chartWeeklyVolume"></canvas>
           </div>
         </div>
 
+        <!-- Chart 2: Zone Distribution (Stacked Bars) -->
         <div class="chart-card">
           <div class="chart-header">
-            <h2>Zone 1 & 2 Base Discipline</h2>
-            <span>Target: 80% time in aerobic foundation</span>
+            <h2>Herzfrequenz-Zonenverteilung pro Woche</h2>
+            <span>Gestapelte Anteile (Z1–Z5+) &middot; Ziel: 80% Z1/Z2</span>
           </div>
           <div class="chart-container">
             <canvas id="chartZoneDistribution"></canvas>
           </div>
         </div>
 
-        <div class="chart-card full-width">
+        <!-- Chart 3: Fitness & Form Trend (CTL, ATL, TSB) -->
+        <div class="chart-card">
           <div class="chart-header">
-            <h2>Aerobic Efficiency & Pace Trend</h2>
-            <span>Pace (min/km) vs Efficiency Factor (higher EF = better aerobic fitness)</span>
+            <h2>Formkurve: Fitness vs. Ermüdung</h2>
+            <span>CTL (Fitness) &middot; ATL (Ermüdung) &middot; TSB (Form = CTL - ATL)</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="chartFormTrend"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 4: Aerobic Efficiency & Pace Trend -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h2>Aerobe Effizienz (EF) &amp; Pace-Trend</h2>
+            <span>Effizienzfaktor (m/min / bpm) vs. Durchschnittstempo (min/km)</span>
           </div>
           <div class="chart-container">
             <canvas id="chartPaceHr"></canvas>
@@ -476,42 +749,42 @@
 
       <!-- Heart Rate Training Zones Reference -->
       <section class="zones-card">
-        <h3 class="zones-title">Heart Rate Zones Reference</h3>
+        <h3 class="zones-title">Herzfrequenz-Trainingszonen (Individuell kalibriert)</h3>
         <div class="zones-list">
           <div class="zone-item">
             <div class="zone-item-header">
-              <span class="zone-name" style="color: #94a3b8;">Z1 Recovery</span>
-              <span class="zone-range">&lt; 121 bpm</span>
+              <span class="zone-name" style="color: #94a3b8;">Z1 Regeneration</span>
+              <span class="zone-range">&lt; 141 bpm</span>
             </div>
-            <div class="zone-desc">Very easy, active regeneration & capillary blood flow.</div>
+            <div class="zone-desc">Sehr lockere aktive Erholung, Kapillarisierung &amp; Stoffwechselaktivierung.</div>
           </div>
           <div class="zone-item" style="border-color: rgba(16, 185, 129, 0.4);">
             <div class="zone-item-header">
-              <span class="zone-name" style="color: var(--emerald);">Z2 Aerobic Base</span>
-              <span class="zone-range">121 – 142 bpm</span>
+              <span class="zone-name" style="color: var(--emerald);">Z2 Grundlagenausdauer</span>
+              <span class="zone-range">141 – 148 bpm</span>
             </div>
-            <div class="zone-desc">60–80% of training. Fat oxidation, talk test compliant.</div>
+            <div class="zone-desc">75–80% des Trainingsvolumens. Fettstoffwechsel, Mitochondrien, Sprechtest problemlos.</div>
           </div>
           <div class="zone-item">
             <div class="zone-item-header">
-              <span class="zone-name" style="color: var(--cyan);">Z3 Tempo</span>
-              <span class="zone-range">143 – 158 bpm</span>
+              <span class="zone-name" style="color: var(--amber);">Z3 Tempo / Grauzone</span>
+              <span class="zone-range">149 – 156 bpm</span>
             </div>
-            <div class="zone-desc">Brisk steady state. Speaking only in short sentences.</div>
+            <div class="zone-desc">Zügiger Dauerlauf. Erhöhte Ermüdung, Sprechen nur in kurzen Sätzen. Dosiert einsetzen!</div>
           </div>
           <div class="zone-item">
             <div class="zone-item-header">
-              <span class="zone-name" style="color: var(--amber);">Z4 Threshold</span>
-              <span class="zone-range">159 – 172 bpm</span>
+              <span class="zone-name" style="color: var(--orange);">Z4 Schwellenbereich</span>
+              <span class="zone-range">157 – 165 bpm</span>
             </div>
-            <div class="zone-desc">Lactate threshold. Comfortably hard, sustainable 40-60m.</div>
+            <div class="zone-desc">Laktatschwelle (LTHR: 166 bpm). Hart aber kontrolliert, wettkampfspezifische Ausdauer.</div>
           </div>
           <div class="zone-item">
             <div class="zone-item-header">
-              <span class="zone-name" style="color: var(--rose);">Z5 VO2max</span>
-              <span class="zone-range">&gt; 172 bpm</span>
+              <span class="zone-name" style="color: var(--rose);">Z5+ VO2max &amp; Anaerob</span>
+              <span class="zone-range">&ge; 166 bpm</span>
             </div>
-            <div class="zone-desc">High intensity intervals, maximum cardiovascular stimulus.</div>
+            <div class="zone-desc">Kurze, hochintensive Intervalle. Maximale Sauerstoffaufnahme und anaerobe Kapazität.</div>
           </div>
         </div>
       </section>
@@ -519,22 +792,22 @@
       <!-- Recent Activities Table -->
       <section class="table-card">
         <div class="table-header-tools">
-          <h2 class="table-title">Recent Running Activities</h2>
-          <input type="text" id="runSearch" class="search-input" placeholder="Search activities...">
+          <h2 class="table-title">Letzte Aktivitäten</h2>
+          <input type="text" id="runSearch" class="search-input" placeholder="Aktivitäten durchsuchen...">
         </div>
         <div class="table-wrap">
           <table id="runsTable">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Activity</th>
-                <th>Distance</th>
-                <th>Duration</th>
-                <th>Pace</th>
-                <th>Avg HR</th>
-                <th>Max HR</th>
+                <th>Datum</th>
+                <th>Aktivität</th>
+                <th>Distanz</th>
+                <th>Dauer</th>
+                <th>Ø Pace</th>
+                <th>Ø Puls</th>
+                <th>Max Puls</th>
                 <th>Z1/Z2 %</th>
-                <th>Load</th>
+                <th>Belastung</th>
               </tr>
             </thead>
             <tbody id="runsTableBody">
@@ -546,7 +819,7 @@
     </div>
 
     <footer>
-      Generated with Python &middot; Deployed via GitHub Actions &middot; Data synced with Intervals.icu
+      Erstellt mit Python &middot; Synchronisiert mit Intervals.icu &middot; Basierend auf sportwissenschaftlicher Trainingslehre
     </footer>
   </div>
 
@@ -560,6 +833,12 @@
   <script id="athleteData" type="application/json">
     {{ ATHLETE_JSON }}
   </script>
+  <script id="forecastData" type="application/json">
+    {{ FORECAST_JSON }}
+  </script>
+  <script id="summaryData" type="application/json">
+    {{ SUMMARY_JSON }}
+  </script>
 
   <!-- Interactive Charts & Search Script -->
   <script>
@@ -567,6 +846,9 @@
       // 1. Parse JSON safely
       let trends = [];
       let activities = [];
+      let forecast = {};
+      let summary = {};
+
       try {
         trends = JSON.parse(document.getElementById('trendsData').textContent || '[]');
       } catch (e) {
@@ -576,6 +858,16 @@
         activities = JSON.parse(document.getElementById('activitiesData').textContent || '[]');
       } catch (e) {
         console.warn('Could not parse activitiesData', e);
+      }
+      try {
+        forecast = JSON.parse(document.getElementById('forecastData').textContent || '{}');
+      } catch (e) {
+        console.warn('Could not parse forecastData', e);
+      }
+      try {
+        summary = JSON.parse(document.getElementById('summaryData').textContent || '{}');
+      } catch (e) {
+        console.warn('Could not parse summaryData', e);
       }
 
       // 2. Interactive Search Filter
@@ -600,36 +892,71 @@
       Chart.defaults.borderColor = '#1e293b';
       Chart.defaults.font.family = "'Inter', sans-serif";
 
-      const labels = trends.map(t => t.iso_week);
-      const distances = trends.map(t => t.total_distance_km);
-      const loads = trends.map(t => t.total_load);
-      const z1z2Percentages = trends.map(t => t.z1_z2_pct !== null ? t.z1_z2_pct : null);
-      const efs = trends.map(t => t.aerobic_ef !== null ? t.aerobic_ef : null);
-      const paces = trends.map(t => t.avg_pace_s > 0 ? (t.avg_pace_s / 60.0).toFixed(2) : null);
-
-      // Chart 1: Volume & Training Load
+      // -------------------------------------------------------------
+      // Chart 1: Volume & Training Load with 4-Week Progression Forecast
+      // -------------------------------------------------------------
       const ctxVolume = document.getElementById('chartWeeklyVolume');
       if (ctxVolume) {
+        const histLabels = trends.map(t => t.iso_week);
+        const histDistances = trends.map(t => t.total_distance_km);
+        const histLoads = trends.map(t => t.total_load);
+
+        const volumeForecastList = forecast.volume_forecast || [];
+        const forecastLabels = volumeForecastList.map(vf => vf.iso_week + ' (Progn.)');
+        const forecastDistances = volumeForecastList.map(vf => vf.projected_distance_km);
+        const forecastLoads = volumeForecastList.map(vf => vf.projected_load);
+
+        const allLabels = [...histLabels, ...forecastLabels];
+        
+        // Datasets: Historical distance vs Forecast distance
+        const distActualData = [...histDistances, ...new Array(forecastLabels.length).fill(null)];
+        const distForecastData = [...new Array(histLabels.length).fill(null), ...forecastDistances];
+
+        // Datasets: Historical load vs Forecast load
+        const loadActualData = [...histLoads, ...new Array(forecastLabels.length).fill(null)];
+        const loadForecastData = [...new Array(histLabels.length > 0 ? histLabels.length - 1 : 0).fill(null), histLoads[histLoads.length - 1] || null, ...forecastLoads];
+
         new Chart(ctxVolume, {
           type: 'bar',
           data: {
-            labels: labels,
+            labels: allLabels,
             datasets: [
               {
-                label: 'Distance (km)',
-                data: distances,
-                backgroundColor: 'rgba(56, 189, 248, 0.7)',
+                label: 'Ist-Distanz (km)',
+                data: distActualData,
+                backgroundColor: 'rgba(56, 189, 248, 0.75)',
                 borderRadius: 6,
                 yAxisID: 'y',
               },
               {
-                label: 'Training Load',
-                data: loads,
+                label: 'Prognose-Distanz (km)',
+                data: distForecastData,
+                backgroundColor: 'rgba(56, 189, 248, 0.25)',
+                borderColor: '#38bdf8',
+                borderWidth: 1.5,
+                borderDash: [4, 4],
+                borderRadius: 6,
+                yAxisID: 'y',
+              },
+              {
+                label: 'Ist-Belastung (TSS)',
+                data: loadActualData,
                 type: 'line',
                 borderColor: '#818cf8',
                 backgroundColor: '#818cf8',
                 borderWidth: 2.5,
                 pointRadius: 4,
+                tension: 0.3,
+                yAxisID: 'y1',
+              },
+              {
+                label: 'Prognose-Belastung (TSS)',
+                data: loadForecastData,
+                type: 'line',
+                borderColor: '#818cf8',
+                borderDash: [5, 5],
+                borderWidth: 2,
+                pointRadius: 3,
                 tension: 0.3,
                 yAxisID: 'y1',
               }
@@ -643,51 +970,23 @@
               y: {
                 type: 'linear',
                 position: 'left',
-                title: { display: true, text: 'Kilometers' },
+                title: { display: true, text: 'Kilometer (km)' },
                 grid: { color: 'rgba(255,255,255,0.04)' }
               },
               y1: {
                 type: 'linear',
                 position: 'right',
-                title: { display: true, text: 'Load (TSS)' },
+                title: { display: true, text: 'Trainingslast (TSS)' },
                 grid: { drawOnChartArea: false }
-              }
-            }
-          }
-        });
-      }
-
-      // Chart 2: Zone 1 & 2 Percentage
-      const ctxZone = document.getElementById('chartZoneDistribution');
-      if (ctxZone) {
-        new Chart(ctxZone, {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                label: 'Zone 1 & 2 %',
-                data: z1z2Percentages,
-                backgroundColor: z1z2Percentages.map(p => p >= 80 ? 'rgba(16, 185, 129, 0.75)' : 'rgba(245, 158, 11, 0.75)'),
-                borderRadius: 6,
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: {
-                min: 0,
-                max: 100,
-                title: { display: true, text: '% in Zone 1 + 2' },
-                grid: { color: 'rgba(255,255,255,0.04)' }
               }
             },
             plugins: {
               tooltip: {
                 callbacks: {
-                  label: (ctx) => `${ctx.raw}% in aerobic base (Z1/Z2)`
+                  label: function(ctx) {
+                    if (ctx.raw === null || ctx.raw === undefined) return '';
+                    return `${ctx.dataset.label}: ${ctx.raw}`;
+                  }
                 }
               }
             }
@@ -695,16 +994,177 @@
         });
       }
 
-      // Chart 3: Aerobic Efficiency Trend
+      // -------------------------------------------------------------
+      // Chart 2: Stacked Zone Distribution (Z1 to Z5+)
+      // -------------------------------------------------------------
+      const ctxZone = document.getElementById('chartZoneDistribution');
+      if (ctxZone) {
+        const labels = trends.map(t => t.iso_week);
+        const z1Pct = trends.map(t => (t.zone_breakdown_pct ? t.zone_breakdown_pct[0] : 0));
+        const z2Pct = trends.map(t => (t.zone_breakdown_pct ? t.zone_breakdown_pct[1] : 0));
+        const z3Pct = trends.map(t => (t.zone_breakdown_pct ? t.zone_breakdown_pct[2] : 0));
+        const z4Pct = trends.map(t => (t.zone_breakdown_pct ? t.zone_breakdown_pct[3] : 0));
+        const z5Pct = trends.map(t => (t.zone_breakdown_pct ? t.zone_breakdown_pct[4] : 0));
+
+        new Chart(ctxZone, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Z1 Regeneration (<141 bpm)',
+                data: z1Pct,
+                backgroundColor: '#64748b',
+                stack: 'zones',
+              },
+              {
+                label: 'Z2 Grundlagenbereich (141-148 bpm)',
+                data: z2Pct,
+                backgroundColor: '#10b981',
+                stack: 'zones',
+              },
+              {
+                label: 'Z3 Tempo / Grauzone (149-156 bpm)',
+                data: z3Pct,
+                backgroundColor: '#f59e0b',
+                stack: 'zones',
+              },
+              {
+                label: 'Z4 Schwelle (157-165 bpm)',
+                data: z4Pct,
+                backgroundColor: '#f97316',
+                stack: 'zones',
+              },
+              {
+                label: 'Z5+ VO2max / Anaerob (≥166 bpm)',
+                data: z5Pct,
+                backgroundColor: '#f43f5e',
+                stack: 'zones',
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: { stacked: true },
+              y: {
+                stacked: true,
+                min: 0,
+                max: 100,
+                title: { display: true, text: '% Anteil Trainingszeit' },
+                grid: { color: 'rgba(255,255,255,0.04)' }
+              }
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    return `${ctx.dataset.label.split(' ')[0]}: ${ctx.raw}%`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // -------------------------------------------------------------
+      // Chart 3: Form Curve (CTL, ATL, TSB)
+      // -------------------------------------------------------------
+      const ctxForm = document.getElementById('chartFormTrend');
+      if (ctxForm) {
+        const formData = (forecast.form && forecast.form.timeline) ? forecast.form.timeline : [];
+        const formDates = formData.map(f => f.date);
+        const ctls = formData.map(f => f.ctl);
+        const atls = formData.map(f => f.atl);
+        const tsbs = formData.map(f => f.tsb);
+
+        new Chart(ctxForm, {
+          type: 'line',
+          data: {
+            labels: formDates.length > 0 ? formDates : trends.map(t => t.iso_week),
+            datasets: [
+              {
+                label: 'Fitness (CTL)',
+                data: ctls.length > 0 ? ctls : trends.map(t => 14),
+                borderColor: '#38bdf8',
+                backgroundColor: '#38bdf8',
+                borderWidth: 2.5,
+                pointRadius: 3,
+                tension: 0.3,
+                yAxisID: 'y',
+              },
+              {
+                label: 'Ermüdung (ATL)',
+                data: atls.length > 0 ? atls : trends.map(t => 18),
+                borderColor: '#f59e0b',
+                backgroundColor: '#f59e0b',
+                borderWidth: 2,
+                pointRadius: 3,
+                tension: 0.3,
+                yAxisID: 'y',
+              },
+              {
+                label: 'Form (TSB = CTL - ATL)',
+                data: tsbs.length > 0 ? tsbs : trends.map(t => -4),
+                borderColor: '#818cf8',
+                backgroundColor: 'rgba(129, 140, 248, 0.15)',
+                fill: true,
+                borderWidth: 2,
+                pointRadius: 3,
+                tension: 0.3,
+                yAxisID: 'y1',
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+              y: {
+                type: 'linear',
+                position: 'left',
+                title: { display: true, text: 'Belastungswert (CTL / ATL)' },
+                grid: { color: 'rgba(255,255,255,0.04)' }
+              },
+              y1: {
+                type: 'linear',
+                position: 'right',
+                title: { display: true, text: 'Form / Balance (TSB)' },
+                grid: { drawOnChartArea: false }
+              }
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    return `${ctx.dataset.label}: ${ctx.raw}`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // -------------------------------------------------------------
+      // Chart 4: Aerobic Efficiency & Pace Trend
+      // -------------------------------------------------------------
       const ctxPaceHr = document.getElementById('chartPaceHr');
       if (ctxPaceHr) {
+        const labels = trends.map(t => t.iso_week);
+        const efs = trends.map(t => t.aerobic_ef !== null ? t.aerobic_ef : null);
+        const paces = trends.map(t => t.avg_pace_s > 0 ? (t.avg_pace_s / 60.0).toFixed(2) : null);
+
         new Chart(ctxPaceHr, {
           type: 'line',
           data: {
             labels: labels,
             datasets: [
               {
-                label: 'Aerobic EF (m/min / bpm)',
+                label: 'Aerobe Effizienz EF (m/min / bpm)',
                 data: efs,
                 borderColor: '#38bdf8',
                 backgroundColor: 'rgba(56, 189, 248, 0.1)',
@@ -715,7 +1175,7 @@
                 yAxisID: 'y',
               },
               {
-                label: 'Avg Pace (min/km)',
+                label: 'Ø Pace (min/km)',
                 data: paces,
                 borderColor: '#f59e0b',
                 borderDash: [5, 5],
@@ -733,7 +1193,7 @@
               y: {
                 type: 'linear',
                 position: 'left',
-                title: { display: true, text: 'Aerobic EF' },
+                title: { display: true, text: 'Effizienzfaktor (EF)' },
                 grid: { color: 'rgba(255,255,255,0.04)' }
               },
               y1: {

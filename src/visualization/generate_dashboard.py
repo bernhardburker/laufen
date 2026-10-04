@@ -1,24 +1,34 @@
 #!/usr/bin/env python3
-"""HTML Dashboard Generator for running trends and activities.
+"""HTML Dashboard Generator for running trends, forecasts, and activities.
 
-Loads running activity data, computes weekly trends, summary KPIs,
-and fills an HTML template for interactive visualization on GitHub Pages or locally.
+Loads running activity data, computes weekly trends, KPI metrics,
+race time predictions (Riegel formula), training volume forecasts,
+fitness/fatigue curves (CTL/ATL/TSB), and dynamic coaching recommendations,
+rendering a German-localized responsive dashboard.
 """
 
 from __future__ import annotations
 
 import argparse
+import html
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 # Ensure project root is in sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.analysis.forecast import (
+    calculate_fitness_form_trend,
+    generate_training_summary,
+    generate_volume_forecast,
+    predict_race_times,
+)
 from src.analysis.trends import (
     aggregate_weekly_trends,
     calculate_run_metrics,
@@ -33,12 +43,18 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate an interactive HTML dashboard from running activities."
     )
+    default_input = Path(
+        os.getenv(
+            "ACTIVITIES_PATH",
+            str(PROJECT_ROOT / "data" / "intervals_activities.json"),
+        )
+    )
     parser.add_argument(
         "--input",
         "-i",
         type=Path,
-        default=PROJECT_ROOT / "data" / "intervals_activities.json",
-        help="Path to activity JSON file (default: data/intervals_activities.json)",
+        default=default_input,
+        help="Path to activity JSON file (default: data/intervals_activities.json or ACTIVITIES_PATH)",
     )
     parser.add_argument(
         "--template",
@@ -63,8 +79,8 @@ def parse_arguments() -> argparse.Namespace:
     )
     parser.add_argument(
         "--title",
-        default="Running & Trends Dashboard",
-        help="Title displayed in the dashboard header",
+        default="Lauf- & Leistungs-Dashboard",
+        help="Title displayed in the dashboard header (default: Lauf- & Leistungs-Dashboard)",
     )
     return parser.parse_args()
 
@@ -82,15 +98,20 @@ def load_athlete_profile() -> Dict[str, Any]:
 
 def build_table_rows(processed_runs: List[Dict[str, Any]]) -> str:
     if not processed_runs:
-        return '<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 24px;">No running activities found in dataset.</td></tr>'
+        return (
+            '<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 24px;">'
+            "Keine Laufaktivitäten im Datensatz gefunden. (No running activities found)</td></tr>"
+        )
 
     # Chronological reverse (newest first)
-    sorted_runs = sorted(processed_runs, key=lambda r: r.get("date") or "", reverse=True)
+    sorted_runs = sorted(
+        processed_runs, key=lambda r: r.get("date") or "", reverse=True
+    )
     rows: List[str] = []
 
     for run in sorted_runs:
         date_str = str(run.get("date", ""))[:10] or "N/A"
-        name = str(run.get("name", "Run"))
+        name = html.escape(str(run.get("name", "Lauf")))
         dist_km = run.get("distance_km", 0.0)
         dur_str = format_duration(run.get("moving_time_s", 0))
         pace_str = format_pace(run.get("pace_s_per_km", 0.0))
@@ -105,7 +126,7 @@ def build_table_rows(processed_runs: List[Dict[str, Any]]) -> str:
         tot_sec = run.get("total_zone_seconds", 0)
         if tot_sec > 0:
             z_pct = round((z1_z2_sec / tot_sec) * 100.0, 1)
-            tag_class = "tag-green" if z_pct >= 80.0 else "tag-amber"
+            tag_class = "tag-green" if z_pct >= 75.0 else "tag-amber"
             z_badge = f'<span class="tag {tag_class}">{z_pct:.1f}%</span>'
         else:
             z_badge = '<span style="color: #64748b;">-</span>'
@@ -131,12 +152,125 @@ def build_table_rows(processed_runs: List[Dict[str, Any]]) -> str:
     return "\n".join(rows)
 
 
+def build_summary_html(summary: Dict[str, Any]) -> str:
+    if not summary or not summary.get("insights"):
+        return ""
+
+    badge_level = summary.get("status_level", "info")
+    badge_color = "#38bdf8"
+    if badge_level == "warning":
+        badge_color = "#f59e0b"
+    elif badge_level == "success":
+        badge_color = "#10b981"
+
+    insights_html = []
+    for ins in summary.get("insights", []):
+        tag_class = (
+            "tag-amber"
+            if ins.get("type") == "warning"
+            else (
+                "tag-green" if ins.get("type") == "success" else "tag-cyan"
+            )
+        )
+        escaped_title = html.escape(ins["title"])
+        escaped_badge = html.escape(ins["badge"])
+        escaped_text = html.escape(ins["text"])
+        insights_html.append(
+            f'<div class="summary-item">'
+            f'  <div class="summary-item-header">'
+            f'    <span class="summary-item-title">{escaped_title}</span>'
+            f'    <span class="tag {tag_class}">{escaped_badge}</span>'
+            f"  </div>"
+            f'  <p class="summary-item-text">{escaped_text}</p>'
+            f"</div>"
+        )
+
+    recommendations_html = []
+    for rec in summary.get("recommendations", []):
+        tag_class = rec.get("tag_class", "tag-cyan")
+        escaped_tag = html.escape(rec["tag"])
+        escaped_title = html.escape(rec["title"])
+        escaped_text = html.escape(rec["text"])
+        recommendations_html.append(
+            f'<div class="recommendation-card">'
+            f'  <div class="rec-header">'
+            f'    <span class="tag {tag_class}">{escaped_tag}</span>'
+            f'    <h4 class="rec-title">{escaped_title}</h4>'
+            f"  </div>"
+            f'  <p class="rec-text">{escaped_text}</p>'
+            f"</div>"
+        )
+
+    status_title_esc = html.escape(summary.get("status_title", ""))
+    status_badge_esc = html.escape(summary.get("status_badge", ""))
+
+    return f"""
+    <section class="summary-section">
+      <div class="summary-header">
+        <div class="summary-header-left">
+          <div class="status-indicator" style="background-color: {badge_color}; box-shadow: 0 0 10px {badge_color};"></div>
+          <div>
+            <h2 class="section-title">Trainings-Status &amp; Kernaussagen</h2>
+            <p class="section-subtitle">{status_title_esc}</p>
+          </div>
+        </div>
+        <span class="tag" style="background: rgba(245, 158, 11, 0.15); color: {badge_color}; border: 1px solid {badge_color}40; font-size: 0.85rem; padding: 6px 14px;">
+          {status_badge_esc}
+        </span>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-column">
+          <h3 class="column-subtitle">📊 Wichtigste Erkenntnisse</h3>
+          <div class="summary-list">
+            {"".join(insights_html)}
+          </div>
+        </div>
+        <div class="summary-column">
+          <h3 class="column-subtitle">🎯 Konkrete Handlungsempfehlungen</h3>
+          <div class="recommendations-list">
+            {"".join(recommendations_html)}
+          </div>
+        </div>
+      </div>
+    </section>
+    """
+
+
+def build_forecast_cards_html(predictions: List[Dict[str, Any]]) -> str:
+    if not predictions:
+        return ""
+
+    cards = []
+    for pred in predictions:
+        dist_name = html.escape(pred["name"])
+        readiness = html.escape(pred["readiness"])
+        time_str = html.escape(pred["predicted_time_str"])
+        pace_str = html.escape(pred["target_pace_str"])
+        note = html.escape(pred["note"])
+        basis = html.escape(pred["basis"])
+        tag_class = pred.get("readiness_tag", "tag-cyan")
+
+        cards.append(
+            f'<div class="forecast-card">'
+            f'  <div class="forecast-card-header">'
+            f'    <span class="forecast-dist">{dist_name}</span>'
+            f'    <span class="tag {tag_class}">{readiness}</span>'
+            f"  </div>"
+            f'  <div class="forecast-time">{time_str}</div>'
+            f'  <div class="forecast-pace">Ziel-Pace: <strong>{pace_str}</strong></div>'
+            f'  <p class="forecast-note">{note}</p>'
+            f'  <div class="forecast-basis">{basis}</div>'
+            f"</div>"
+        )
+    return "\n".join(cards)
+
+
 def generate_dashboard(
     input_file: Path,
     template_file: Path,
     output_file: Path,
     weeks: int = 12,
-    title: str = "Running & Trends Dashboard",
+    title: str = "Lauf- & Leistungs-Dashboard",
 ) -> None:
     if not input_file.exists():
         raise FileNotFoundError(f"Input file not found: {input_file}")
@@ -146,6 +280,7 @@ def generate_dashboard(
 
     activities = load_activities(input_file)
     runs = filter_runs(activities)
+    athlete_profile = load_athlete_profile()
 
     # Process runs
     processed_runs = []
@@ -154,9 +289,11 @@ def generate_dashboard(
         metrics["max_heartrate"] = r.get("max_heartrate")
         metrics["moving_time_str"] = format_duration(metrics["moving_time_s"])
         metrics["pace_str"] = format_pace(metrics["pace_s_per_km"])
+        metrics["icu_ctl"] = r.get("icu_ctl")
+        metrics["icu_atl"] = r.get("icu_atl")
         processed_runs.append(metrics)
 
-    generation_date = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    generation_date = datetime.now(timezone.utc).strftime("%d.%m.%Y %H:%M UTC")
 
     if not processed_runs:
         context = {
@@ -169,12 +306,23 @@ def generate_dashboard(
             "AVG_HR": "-",
             "Z1_Z2_PERCENT": "0.0",
             "AEROBIC_EF": "-",
+            "CURRENT_CTL": "0.0",
+            "CURRENT_ATL": "0.0",
+            "CURRENT_TSB": "0.0",
+            "CURRENT_TSB_STATUS": "Keine Daten",
+            "SUMMARY_SECTION_HTML": "",
+            "FORECAST_CARDS_HTML": "",
             "EMPTY_STATE_DISPLAY": "block",
             "CONTENT_DISPLAY": "none",
-            "RUNS_TABLE_ROWS": '<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 24px;">No running activities found in dataset.</td></tr>',
+            "RUNS_TABLE_ROWS": (
+                '<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 24px;">'
+                "Keine Laufaktivitäten gefunden. (no running activities)</td></tr>"
+            ),
             "TRENDS_JSON": "[]",
             "ACTIVITIES_JSON": "[]",
-            "ATHLETE_JSON": json.dumps(load_athlete_profile()),
+            "ATHLETE_JSON": json.dumps(athlete_profile),
+            "FORECAST_JSON": "{}",
+            "SUMMARY_JSON": "{}",
         }
     else:
         trends = aggregate_weekly_trends(runs, max_weeks=weeks)
@@ -182,13 +330,19 @@ def generate_dashboard(
         total_time_s = sum(r["moving_time_s"] for r in processed_runs)
         total_runs_count = len(processed_runs)
 
-        avg_pace_s = (total_time_s / total_dist_km) if total_dist_km > 0 else 0.0
+        avg_pace_s = (
+            (total_time_s / total_dist_km) if total_dist_km > 0 else 0.0
+        )
         avg_pace_formatted = format_pace(avg_pace_s)
 
         hr_weighted = sum(
-            r["avg_hr"] * r["moving_time_s"] for r in processed_runs if r["avg_hr"] > 0
+            r["avg_hr"] * r["moving_time_s"]
+            for r in processed_runs
+            if r["avg_hr"] > 0
         )
-        hr_time = sum(r["moving_time_s"] for r in processed_runs if r["avg_hr"] > 0)
+        hr_time = sum(
+            r["moving_time_s"] for r in processed_runs if r["avg_hr"] > 0
+        )
         avg_hr_val = round(hr_weighted / hr_time, 1) if hr_time > 0 else 0.0
 
         z1_z2_total_s = sum(r["z1_z2_seconds"] for r in processed_runs)
@@ -200,11 +354,31 @@ def generate_dashboard(
         )
 
         ef_list = [
-            r["aerobic_ef"] for r in processed_runs if r["aerobic_ef"] is not None
+            r["aerobic_ef"]
+            for r in processed_runs
+            if r["aerobic_ef"] is not None
         ]
-        avg_ef_val = round(sum(ef_list) / len(ef_list), 3) if ef_list else "-"
+        avg_ef_val = (
+            round(sum(ef_list) / len(ef_list), 3) if ef_list else "-"
+        )
+
+        # Forecast and form calculations
+        predictions = predict_race_times(processed_runs, athlete_profile)
+        volume_forecast = generate_volume_forecast(trends, num_weeks=4)
+        form_data = calculate_fitness_form_trend(processed_runs)
+        summary_data = generate_training_summary(
+            processed_runs, trends, athlete_profile
+        )
 
         table_rows = build_table_rows(processed_runs)
+        summary_html = build_summary_html(summary_data)
+        forecast_html = build_forecast_cards_html(predictions)
+
+        forecast_payload = {
+            "predictions": predictions,
+            "volume_forecast": volume_forecast,
+            "form": form_data,
+        }
 
         context = {
             "DASHBOARD_TITLE": title,
@@ -216,12 +390,20 @@ def generate_dashboard(
             "AVG_HR": f"{avg_hr_val:.0f}",
             "Z1_Z2_PERCENT": f"{z1_z2_pct_val:.1f}",
             "AEROBIC_EF": str(avg_ef_val),
+            "CURRENT_CTL": f"{form_data['latest_ctl']:.1f}",
+            "CURRENT_ATL": f"{form_data['latest_atl']:.1f}",
+            "CURRENT_TSB": f"{form_data['current_tsb']:+.1f}",
+            "CURRENT_TSB_STATUS": form_data["tsb_status"],
+            "SUMMARY_SECTION_HTML": summary_html,
+            "FORECAST_CARDS_HTML": forecast_html,
             "EMPTY_STATE_DISPLAY": "none",
             "CONTENT_DISPLAY": "block",
             "RUNS_TABLE_ROWS": table_rows,
             "TRENDS_JSON": json.dumps(trends, ensure_ascii=False),
             "ACTIVITIES_JSON": json.dumps(processed_runs, ensure_ascii=False),
-            "ATHLETE_JSON": json.dumps(load_athlete_profile(), ensure_ascii=False),
+            "ATHLETE_JSON": json.dumps(athlete_profile, ensure_ascii=False),
+            "FORECAST_JSON": json.dumps(forecast_payload, ensure_ascii=False),
+            "SUMMARY_JSON": json.dumps(summary_data, ensure_ascii=False),
         }
 
     template_content = template_file.read_text(encoding="utf-8")

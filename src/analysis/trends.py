@@ -129,6 +129,7 @@ def calculate_run_metrics(run: Dict[str, Any]) -> Dict[str, Any]:
         "aerobic_ef": ef,
         "z1_z2_seconds": z1_z2_seconds,
         "total_zone_seconds": total_zone_seconds,
+        "zone_times": zone_times,
     }
 
 
@@ -181,11 +182,23 @@ def aggregate_weekly_trends(
         ef_list = [r["aerobic_ef"] for r in week_runs if r["aerobic_ef"] is not None]
         avg_ef = round(sum(ef_list) / len(ef_list), 3) if ef_list else None
 
+        # Longest run in week
+        longest_km = max((r["distance_km"] for r in week_runs), default=0.0)
+
+        # 5-zone breakdown aggregation
+        z1_s = sum((r.get("zone_times", [])[0] if len(r.get("zone_times", [])) > 0 else 0) for r in week_runs)
+        z2_s = sum((r.get("zone_times", [])[1] if len(r.get("zone_times", [])) > 1 else 0) for r in week_runs)
+        z3_s = sum((r.get("zone_times", [])[2] if len(r.get("zone_times", [])) > 2 else 0) for r in week_runs)
+        z4_s = sum((r.get("zone_times", [])[3] if len(r.get("zone_times", [])) > 3 else 0) for r in week_runs)
+        z5_s = sum((sum(r.get("zone_times", [])[4:]) if len(r.get("zone_times", [])) > 4 else 0) for r in week_runs)
+        z_total = z1_s + z2_s + z3_s + z4_s + z5_s
+
         trends.append(
             {
                 "iso_week": week,
                 "runs_count": len(week_runs),
                 "total_distance_km": round(total_distance, 2),
+                "longest_run_km": round(longest_km, 2),
                 "total_time_s": total_time,
                 "total_load": round(total_load, 1),
                 "avg_pace_s": avg_pace_s,
@@ -193,6 +206,11 @@ def aggregate_weekly_trends(
                 "avg_hr": round(avg_hr, 1),
                 "z1_z2_pct": z1_z2_pct,
                 "aerobic_ef": avg_ef,
+                "zone_breakdown_s": [z1_s, z2_s, z3_s, z4_s, z5_s],
+                "zone_breakdown_pct": [
+                    round((z / z_total) * 100.0, 1) if z_total > 0 else 0.0
+                    for z in [z1_s, z2_s, z3_s, z4_s, z5_s]
+                ],
             }
         )
 
