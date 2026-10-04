@@ -11,6 +11,7 @@ if str(PROJECT_ROOT) not in sys.path:
 import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from src.analysis.ai_coach import build_coach_prompt
 from src.analysis.forecast import (
     calculate_fitness_form_trend,
     generate_training_summary,
@@ -133,12 +134,32 @@ class ForecastDriver:
         )
         assert has_zone_or_pace_advice, "Expected zone/pace advice in recommendations."
 
+    def compute_ai_coach_prompt(self, tmp_path: Path) -> None:
+        activities_file = tmp_path / "test_activities.json"
+        athlete_file = tmp_path / "test_athlete.json"
+        with open(activities_file, "w", encoding="utf-8") as f:
+            json.dump(self.runs, f)
+        with open(athlete_file, "w", encoding="utf-8") as f:
+            json.dump(self.athlete_profile, f)
+        self.ai_coach_prompt = build_coach_prompt(activities_file, athlete_file)
+
+    def assert_prompt_includes_zones_and_runs(self) -> None:
+        assert "148" in self.ai_coach_prompt
+        assert "166" in self.ai_coach_prompt
+        assert "Tempo 7k" in self.ai_coach_prompt
+
+    def assert_prompt_instructs_on_80_20(self) -> None:
+        assert "80/20" in self.ai_coach_prompt
+        assert "Zone 2" in self.ai_coach_prompt or "Z2" in self.ai_coach_prompt
+
 
 # 3. Pytest Fixture
 @pytest.fixture
-def driver() -> ForecastDriver:
+def driver(tmp_path: Path) -> ForecastDriver:
     workspace_root = Path(__file__).resolve().parent.parent
-    return ForecastDriver(workspace_root)
+    d = ForecastDriver(workspace_root)
+    d.tmp_path = tmp_path
+    return d
 
 
 # 4. Step Definitions
@@ -165,6 +186,11 @@ def when_generate_volume_forecast(driver: ForecastDriver, weeks: int):
 @when("training summary and recommendations are generated")
 def when_generate_summary(driver: ForecastDriver):
     driver.compute_summary()
+
+
+@when("an AI coach prompt is constructed")
+def when_construct_ai_coach_prompt(driver: ForecastDriver):
+    driver.compute_ai_coach_prompt(driver.tmp_path)
 
 
 @then("race predictions are returned for standard distances")
@@ -195,3 +221,13 @@ def then_check_summary_structure(driver: ForecastDriver):
 @then("actionable recommendations are provided for zone discipline and volume")
 def then_check_recommendations(driver: ForecastDriver):
     driver.assert_actionable_recommendations()
+
+
+@then("the prompt includes athlete heart rate zones and recent runs")
+def then_prompt_includes_zones(driver: ForecastDriver):
+    driver.assert_prompt_includes_zones_and_runs()
+
+
+@then("the prompt instructs the AI coach on 80/20 zone discipline")
+def then_prompt_instructs_80_20(driver: ForecastDriver):
+    driver.assert_prompt_instructs_on_80_20()

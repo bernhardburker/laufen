@@ -22,6 +22,7 @@ on:
       - 'src/**'
       - 'templates/**'
       - '.github/workflows/deploy-pages.yml'
+      - '.github/scripts/**'
       - 'config/**'
 
 # Set permissions for GitHub Pages deployment
@@ -40,24 +41,26 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OVERRIDE || 'self-hosted' }}
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
+        continue-on-error: true
         with:
           python-version: '3.13'
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python3 -m pip install --upgrade pip || true
+          python3 -m pip install -r requirements.txt || pip install -r requirements.txt
 
       - name: Run automated test suite
         run: |
-          pytest tests/
+          pytest tests/ || .venv/bin/pytest tests/
 
       - name: Fetch activities from Intervals.icu
         env:
@@ -75,12 +78,29 @@ jobs:
             echo "[]" > data/intervals_activities.json
           fi
 
+      - name: Generate Agentic AI Coach Review (agy)
+        id: ai_coach
+        continue-on-error: true
+        env:
+          AGY_MODEL: ${{ vars.AGY_MODEL || 'Gemini 3.7 Flash (Medium)' }}
+          AGY_TIMEOUT: '3m'
+        run: |
+          chmod +x .github/scripts/run-ai-coach.sh
+          ./.github/scripts/run-ai-coach.sh data/intervals_activities.json data/ai_coach_commentary.md config/athlete.json
+
+      - name: Publish AI Coach Review to Job Summary
+        if: always() && hashFiles('data/ai_coach_commentary.md') != ''
+        run: |
+          echo "## 🤖 KI-Laufcoach Analyse (Antigravity AI)" >> "$GITHUB_STEP_SUMMARY"
+          cat data/ai_coach_commentary.md >> "$GITHUB_STEP_SUMMARY"
+
       - name: Generate HTML Dashboard
         run: |
           python3 src/visualization/generate_dashboard.py \
             --input data/intervals_activities.json \
             --template templates/dashboard.html \
-            --output dist/index.html
+            --output dist/index.html \
+            --ai-coach data/ai_coach_commentary.md
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

@@ -13,6 +13,7 @@ import argparse
 import html
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -81,6 +82,12 @@ def parse_arguments() -> argparse.Namespace:
         "--title",
         default="Lauf- & Leistungs-Dashboard",
         help="Title displayed in the dashboard header (default: Lauf- & Leistungs-Dashboard)",
+    )
+    parser.add_argument(
+        "--ai-coach",
+        type=Path,
+        default=PROJECT_ROOT / "data" / "ai_coach_commentary.md",
+        help="Path to AI coach markdown commentary (default: data/ai_coach_commentary.md)",
     )
     return parser.parse_args()
 
@@ -152,7 +159,99 @@ def build_table_rows(processed_runs: List[Dict[str, Any]]) -> str:
     return "\n".join(rows)
 
 
-def build_summary_html(summary: Dict[str, Any]) -> str:
+def render_markdown_to_html(md_text: str) -> str:
+    lines = md_text.strip().splitlines()
+    html_lines = []
+    in_list = False
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            if in_list:
+                html_lines.append("</ul>")
+                in_list = False
+            continue
+
+        if stripped in ("---", "***", "___"):
+            if in_list:
+                html_lines.append("</ul>")
+                in_list = False
+            html_lines.append(
+                '<hr style="border: none; border-top: 1px solid var(--card-border); margin: 16px 0;">'
+            )
+            continue
+
+        if stripped.startswith("### "):
+            if in_list:
+                html_lines.append("</ul>")
+                in_list = False
+            text = html.escape(stripped[4:])
+            html_lines.append(
+                f'<h4 style="font-size: 1.05rem; font-weight: 600; color: var(--cyan); margin: 14px 0 6px;">{text}</h4>'
+            )
+            continue
+        elif stripped.startswith("## "):
+            if in_list:
+                html_lines.append("</ul>")
+                in_list = False
+            text = html.escape(stripped[3:])
+            html_lines.append(
+                f'<h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-main); margin: 16px 0 8px;">{text}</h3>'
+            )
+            continue
+
+        if stripped.startswith("> "):
+            if in_list:
+                html_lines.append("</ul>")
+                in_list = False
+            q_text = html.escape(stripped[2:])
+            q_text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", q_text)
+            html_lines.append(
+                f'<blockquote style="border-left: 3px solid var(--cyan); padding: 8px 14px; background: rgba(56, 189, 248, 0.05); border-radius: 4px; color: var(--text-main); font-style: italic; margin: 12px 0;">{q_text}</blockquote>'
+            )
+            continue
+
+        if stripped.startswith(("- ", "* ")) or (
+            len(stripped) > 2
+            and stripped[0].isdigit()
+            and stripped[1:3] in (". ", ") ")
+        ):
+            if not in_list:
+                html_lines.append(
+                    '<ul style="margin: 8px 0 12px 20px; color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;">'
+                )
+                in_list = True
+            item_text = (
+                stripped[2:]
+                if stripped.startswith(("- ", "* "))
+                else stripped.split(". ", 1)[-1]
+            )
+            item_text = html.escape(item_text)
+            item_text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", item_text)
+            item_text = re.sub(r"\*(.+?)\*", r"<em>\1</em>", item_text)
+            html_lines.append(f'<li style="margin-bottom: 6px;">{item_text}</li>')
+            continue
+
+        if in_list:
+            html_lines.append("</ul>")
+            in_list = False
+
+        p_text = html.escape(stripped)
+        p_text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", p_text)
+        p_text = re.sub(r"\*(.+?)\*", r"<em>\1</em>", p_text)
+        html_lines.append(
+            f'<p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.55; margin-bottom: 10px;">{p_text}</p>'
+        )
+
+    if in_list:
+        html_lines.append("</ul>")
+
+    return "\n".join(html_lines)
+
+
+def build_summary_html(
+    summary: Dict[str, Any], ai_coach_markdown: Optional[str] = None
+) -> str:
     if not summary or not summary.get("insights"):
         return ""
 
@@ -204,8 +303,27 @@ def build_summary_html(summary: Dict[str, Any]) -> str:
     status_title_esc = html.escape(summary.get("status_title", ""))
     status_badge_esc = html.escape(summary.get("status_badge", ""))
 
+    ai_coach_block = ""
+    if ai_coach_markdown and ai_coach_markdown.strip():
+        coach_html = render_markdown_to_html(ai_coach_markdown)
+        ai_coach_block = f"""
+        <div class="ai-coach-banner" style="background: rgba(56, 189, 248, 0.04); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 20px; margin-bottom: 24px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="badge-dot" style="background-color: var(--cyan); box-shadow: 0 0 8px var(--cyan);"></span>
+              <span style="font-weight: 700; color: var(--cyan); font-size: 0.95rem;">🤖 KI-Laufcoach (Antigravity AI Agent)</span>
+            </div>
+            <span class="tag tag-cyan">Agentic Coaching</span>
+          </div>
+          <div class="ai-coach-body" style="font-size: 0.9rem; line-height: 1.6;">
+            {coach_html}
+          </div>
+        </div>
+        """
+
     return f"""
     <section class="summary-section">
+      {ai_coach_block}
       <div class="summary-header">
         <div class="summary-header-left">
           <div class="status-indicator" style="background-color: {badge_color}; box-shadow: 0 0 10px {badge_color};"></div>
@@ -271,6 +389,7 @@ def generate_dashboard(
     output_file: Path,
     weeks: int = 12,
     title: str = "Lauf- & Leistungs-Dashboard",
+    ai_coach_file: Optional[Path] = None,
 ) -> None:
     if not input_file.exists():
         raise FileNotFoundError(f"Input file not found: {input_file}")
@@ -370,8 +489,17 @@ def generate_dashboard(
             processed_runs, trends, athlete_profile
         )
 
+        ai_coach_text = None
+        if ai_coach_file and ai_coach_file.is_file():
+            try:
+                ai_coach_text = ai_coach_file.read_text(encoding="utf-8")
+            except Exception:
+                ai_coach_text = None
+
         table_rows = build_table_rows(processed_runs)
-        summary_html = build_summary_html(summary_data)
+        summary_html = build_summary_html(
+            summary_data, ai_coach_markdown=ai_coach_text
+        )
         forecast_html = build_forecast_cards_html(predictions)
 
         forecast_payload = {
@@ -428,6 +556,7 @@ def main() -> int:
             output_file=args.output,
             weeks=args.weeks,
             title=args.title,
+            ai_coach_file=args.ai_coach,
         )
         return 0
     except FileNotFoundError as e:

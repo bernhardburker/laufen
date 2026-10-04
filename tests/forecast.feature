@@ -20,3 +20,10 @@ Feature: Race predictions, volume forecasting, and training recommendations
     When training summary and recommendations are generated
     Then the summary identifies training status and key observations
     And actionable recommendations are provided for zone discipline and volume
+
+  Scenario: Prepare coaching prompt for Antigravity AI Coach
+    Given an activities dataset with multiple running activities
+    When an AI coach prompt is constructed
+    Then the prompt includes athlete heart rate zones and recent runs
+    And the prompt instructs the AI coach on 80/20 zone discipline
+
