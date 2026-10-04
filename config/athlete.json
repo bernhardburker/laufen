@@ -2,6 +2,7 @@
   "athlete": {
     "id": "i697752",
     "name": "BerniBurker",
+    "classification": "Hobbyläufer (Basisaufbau)",
     "heart_rate": {
       "resting_hr": 51,
       "max_hr": 183,

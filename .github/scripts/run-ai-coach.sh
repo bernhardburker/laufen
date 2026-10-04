@@ -86,6 +86,7 @@ if "$agy_bin" \
     JSON_OUTPUT="$REPO_ROOT/data/ai_coach_summary.json"
     if "$PYTHON_EXEC" "$REPO_ROOT/src/analysis/ai_coach.py" \
         --parse-response "$AI_OUTPUT_TMP" \
+        --athlete "$ATHLETE_FILE" \
         --output-json "$JSON_OUTPUT" \
         --output-md "$OUTPUT_FILE"; then
       echo "==> Dynamic AI summary & recommendations saved to: $JSON_OUTPUT"

@@ -415,7 +415,7 @@ def generate_training_summary(
             "badge": f"Ø {avg_weekly_km:.1f} km / Wo.",
             "text": (
                 f"Du absolvierst durchschnittlich {avg_runs_per_week:.1f} Läufe und {avg_weekly_km:.1f} km pro Woche. "
-                f"Dein längster Lauf lag bei {longest_run:.2f} km. Diese Kontinuität ist ein solides Fundament."
+                f"Dein längster Lauf lag bei {longest_run:.2f} km."
             ),
         }
     )

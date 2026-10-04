@@ -95,11 +95,18 @@ def parse_arguments() -> argparse.Namespace:
         default=PROJECT_ROOT / "data" / "ai_coach_summary.json",
         help="Path to AI coach structured JSON summary (default: data/ai_coach_summary.json)",
     )
+    parser.add_argument(
+        "--athlete",
+        "-a",
+        type=Path,
+        default=PROJECT_ROOT / "config" / "athlete.json",
+        help="Path to athlete profile JSON (default: config/athlete.json)",
+    )
     return parser.parse_args()
 
 
-def load_athlete_profile() -> Dict[str, Any]:
-    athlete_path = PROJECT_ROOT / "config" / "athlete.json"
+def load_athlete_profile(file_path: Optional[Path] = None) -> Dict[str, Any]:
+    athlete_path = file_path or (PROJECT_ROOT / "config" / "athlete.json")
     if athlete_path.is_file():
         try:
             with open(athlete_path, "r", encoding="utf-8") as f:
@@ -397,6 +404,7 @@ def generate_dashboard(
     title: str = "Lauf- & Leistungs-Dashboard",
     ai_coach_file: Optional[Path] = None,
     ai_summary_file: Optional[Path] = None,
+    athlete_file: Optional[Path] = None,
 ) -> None:
     if not input_file.exists():
         raise FileNotFoundError(f"Input file not found: {input_file}")
@@ -406,7 +414,7 @@ def generate_dashboard(
 
     activities = load_activities(input_file)
     runs = filter_runs(activities)
-    athlete_profile = load_athlete_profile()
+    athlete_profile = load_athlete_profile(athlete_file)
 
     # Process runs
     processed_runs = []
@@ -586,6 +594,7 @@ def main() -> int:
             title=args.title,
             ai_coach_file=args.ai_coach,
             ai_summary_file=args.ai_summary,
+            athlete_file=args.athlete,
         )
         return 0
     except FileNotFoundError as e:

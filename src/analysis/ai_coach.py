@@ -43,20 +43,110 @@ def load_athlete_profile(file_path: Optional[Path] = None) -> Dict[str, Any]:
     return {}
 
 
+def extract_athlete_display_name(athlete_info: Dict[str, Any]) -> str:
+    """Extract a friendly first name or display name for coaching dialogue."""
+    if "display_name" in athlete_info and athlete_info["display_name"]:
+        return str(athlete_info["display_name"]).strip()
+    name = str(athlete_info.get("name") or "").strip()
+    if not name:
+        return "Athlet"
+    # Match CamelCase like "BerniBurker" -> "Berni"
+    camel_match = re.match(r"^([A-Z][a-z]{2,})[A-Z]", name)
+    if camel_match:
+        return camel_match.group(1)
+    # Default to first whitespace-delimited word (e.g. "Max Mustermann" -> "Max")
+    return name.split()[0]
+
+
+def determine_athlete_classification(
+    runs: List[Dict[str, Any]],
+    athlete_profile: Optional[Dict[str, Any]] = None,
+    trends: Optional[List[Dict[str, Any]]] = None,
+    form_data: Optional[Dict[str, Any]] = None,
+) -> Dict[str, str]:
+    """Classify athlete level (Hobby, Erfahren, Profi) from profile or metrics."""
+    athlete_info = (athlete_profile or {}).get("athlete", {})
+    explicit_level = athlete_info.get("classification") or athlete_info.get("level")
+    if explicit_level:
+        return {
+            "category": str(explicit_level),
+            "description": "Im Athleten-Profil hinterlegt",
+            "source": "config",
+        }
+
+    # Fallback when no activities available
+    if not runs:
+        return {
+            "category": "Einsteiger / Wiedereinsteiger",
+            "description": "Keine aktuellen Läufe verzeichnet",
+            "source": "dynamic",
+        }
+
+    num_weeks = max(len(trends or []), 1)
+    total_km = sum(
+        float(r.get("distance_km") or (r.get("distance", 0) / 1000.0)) for r in runs
+    )
+    avg_weekly_km = total_km / num_weeks
+    avg_runs_per_week = len(runs) / num_weeks
+    ctl = float((form_data or {}).get("latest_ctl") or 0.0)
+
+    if avg_weekly_km < 20.0 or avg_runs_per_week < 2.5 or ctl < 18.0:
+        category = "Hobbyläufer (Basisaufbau)"
+        desc = f"Überschaubares Pensum ({avg_weekly_km:.1f} km/Wo., {avg_runs_per_week:.1f} Läufe/Wo., CTL {ctl:.1f})"
+    elif avg_weekly_km < 45.0 or avg_runs_per_week < 3.5 or ctl < 38.0:
+        category = "Regelmäßiger Hobbyläufer"
+        desc = f"Solides Breitensportpensum ({avg_weekly_km:.1f} km/Wo., {avg_runs_per_week:.1f} Läufe/Wo., CTL {ctl:.1f})"
+    elif avg_weekly_km < 70.0 or avg_runs_per_week < 4.5 or ctl < 60.0:
+        category = "Ambitionierter Läufer"
+        desc = f"Ambitioniertes Pensum ({avg_weekly_km:.1f} km/Wo., {avg_runs_per_week:.1f} Läufe/Wo., CTL {ctl:.1f})"
+    else:
+        category = "Leistungssportler / Profi"
+        desc = f"Hohes Wettkampfpensum ({avg_weekly_km:.1f} km/Wo., {avg_runs_per_week:.1f} Läufe/Wo., CTL {ctl:.1f})"
+
+    return {
+        "category": category,
+        "description": desc,
+        "source": "dynamic",
+    }
+
+
+def save_athlete_classification(
+    athlete_file: Optional[Path], classification_str: str
+) -> None:
+    """Persist athlete classification into athlete configuration JSON."""
+    if not athlete_file or not athlete_file.is_file():
+        return
+    try:
+        with open(athlete_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if "athlete" in data and isinstance(data["athlete"], dict):
+            if data["athlete"].get("classification") != classification_str:
+                data["athlete"]["classification"] = classification_str
+                with open(athlete_file, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
 def build_coach_prompt(
     activities_file: Path,
     athlete_file: Optional[Path] = None,
+    save_classification: bool = True,
 ) -> str:
     """Prepare a detailed, context-rich prompt for Antigravity AI Coach."""
     activities = load_activities(activities_file)
     runs = filter_runs(activities)
     athlete_profile = load_athlete_profile(athlete_file)
+    athlete_info = athlete_profile.get("athlete", {})
+    athlete_name = extract_athlete_display_name(athlete_info)
+    full_name = athlete_info.get("name") or athlete_name
 
     if not runs:
         return (
-            "Du bist ein professioneller Lauf- und Ausdauertrainer. "
-            "Es liegen aktuell noch keine Laufaktivitäten vor. "
-            "Gib dem Läufer eine kurze, motivierende Empfehlung für den Einstieg in das strukturierte Lauftraining als JSON."
+            "Du bist ein professioneller, bodenständiger Lauf- und Ausdauertrainer. "
+            f"Für {athlete_name} liegen aktuell noch keine Laufaktivitäten vor. "
+            f"Gib {athlete_name} eine kurze, sachliche und realistische Empfehlung für den Einstieg in das strukturierte Lauftraining als JSON. "
+            "Vermeide jegliche Übertreibung oder Schmeichelei."
         )
 
     processed_runs = []
@@ -74,8 +164,19 @@ def build_coach_prompt(
     form_data = calculate_fitness_form_trend(runs)
     predictions = predict_race_times(processed_runs, athlete_profile)
 
+    # Weekly stats from recent trends
+    num_trend_weeks = max(len(trends), 1)
+    avg_weekly_km = sum(t["total_distance_km"] for t in trends) / num_trend_weeks
+    avg_runs_per_week = sum(t["runs_count"] for t in trends) / num_trend_weeks
+
+    # Athlete classification
+    classification = determine_athlete_classification(
+        processed_runs, athlete_profile, trends, form_data
+    )
+    if save_classification and athlete_file:
+        save_athlete_classification(athlete_file, classification["category"])
+
     # Athlete specs
-    athlete_info = athlete_profile.get("athlete", {})
     hr_info = athlete_info.get("heart_rate", {})
     lthr = hr_info.get("lthr", 166)
     max_hr = hr_info.get("max_hr", 183)
@@ -125,14 +226,25 @@ def build_coach_prompt(
 
     prompt = f"""Du bist ein erfahrener Lauf- und Ausdauertrainer mit Spezialisierung auf sportwissenschaftliche Trainingssteuerung, Herzfrequenz-Zonen und polarisiertes Training (80/20-Methode nach Stephen Seiler / Matt Fitzgerald).
 
-Analysiere die aktuellen Trainingsdaten des Athleten (Berni) und erstelle die vollständige dynamische Trainings-Zusammenfassung und Handlungsempfehlungen für das Dashboard.
+Analysiere die aktuellen Trainingsdaten des Athleten ({athlete_name}) und erstelle eine vollständige, dynamische Trainings-Zusammenfassung und Handlungsempfehlungen für das Dashboard.
+
+### Tonalität & Coaching-Haltung (STRIKTE VORGABE):
+- **Basiere deine Analyse und Tonalität ausschließlich auf den realen Daten**:
+  Der Athlet ({athlete_name}) ist anhand der Daten eingestuft als: **{classification['category']}** ({classification['description']}).
+  Passe deine Sprache, Erwartungshaltung und Ratschläge exakt diesem aktuellen Leistungsstand an.
+- **Keine Übertreibungen, kein Hype, keine Schmeicheleien**: Verzichte komplett auf Schmeicheleien, künstlichen Cheerleader-Ton und unrealistische Floskeln ("Zeiten werden explodieren", "herausragendes Fundament", "Spitzenleistung").
+- **Sachlich, ehrlich und ungeschminkt auf Augenhöhe**: Benenne Schwachstellen (z.B. zu geringer Z1/Z2-Anteil, zu hohes Grundlagentempo, sprunghafte Belastungsspitzen) direkt und physiologisch fundiert. Behandle Hobbyläufer wie Hobbyläufer und Leistungssportler wie Leistungssportler – respektvoll, partnerschaftlich und unaufgeregt.
+- **Herzfrequenz-Steuerung bei Grundlageneinheiten**: Für Zone-2-Läufe NIEMALS eine feste Ziel-Pace vorgeben! Grundlagenläufe werden ausschließlich über die Herzfrequenz (< {z2_max} bpm) gesteuert. Die Pace ist ein reines Resultat und zweitrangig (Gehpausen an Anstiegen sind normal und erwünscht).
 
 ### Athleten-Profil:
+- Name: {full_name} ({athlete_name})
+- Einstufung / Level: {classification['category']} ({classification['description']})
 - Ruhepuls: {resting_hr} bpm | Maximalpuls: {max_hr} bpm
 - Laktatschwelle (LTHR): {lthr} bpm
 - Grundlagen-Obergrenze (Zone 2 max): {z2_max} bpm
 - Bisherige Zone 1 & 2 Disziplin im gesamten Zeitraum: {overall_z1_z2_pct}% (Soll: ~80%)
 - Aktuelle Form (TSB): {form_data['current_tsb']:+.1f} (Fitness CTL: {form_data['latest_ctl']}, Ermüdung ATL: {form_data['latest_atl']})
+- Aktuelles Pensum: Ø {avg_weekly_km:.1f} km / Woche bei Ø {avg_runs_per_week:.1f} Läufen
 
 ### Letzte Aktivitäten:
 {chr(10).join(runs_lines)}
@@ -146,46 +258,46 @@ Analysiere die aktuellen Trainingsdaten des Athleten (Berni) und erstelle die vo
 ---
 
 ### Deine Coaching-Aufgabe:
-Erstelle eine vollständige, dynamische und ehrliche Trainingsbewertung.
+Erstelle eine vollständige, dynamische und ehrliche Trainingsbewertung für {athlete_name}.
 Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (kein Markdown-Backticks ```json davor oder danach, kein sonstiger Text außenherum) in folgender Struktur:
 
 {{
-  "status_title": "Prägnanter Status-Titel (z.B. Aufbauphase mit Optimierungspotenzial / Z2-Fokus nötig)",
-  "status_badge": "Kurzer Badge-Text (z.B. Intensität drosseln / Hervorragende Basis)",
-  "status_level": "warning" oder "success" oder "info",
-  "coach_commentary": "Dein persönlicher, motivierender Coaching-Brief an Berni als Markdown formatiert (ca. 180-260 Wörter) mit Absätzen, Überschriften (###) und einer konkreten Wochenaufgabe für nächste Woche.",
+  "status_title": "Prägnanter Status-Titel basierend auf den Daten (z.B. Aerobe Basis fehlt / Hoher Grauzonen-Anteil / Solide Aufbauphase)",
+  "status_badge": "Kurzer Badge-Text (z.B. Intensität drosseln / Z2-Defizit / Pensum stabilisieren)",
+  "status_level": "warning" oder "info" oder "success",
+  "coach_commentary": "Dein ehrlicher, bodenständiger Coaching-Brief an {athlete_name} als Markdown formatiert (ca. 160-220 Wörter) mit Absätzen, Überschriften (###) und einer konkreten Wochenaufgabe für nächste Woche. Bleibe nüchtern, sachlich und realistisch – absolut keine Übertreibungen oder Schmeicheleien.",
   "insights": [
     {{
-      "title": "Titel der Erkenntnis (z.B. Intensitätsfalle / Zu hohes Tempo)",
-      "type": "warning" oder "success" oder "info",
-      "badge": "Kurzer Tag (z.B. 10.6% Z1/Z2)",
-      "text": "Detaillierte, faktenbasierte Erklärung mit deinen echten gemessenen Werten..."
+      "title": "Titel der Erkenntnis (z.B. Intensitätsfalle / Fehlende aerobe Basis)",
+      "type": "warning" oder "info" oder "success",
+      "badge": "Kurzer Tag (z.B. {overall_z1_z2_pct}% Z1/Z2)",
+      "text": "Nüchterne, faktenbasierte Erklärung mit den echten gemessenen Werten..."
     }},
     {{
-      "title": "Zweite Erkenntnis (z.B. Trainingsvolumen & Kontinuität)",
+      "title": "Zweite Erkenntnis (z.B. Trainingsvolumen & Häufigkeit)",
       "type": "info",
-      "badge": "Ø 13.1 km / Wo.",
-      "text": "Einschätzung zu Umfang, Regelmäßigkeit und Long Run..."
+      "badge": "Ø {avg_weekly_km:.1f} km / Wo.",
+      "text": "Realistische Einschätzung zu aktuellem Umfang, Häufigkeit und Long Run..."
     }}
   ],
   "recommendations": [
     {{
-      "title": "Titel Empfehlung 1 (z.B. Pace bei Grundlagenläufen bewusst drosseln)",
-      "tag": "Priorität 1: Grundlagenausdauer",
+      "title": "Titel Empfehlung 1 (z.B. Grundlagenläufe strikt nach Herzfrequenz steuern)",
+      "tag": "Priorität 1: Aerobe Basis",
       "tag_class": "tag-amber",
-      "text": "Konkrete Praxisanweisung (z.B. Pace 6:45-7:15 min/km, Puls strikt unter {z2_max} bpm)..."
+      "text": "Konkrete Praxisanweisung (Puls strikt unter {z2_max} bpm, Pace ignorieren, bei Bedarf Gehpausen)..."
     }},
     {{
-      "title": "Titel Empfehlung 2 (z.B. Klare Reiztrennung / Polarisiertes 80/20)",
+      "title": "Titel Empfehlung 2 (z.B. Klare Reiztrennung nach 80/20)",
       "tag": "Trainingsstruktur",
       "tag_class": "tag-cyan",
       "text": "Trennung zwischen 80% lockerer Z2-Basis und gezielten Schwellenreizen an LTHR {lthr} bpm..."
     }},
     {{
-      "title": "Titel Empfehlung 3 (z.B. Volumen nach der 10%-Regel steigern)",
-      "tag": "Verletzungsprävention",
+      "title": "Titel Empfehlung 3 (z.B. Behutsamer Umfangsausbau)",
+      "tag": "Umfangsaufbau",
       "tag_class": "tag-green",
-      "text": "Empfehlung für das nächste Wochenziel und optionale Laufeinheiten..."
+      "text": "Empfehlung für das nächste Wochenziel, angepasst an das Niveau ({classification['category']})..."
     }}
   ]
 }}
@@ -281,6 +393,15 @@ def main() -> int:
         if not parsed:
             print("Warning: Could not parse valid structured JSON from agy response.", file=sys.stderr)
             return 1
+
+        if args.athlete and args.athlete.is_file():
+            profile = load_athlete_profile(args.athlete)
+            athlete_info = profile.get("athlete", {})
+            if "athlete" not in parsed or not isinstance(parsed.get("athlete"), dict):
+                parsed["athlete"] = {}
+            parsed["athlete"]["name"] = extract_athlete_display_name(athlete_info)
+            if athlete_info.get("classification"):
+                parsed["athlete"]["classification"] = athlete_info["classification"]
 
         args.output_json.parent.mkdir(parents=True, exist_ok=True)
         args.output_json.write_text(json.dumps(parsed, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -133,26 +133,34 @@ def build_athlete_config(
         "tempo_run": "05:45 - 06:00",
         "intervals_1k": "05:00 - 05:20",
     }
+    classification = None
+    display_name = None
     if existing_config and "athlete" in existing_config:
         existing_pace = existing_config["athlete"].get("pace_targets_min_per_km")
         if existing_pace:
             pace_targets = existing_pace
+        classification = existing_config["athlete"].get("classification")
+        display_name = existing_config["athlete"].get("display_name")
 
-    return {
-        "athlete": {
-            "id": str(athlete_id),
-            "name": name,
-            "heart_rate": {
-                "resting_hr": resting_hr,
-                "max_hr": max_hr,
-                "lthr": lthr,
-                "zones": zones,
-                "raw_hr_zones": hr_cutoffs,
-                "raw_zone_names": hr_zone_names,
-            },
-            "pace_targets_min_per_km": pace_targets,
-        }
+    athlete_dict: Dict[str, Any] = {
+        "id": str(athlete_id),
+        "name": name,
+        "heart_rate": {
+            "resting_hr": resting_hr,
+            "max_hr": max_hr,
+            "lthr": lthr,
+            "zones": zones,
+            "raw_hr_zones": hr_cutoffs,
+            "raw_zone_names": hr_zone_names,
+        },
+        "pace_targets_min_per_km": pace_targets,
     }
+    if classification:
+        athlete_dict["classification"] = classification
+    if display_name:
+        athlete_dict["display_name"] = display_name
+
+    return {"athlete": athlete_dict}
 
 
 def main() -> None:

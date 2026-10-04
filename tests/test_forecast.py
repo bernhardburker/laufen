@@ -154,6 +154,46 @@ class ForecastDriver:
         assert "80/20" in self.ai_coach_prompt
         assert "Zone 2" in self.ai_coach_prompt or "Z2" in self.ai_coach_prompt
 
+    def assert_prompt_realistic_tone(self) -> None:
+        prompt_lower = self.ai_coach_prompt.lower()
+        assert "übertreib" in prompt_lower
+        assert "realistisch" in prompt_lower or "bodenständig" in prompt_lower
+        assert "schmeichelei" in prompt_lower or "cheerleader" in prompt_lower
+
+    def compute_ai_coach_prompt_for_custom_athlete(
+        self, name: str, classification: str
+    ) -> None:
+        activities_file = self.tmp_path / "custom_activities.json"
+        athlete_file = self.tmp_path / "custom_athlete.json"
+        with open(activities_file, "w", encoding="utf-8") as f:
+            json.dump(self.runs, f)
+        custom_profile = {
+            "athlete": {
+                "name": name,
+                "classification": classification,
+                "heart_rate": {
+                    "resting_hr": 48,
+                    "max_hr": 190,
+                    "lthr": 172,
+                    "zones": {"z2_aerobic": {"max": 152}},
+                },
+            }
+        }
+        with open(athlete_file, "w", encoding="utf-8") as f:
+            json.dump(custom_profile, f)
+        self.custom_athlete_prompt = build_coach_prompt(
+            activities_file, athlete_file, save_classification=True
+        )
+
+    def assert_custom_prompt_adapts(self) -> None:
+        assert "Sarah" in self.custom_athlete_prompt
+        assert "Ambitionierter Läufer" in self.custom_athlete_prompt
+        assert "152" in self.custom_athlete_prompt
+
+    def assert_no_hardcoded_personal_details(self) -> None:
+        assert "Berni" not in self.custom_athlete_prompt
+        assert "BerniBurker" not in self.custom_athlete_prompt
+
     def prepare_raw_coach_response(self) -> None:
         self.raw_coach_response = """```json
 {
@@ -280,6 +320,32 @@ def then_prompt_instructs_80_20(driver: ForecastDriver):
     driver.assert_prompt_instructs_on_80_20()
 
 
+@then("the prompt instructs the AI coach to be realistic and avoid flattery")
+def then_prompt_instructs_realistic_tone(driver: ForecastDriver):
+    driver.assert_prompt_realistic_tone()
+
+
 @then("the parsed summary contains status title, insights, and recommendations")
 def then_assert_parsed_summary(driver: ForecastDriver):
     driver.assert_parsed_summary()
+
+
+@when(
+    parsers.parse(
+        'an AI coach prompt is constructed for custom athlete profile "{name}" with classification "{classification}"'
+    )
+)
+def when_construct_custom_athlete_prompt(
+    driver: ForecastDriver, name: str, classification: str
+):
+    driver.compute_ai_coach_prompt_for_custom_athlete(name, classification)
+
+
+@then("the prompt adapts dynamically to the athlete name and classification")
+def then_assert_custom_prompt_adapts(driver: ForecastDriver):
+    driver.assert_custom_prompt_adapts()
+
+
+@then("the prompt contains no hardcoded personal details")
+def then_assert_no_hardcoded_details(driver: ForecastDriver):
+    driver.assert_no_hardcoded_personal_details()

@@ -26,9 +26,17 @@ Feature: Race predictions, volume forecasting, and training recommendations
     When an AI coach prompt is constructed
     Then the prompt includes athlete heart rate zones and recent runs
     And the prompt instructs the AI coach on 80/20 zone discipline
+    And the prompt instructs the AI coach to be realistic and avoid flattery
 
   Scenario: Parse structured JSON response from Antigravity AI Coach
     Given a valid JSON response string from Antigravity AI Coach
     When the coach response is parsed
     Then the parsed summary contains status title, insights, and recommendations
+
+  Scenario: Classify athlete experience level and dynamically customize prompt for different athletes
+    Given an activities dataset with multiple running activities
+    When an AI coach prompt is constructed for custom athlete profile "Sarah" with classification "Ambitionierter Läufer"
+    Then the prompt adapts dynamically to the athlete name and classification
+    And the prompt contains no hardcoded personal details
+
 
