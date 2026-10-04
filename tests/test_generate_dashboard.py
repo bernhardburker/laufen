@@ -206,6 +206,50 @@ class DashboardGeneratorDriver:
         assert "Individuelle KI-Empfehlung" in content
         assert "Exklusiver Coaching-Kommentar für Berni" in content
 
+    def prepare_dataset_with_strava_placeholders(self) -> None:
+        activities = [
+            {
+                "id": "run-001",
+                "type": "Run",
+                "name": "Morning Easy Run",
+                "start_date_local": "2026-09-02T07:00:00",
+                "distance": 6000.0,
+                "moving_time": 2160,
+                "average_heartrate": 140,
+                "max_heartrate": 152,
+                "icu_training_load": 45,
+                "icu_hr_zone_times": [600, 1200, 300, 60, 0, 0, 0],
+            },
+            {
+                "id": "strava-stub-01",
+                "type": None,
+                "source": "STRAVA",
+                "start_date_local": "2026-08-20T18:00:00",
+            },
+        ]
+        self.write_dataset(activities)
+
+    def assert_html_contains_interactive_filters(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "dateFilterButtons" in content
+        assert 'data-range="all"' in content
+        assert 'data-range="12w"' in content
+        assert 'data-range="4w"' in content
+        assert "filterStartDate" in content
+
+    def assert_html_contains_table_controls(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "sortable" in content
+        assert 'data-sort="date"' in content
+        assert "pageSizeSelect" in content
+        assert "tableZoneFilter" in content
+
+    def assert_html_contains_datasource_notice(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "datasource-banner" in content
+        assert "Datenquellen-Hinweis" in content
+        assert "Strava" in content
+
 
 # 3. Fixture injecting the Driver
 @pytest.fixture
@@ -309,4 +353,25 @@ def when_generator_executed_with_ai_summary(driver: DashboardGeneratorDriver):
 @then("the output HTML contains the custom dynamic AI insights")
 def then_html_contains_dynamic_ai_insights(driver: DashboardGeneratorDriver):
     driver.assert_html_contains_dynamic_ai_insights()
+
+
+@given("an activities dataset with multiple running activities and strava placeholders")
+def given_dataset_with_strava_placeholders(driver: DashboardGeneratorDriver):
+    driver.prepare_dataset_with_strava_placeholders()
+
+
+@then("the output HTML contains interactive date range filter buttons")
+def then_html_contains_interactive_filters(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_interactive_filters()
+
+
+@then("the output HTML contains sortable table columns and pagination controls")
+def then_html_contains_table_controls(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_table_controls()
+
+
+@then("the output HTML displays the data source transparency notice")
+def then_html_displays_datasource_notice(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_datasource_notice()
+
 

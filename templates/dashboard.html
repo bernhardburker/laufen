@@ -605,6 +605,216 @@
       margin: 0 auto;
     }
 
+    /* Filter Bar */
+    .filter-bar {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .filter-buttons {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 4px;
+    }
+
+    .filter-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .filter-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .filter-btn.active {
+      background: var(--cyan);
+      color: #0b0f19;
+      font-weight: 600;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+    }
+
+    .custom-range-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .date-input {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      outline: none;
+      font-family: inherit;
+      color-scheme: dark;
+    }
+
+    .date-input:focus {
+      border-color: var(--cyan);
+    }
+
+    .btn-small {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--cyan);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    .btn-small:hover {
+      background: var(--cyan);
+      color: #0b0f19;
+    }
+
+    .filter-status-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Datasource Banner */
+    .datasource-banner {
+      background: rgba(56, 189, 248, 0.05);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: var(--radius);
+      padding: 12px 18px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .datasource-icon {
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+
+    .datasource-text {
+      flex: 1;
+      color: var(--text-main);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .datasource-tip {
+      color: var(--cyan);
+      display: inline-block;
+      margin-top: 2px;
+    }
+
+    /* Table Sorting & Paging Tools */
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.15s ease;
+    }
+
+    th.sortable:hover {
+      color: var(--cyan);
+    }
+
+    .sort-icon {
+      display: inline-block;
+      margin-left: 4px;
+      font-size: 0.7rem;
+      color: var(--cyan);
+      min-width: 10px;
+    }
+
+    .filter-select {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      outline: none;
+      font-family: inherit;
+      color-scheme: dark;
+    }
+
+    .filter-select:focus {
+      border-color: var(--cyan);
+    }
+
+    .table-footer-tools {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--card-border);
+    }
+
+    .btn-page {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    .btn-page:hover:not(:disabled) {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    .btn-page:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
     .content-section {
       display: {{ CONTENT_DISPLAY }};
     }
@@ -641,6 +851,38 @@
 
     <!-- Main Dashboard Content -->
     <div class="content-section">
+      {{ DATA_SOURCE_INFO_HTML }}
+
+      <!-- Interactive Date Range & Scope Controls -->
+      <section class="filter-bar">
+        <div class="filter-group">
+          <span class="filter-label">Zeitraum:</span>
+          <div class="filter-buttons" id="dateFilterButtons">
+            <button type="button" class="filter-btn active" data-range="all">Gesamter Zeitraum</button>
+            <button type="button" class="filter-btn" data-range="12w">Letzte 12 Wochen</button>
+            <button type="button" class="filter-btn" data-range="4w">Letzte 4 Wochen</button>
+            <button type="button" class="filter-btn" data-range="month">Diesen Monat</button>
+            <button type="button" class="filter-btn" data-range="custom">Benutzerdefiniert</button>
+          </div>
+        </div>
+        <div class="custom-range-inputs" id="customDateRange" style="display: none;">
+          <input type="date" id="filterStartDate" class="date-input">
+          <span style="color: var(--text-muted); font-size: 0.8rem;">bis</span>
+          <input type="date" id="filterEndDate" class="date-input">
+          <button type="button" class="btn-small" id="btnApplyCustomDates">Anwenden</button>
+          <button type="button" class="btn-small" id="btnResetDateFilter" style="background: rgba(255,255,255,0.08); color: var(--text-muted); border-color: var(--card-border);">Reset</button>
+        </div>
+        <div class="filter-status-meta">
+          <span class="badge" id="activeFilterBadge">
+            <span class="badge-dot"></span>
+            <span id="activeFilterText">Alle Aktivitäten</span>
+          </span>
+          <button type="button" id="btnResetWeekFilter" class="btn-small" style="display: none; background: rgba(245, 158, 11, 0.15); color: var(--amber); border-color: rgba(245, 158, 11, 0.3);">
+            ✕ Wochenfilter aufheben
+          </button>
+        </div>
+      </section>
+
       <!-- KPI Cards -->
       <section class="kpi-grid">
         <div class="kpi-card">
@@ -668,7 +910,7 @@
           <div class="kpi-value" id="kpiZoneBase" style="color: var(--emerald);">{{ Z1_Z2_PERCENT }}%</div>
           <span class="kpi-sub">Ziel: 80% im aeroben Bereich</span>
           <div class="progress-bar-bg">
-            <div class="progress-bar-fill" style="width: {{ Z1_Z2_PERCENT }}%;"></div>
+            <div class="progress-bar-fill" id="kpiZoneBaseBar" style="width: {{ Z1_Z2_PERCENT }}%;"></div>
           </div>
         </div>
         <div class="kpi-card">
@@ -792,28 +1034,56 @@
       <!-- Recent Activities Table -->
       <section class="table-card">
         <div class="table-header-tools">
-          <h2 class="table-title">Letzte Aktivitäten</h2>
-          <input type="text" id="runSearch" class="search-input" placeholder="Aktivitäten durchsuchen...">
+          <div>
+            <h2 class="table-title">Letzte Aktivitäten</h2>
+            <span id="tableFilterSummary" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 2px;">
+              Zeige {{ TOTAL_RUNS }} von {{ TOTAL_RUNS }} Läufen
+            </span>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <select id="tableZoneFilter" class="filter-select">
+              <option value="all">Alle Intensitäten</option>
+              <option value="base">Nur Grundlagenausdauer (Z1/Z2 ≥ 75%)</option>
+              <option value="quality">Tempo &amp; Intervalle (&lt; 75%)</option>
+              <option value="long">Lange Läufe (≥ 8 km)</option>
+            </select>
+            <input type="text" id="runSearch" class="search-input" placeholder="Aktivitäten filtern...">
+          </div>
         </div>
         <div class="table-wrap">
           <table id="runsTable">
             <thead>
               <tr>
-                <th>Datum</th>
-                <th>Aktivität</th>
-                <th>Distanz</th>
-                <th>Dauer</th>
-                <th>Ø Pace</th>
-                <th>Ø Puls</th>
-                <th>Max Puls</th>
-                <th>Z1/Z2 %</th>
-                <th>Belastung</th>
+                <th class="sortable" data-sort="date">Datum <span class="sort-icon" id="sortIcon_date">▼</span></th>
+                <th class="sortable" data-sort="name">Aktivität <span class="sort-icon" id="sortIcon_name"></span></th>
+                <th class="sortable" data-sort="distance_km">Distanz <span class="sort-icon" id="sortIcon_distance_km"></span></th>
+                <th class="sortable" data-sort="moving_time_s">Dauer <span class="sort-icon" id="sortIcon_moving_time_s"></span></th>
+                <th class="sortable" data-sort="pace_s_per_km">Ø Pace <span class="sort-icon" id="sortIcon_pace_s_per_km"></span></th>
+                <th class="sortable" data-sort="avg_hr">Ø Puls <span class="sort-icon" id="sortIcon_avg_hr"></span></th>
+                <th class="sortable" data-sort="max_heartrate">Max Puls <span class="sort-icon" id="sortIcon_max_heartrate"></span></th>
+                <th class="sortable" data-sort="z_pct">Z1/Z2 % <span class="sort-icon" id="sortIcon_z_pct"></span></th>
+                <th class="sortable" data-sort="training_load">Belastung <span class="sort-icon" id="sortIcon_training_load"></span></th>
               </tr>
             </thead>
             <tbody id="runsTableBody">
               {{ RUNS_TABLE_ROWS }}
             </tbody>
           </table>
+        </div>
+        <div class="table-footer-tools">
+          <div id="paginationInfo" style="font-size: 0.8rem; color: var(--text-muted);">
+            Zeige {{ TOTAL_RUNS }} Aktivitäten
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="pageSizeSelect" class="filter-select" style="padding: 4px 8px; font-size: 0.8rem;">
+              <option value="10">10 pro Seite</option>
+              <option value="25">25 pro Seite</option>
+              <option value="50">50 pro Seite</option>
+              <option value="all" selected>Alle anzeigen</option>
+            </select>
+            <button type="button" class="btn-page" id="btnPrevPage" disabled>&laquo; Zurück</button>
+            <button type="button" class="btn-page" id="btnNextPage" disabled>Weiter &raquo;</button>
+          </div>
         </div>
       </section>
     </div>
@@ -848,6 +1118,7 @@
       let activities = [];
       let forecast = {};
       let summary = {};
+      let athlete = {};
 
       try {
         trends = JSON.parse(document.getElementById('trendsData').textContent || '[]');
@@ -869,21 +1140,571 @@
       } catch (e) {
         console.warn('Could not parse summaryData', e);
       }
+      try {
+        athlete = JSON.parse(document.getElementById('athleteData').textContent || '{}');
+      } catch (e) {
+        console.warn('Could not parse athleteData', e);
+      }
 
-      // 2. Interactive Search Filter
-      const searchInput = document.getElementById('runSearch');
-      if (searchInput) {
-        searchInput.addEventListener('input', function(e) {
-          const query = e.target.value.toLowerCase();
-          const rows = document.querySelectorAll('#runsTableBody tr');
-          rows.forEach(row => {
-            const text = row.innerText.toLowerCase();
-            row.style.display = text.includes(query) ? '' : 'none';
+      // Format helpers
+      function formatDuration(s) {
+        if (!s || s <= 0) return '0m';
+        const total = Math.round(s);
+        const hrs = Math.floor(total / 3600);
+        const mins = Math.floor((total % 3600) / 60);
+        return hrs > 0 ? `${hrs}h ${mins < 10 ? '0' : ''}${mins}m` : `${mins}m`;
+      }
+
+      function formatPace(secPerKm) {
+        if (!secPerKm || !isFinite(secPerKm) || secPerKm <= 0) return '-:-- /km';
+        const totalSec = Math.round(secPerKm);
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        return `${m}:${s < 10 ? '0' : ''}${s} /km`;
+      }
+
+      function escapeHtml(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      // State Management
+      let currentRange = 'all';
+      let customStartDate = null;
+      let customEndDate = null;
+      let selectedWeek = null;
+      let currentZoneFilter = 'all';
+      let searchQuery = '';
+      let currentSortCol = 'date';
+      let currentSortDir = 'desc';
+      let currentPage = 1;
+      let currentPageSize = 'all';
+
+      let currentDateFilteredRuns = [...activities];
+
+      // Setup custom date inputs min/max bounds
+      if (activities.length > 0) {
+        const sortedDates = activities.map(r => (r.date || '').substring(0, 10)).filter(Boolean).sort();
+        if (sortedDates.length > 0) {
+          const minDate = sortedDates[0];
+          const maxDate = sortedDates[sortedDates.length - 1];
+          const startInp = document.getElementById('filterStartDate');
+          const endInp = document.getElementById('filterEndDate');
+          if (startInp && endInp) {
+            startInp.min = minDate;
+            startInp.max = maxDate;
+            startInp.value = minDate;
+            endInp.min = minDate;
+            endInp.max = maxDate;
+            endInp.value = maxDate;
+            customStartDate = minDate;
+            customEndDate = maxDate;
+          }
+        }
+      }
+
+      // Date Filtering Function
+      function getFilteredRunsByDate(runs, range, customStart, customEnd) {
+        if (!runs || runs.length === 0) return [];
+        if (range === 'all') return [...runs];
+
+        const latestRunDateStr = runs.reduce((max, r) => (!max || (r.date || '') > max ? r.date : max), '');
+        if (!latestRunDateStr) return [...runs];
+        const latestDate = new Date(latestRunDateStr);
+
+        if (range === '12w') {
+          const cutoff = new Date(latestDate.getTime() - (12 * 7 * 24 * 3600 * 1000));
+          return runs.filter(r => new Date(r.date) >= cutoff);
+        } else if (range === '4w') {
+          const cutoff = new Date(latestDate.getTime() - (4 * 7 * 24 * 3600 * 1000));
+          return runs.filter(r => new Date(r.date) >= cutoff);
+        } else if (range === 'month') {
+          const ym = latestRunDateStr.substring(0, 7);
+          return runs.filter(r => r.date && r.date.startsWith(ym));
+        } else if (range === 'custom') {
+          return runs.filter(r => {
+            const d = (r.date || '').substring(0, 10);
+            if (customStart && d < customStart) return false;
+            if (customEnd && d > customEnd) return false;
+            return true;
           });
+        }
+        return [...runs];
+      }
+
+      // Dynamic KPI calculation & DOM update
+      function updateKPIs(runs) {
+        const totalDist = runs.reduce((acc, r) => acc + (r.distance_km || 0), 0);
+        const totalTime = runs.reduce((acc, r) => acc + (r.moving_time_s || 0), 0);
+        const totalRuns = runs.length;
+
+        const avgPaceS = totalDist > 0 ? (totalTime / totalDist) : 0;
+        
+        const hrWeighted = runs.reduce((acc, r) => acc + ((r.avg_hr || 0) * (r.moving_time_s || 0)), 0);
+        const hrTime = runs.reduce((acc, r) => acc + (r.avg_hr > 0 ? (r.moving_time_s || 0) : 0), 0);
+        const avgHr = hrTime > 0 ? Math.round(hrWeighted / hrTime) : 0;
+
+        const z1z2Total = runs.reduce((acc, r) => acc + (r.z1_z2_seconds || 0), 0);
+        const zoneTotal = runs.reduce((acc, r) => acc + (r.total_zone_seconds || 0), 0);
+        const z1z2Pct = zoneTotal > 0 ? (Math.round((z1z2Total / zoneTotal) * 1000) / 10) : 0;
+
+        const efs = runs.map(r => r.aerobic_ef).filter(v => v !== null && v !== undefined && v > 0);
+        const avgEf = efs.length > 0 ? (efs.reduce((a, b) => a + b, 0) / efs.length).toFixed(3) : '-';
+
+        const elDist = document.getElementById('kpiTotalDist');
+        if (elDist) elDist.innerHTML = `${totalDist.toFixed(1)} <span style="font-size: 1rem; font-weight: normal; color: var(--text-muted);">km</span>`;
+
+        const elRuns = document.getElementById('kpiTotalRuns');
+        if (elRuns) elRuns.innerHTML = `${totalRuns} Läufe erfasst <span style="display:none;">(${totalRuns} runs)</span>`;
+
+        const elTime = document.getElementById('kpiTotalTime');
+        if (elTime) elTime.textContent = formatDuration(totalTime);
+
+        const elPace = document.getElementById('kpiAvgPace');
+        if (elPace) elPace.textContent = formatPace(avgPaceS);
+
+        const elHr = document.getElementById('kpiAvgHr');
+        if (elHr) elHr.innerHTML = `${avgHr > 0 ? avgHr : '-'} <span style="font-size: 1rem; font-weight: normal; color: var(--text-muted);">bpm</span>`;
+
+        const elZone = document.getElementById('kpiZoneBase');
+        if (elZone) elZone.textContent = `${z1z2Pct.toFixed(1)}%`;
+
+        const elZoneBar = document.getElementById('kpiZoneBaseBar');
+        if (elZoneBar) elZoneBar.style.width = `${Math.min(100, z1z2Pct)}%`;
+
+        const elEf = document.getElementById('kpiEf');
+        if (elEf) elEf.textContent = avgEf;
+      }
+
+      // Group activities into weekly trends for charts
+      function computeWeeklyTrends(runs) {
+        if (!runs || runs.length === 0) return [];
+        const weeksMap = {};
+        runs.forEach(r => {
+          const w = r.iso_week || 'Unknown';
+          if (!weeksMap[w]) weeksMap[w] = [];
+          weeksMap[w].push(r);
+        });
+
+        const sortedWeeks = Object.keys(weeksMap).sort();
+        return sortedWeeks.map(w => {
+          const wRuns = weeksMap[w];
+          const dist = wRuns.reduce((acc, r) => acc + (r.distance_km || 0), 0);
+          const time = wRuns.reduce((acc, r) => acc + (r.moving_time_s || 0), 0);
+          const load = wRuns.reduce((acc, r) => acc + (r.training_load || 0), 0);
+          const paceS = dist > 0 ? (time / dist) : 0;
+
+          const hrWeight = wRuns.reduce((acc, r) => acc + ((r.avg_hr || 0) * (r.moving_time_s || 0)), 0);
+          const hrT = wRuns.reduce((acc, r) => acc + (r.avg_hr > 0 ? (r.moving_time_s || 0) : 0), 0);
+          const avgHr = hrT > 0 ? Math.round(hrWeight / hrT) : 0;
+
+          const efs = wRuns.map(r => r.aerobic_ef).filter(v => v !== null && v !== undefined && v > 0);
+          const avgEf = efs.length > 0 ? parseFloat((efs.reduce((a, b) => a + b, 0) / efs.length).toFixed(3)) : null;
+
+          const z1 = wRuns.reduce((s, r) => s + ((r.zone_times && r.zone_times[0]) || 0), 0);
+          const z2 = wRuns.reduce((s, r) => s + ((r.zone_times && r.zone_times[1]) || 0), 0);
+          const z3 = wRuns.reduce((s, r) => s + ((r.zone_times && r.zone_times[2]) || 0), 0);
+          const z4 = wRuns.reduce((s, r) => s + ((r.zone_times && r.zone_times[3]) || 0), 0);
+          const z5 = wRuns.reduce((s, r) => {
+            if (!r.zone_times || r.zone_times.length < 5) return s;
+            return s + r.zone_times.slice(4).reduce((a, b) => a + b, 0);
+          }, 0);
+          const zTotal = z1 + z2 + z3 + z4 + z5;
+
+          return {
+            iso_week: w,
+            runs_count: wRuns.length,
+            total_distance_km: Math.round(dist * 100) / 100,
+            total_load: Math.round(load * 10) / 10,
+            avg_pace_s: paceS,
+            avg_hr: avgHr,
+            aerobic_ef: avgEf,
+            zone_breakdown_pct: [
+              zTotal > 0 ? Math.round((z1 / zTotal) * 1000) / 10 : 0,
+              zTotal > 0 ? Math.round((z2 / zTotal) * 1000) / 10 : 0,
+              zTotal > 0 ? Math.round((z3 / zTotal) * 1000) / 10 : 0,
+              zTotal > 0 ? Math.round((z4 / zTotal) * 1000) / 10 : 0,
+              zTotal > 0 ? Math.round((z5 / zTotal) * 1000) / 10 : 0,
+            ]
+          };
         });
       }
 
-      // If Chart.js is not loaded or trends empty, exit early
+      // Chart Instances
+      let chartVolume = null;
+      let chartZone = null;
+      let chartForm = null;
+      let chartPaceHr = null;
+
+      // Update Chart Datasets
+      function updateChartsWithTrends(trendList, filteredRuns) {
+        if (!trendList || trendList.length === 0) return;
+
+        // Chart 1: Volume & Load
+        if (chartVolume) {
+          const histLabels = trendList.map(t => t.iso_week);
+          const histDistances = trendList.map(t => t.total_distance_km);
+          const histLoads = trendList.map(t => t.total_load);
+
+          const volumeForecastList = forecast.volume_forecast || [];
+          const showForecast = (currentRange === 'all' || currentRange === '12w');
+          const forecastLabels = showForecast ? volumeForecastList.map(vf => vf.iso_week + ' (Progn.)') : [];
+          const forecastDistances = showForecast ? volumeForecastList.map(vf => vf.projected_distance_km) : [];
+          const forecastLoads = showForecast ? volumeForecastList.map(vf => vf.projected_load) : [];
+
+          const allLabels = [...histLabels, ...forecastLabels];
+          chartVolume.data.labels = allLabels;
+          chartVolume.data.datasets[0].data = [...histDistances, ...new Array(forecastLabels.length).fill(null)];
+          chartVolume.data.datasets[1].data = [...new Array(histLabels.length).fill(null), ...forecastDistances];
+          chartVolume.data.datasets[2].data = [...histLoads, ...new Array(forecastLabels.length).fill(null)];
+          chartVolume.data.datasets[3].data = showForecast
+            ? [...new Array(histLabels.length > 0 ? histLabels.length - 1 : 0).fill(null), histLoads[histLoads.length - 1] || null, ...forecastLoads]
+            : [];
+          chartVolume.update();
+        }
+
+        // Chart 2: Zones
+        if (chartZone) {
+          chartZone.data.labels = trendList.map(t => t.iso_week);
+          chartZone.data.datasets[0].data = trendList.map(t => t.zone_breakdown_pct[0] || 0);
+          chartZone.data.datasets[1].data = trendList.map(t => t.zone_breakdown_pct[1] || 0);
+          chartZone.data.datasets[2].data = trendList.map(t => t.zone_breakdown_pct[2] || 0);
+          chartZone.data.datasets[3].data = trendList.map(t => t.zone_breakdown_pct[3] || 0);
+          chartZone.data.datasets[4].data = trendList.map(t => t.zone_breakdown_pct[4] || 0);
+          chartZone.update();
+        }
+
+        // Chart 4: Aerobic Efficiency & Pace
+        if (chartPaceHr) {
+          chartPaceHr.data.labels = trendList.map(t => t.iso_week);
+          chartPaceHr.data.datasets[0].data = trendList.map(t => t.aerobic_ef);
+          chartPaceHr.data.datasets[1].data = trendList.map(t => t.avg_pace_s > 0 ? (t.avg_pace_s / 60.0).toFixed(2) : null);
+          chartPaceHr.update();
+        }
+
+        // Chart 3: Form Curve (CTL/ATL/TSB)
+        if (chartForm && forecast.form && forecast.form.timeline) {
+          const runDates = new Set(filteredRuns.map(r => (r.date || '').substring(0, 10)));
+          const filteredTimeline = forecast.form.timeline.filter(f => runDates.has(f.date) || currentRange === 'all');
+          const sourceTimeline = filteredTimeline.length > 0 ? filteredTimeline : forecast.form.timeline;
+
+          chartForm.data.labels = sourceTimeline.map(f => f.date);
+          chartForm.data.datasets[0].data = sourceTimeline.map(f => f.ctl);
+          chartForm.data.datasets[1].data = sourceTimeline.map(f => f.atl);
+          chartForm.data.datasets[2].data = sourceTimeline.map(f => f.tsb);
+          chartForm.update();
+        }
+      }
+
+      // Table Row HTML Renderer
+      function renderTableRows(runsToDisplay) {
+        const tbody = document.getElementById('runsTableBody');
+        if (!tbody) return;
+
+        if (runsToDisplay.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 24px;">Keine Aktivitäten für die gewählten Filterkriterien gefunden.</td></tr>';
+          return;
+        }
+
+        const htmlRows = runsToDisplay.map(run => {
+          const dateStr = (run.date || '').substring(0, 10) || 'N/A';
+          const name = escapeHtml(run.name || 'Lauf');
+          const distKm = (run.distance_km || 0).toFixed(2);
+          const durStr = formatDuration(run.moving_time_s || 0);
+          const paceStr = formatPace(run.pace_s_per_km || 0);
+
+          const avgHr = run.avg_hr || 0;
+          const avgHrStr = avgHr > 0 ? `${Math.round(avgHr)} bpm` : '-';
+
+          const maxHr = run.max_heartrate;
+          const maxHrStr = maxHr ? `${Math.round(maxHr)} bpm` : '-';
+
+          const z1z2Sec = run.z1_z2_seconds || 0;
+          const totSec = run.total_zone_seconds || 0;
+          let zBadge = '<span style="color: #64748b;">-</span>';
+          if (totSec > 0) {
+            const zPct = Math.round((z1z2Sec / totSec) * 1000) / 10;
+            const tagClass = zPct >= 75.0 ? 'tag-green' : 'tag-amber';
+            zBadge = `<span class="tag ${tagClass}">${zPct.toFixed(1)}%</span>`;
+          }
+
+          const loadVal = run.training_load || 0;
+          const loadStr = loadVal > 0 ? `${Math.round(loadVal)}` : '-';
+
+          return `<tr>
+            <td>${dateStr}</td>
+            <td><strong>${name}</strong></td>
+            <td>${distKm} km</td>
+            <td>${durStr}</td>
+            <td>${paceStr}</td>
+            <td>${avgHrStr}</td>
+            <td>${maxHrStr}</td>
+            <td>${zBadge}</td>
+            <td>${loadStr}</td>
+          </tr>`;
+        });
+
+        tbody.innerHTML = htmlRows.join('\n');
+      }
+
+      // Sorting Algorithm
+      function sortRuns(runs, col, dir) {
+        return [...runs].sort((a, b) => {
+          let valA = a[col];
+          let valB = b[col];
+
+          if (col === 'z_pct') {
+            valA = (a.total_zone_seconds > 0) ? (a.z1_z2_seconds / a.total_zone_seconds) : 0;
+            valB = (b.total_zone_seconds > 0) ? (b.z1_z2_seconds / b.total_zone_seconds) : 0;
+          }
+
+          if (valA === undefined || valA === null) valA = (typeof valB === 'string' ? '' : -Infinity);
+          if (valB === undefined || valB === null) valB = (typeof valA === 'string' ? '' : -Infinity);
+
+          if (typeof valA === 'string') {
+            const cmp = valA.localeCompare(valB);
+            return dir === 'asc' ? cmp : -cmp;
+          }
+          return dir === 'asc' ? (valA - valB) : (valB - valA);
+        });
+      }
+
+      // Filter & Render Table with Search, Zone, Sort & Pagination
+      function applyTableFiltersAndRender() {
+        let list = [...currentDateFilteredRuns];
+
+        // 1. Week filter (from chart bar click)
+        if (selectedWeek) {
+          list = list.filter(r => r.iso_week === selectedWeek);
+        }
+
+        // 2. Zone discipline filter
+        if (currentZoneFilter === 'base') {
+          list = list.filter(r => r.total_zone_seconds > 0 && (r.z1_z2_seconds / r.total_zone_seconds) >= 0.75);
+        } else if (currentZoneFilter === 'quality') {
+          list = list.filter(r => r.total_zone_seconds > 0 && (r.z1_z2_seconds / r.total_zone_seconds) < 0.75);
+        } else if (currentZoneFilter === 'long') {
+          list = list.filter(r => (r.distance_km || 0) >= 8.0);
+        }
+
+        // 3. Search query filter
+        if (searchQuery) {
+          list = list.filter(r => {
+            const str = `${r.date || ''} ${r.name || ''} ${r.distance_km || ''} ${formatPace(r.pace_s_per_km)} ${r.avg_hr || ''}`.toLowerCase();
+            return str.includes(searchQuery);
+          });
+        }
+
+        // 4. Sort
+        list = sortRuns(list, currentSortCol, currentSortDir);
+
+        // Update sort icons in table headers
+        const cols = ['date', 'name', 'distance_km', 'moving_time_s', 'pace_s_per_km', 'avg_hr', 'max_heartrate', 'z_pct', 'training_load'];
+        cols.forEach(col => {
+          const icon = document.getElementById(`sortIcon_${col}`);
+          if (icon) {
+            icon.textContent = (col === currentSortCol) ? (currentSortDir === 'asc' ? '▲' : '▼') : '';
+          }
+        });
+
+        // 5. Pagination
+        const totalMatches = list.length;
+        const totalRunsCount = activities.length;
+
+        const tableSummary = document.getElementById('tableFilterSummary');
+        if (tableSummary) {
+          tableSummary.textContent = `Zeige ${totalMatches} von ${totalRunsCount} Läufen`;
+        }
+
+        let pagedList = list;
+        if (currentPageSize !== 'all') {
+          const size = parseInt(currentPageSize, 10);
+          const totalPages = Math.max(1, Math.ceil(totalMatches / size));
+          if (currentPage > totalPages) currentPage = totalPages;
+          const start = (currentPage - 1) * size;
+          pagedList = list.slice(start, start + size);
+
+          const pagInfo = document.getElementById('paginationInfo');
+          if (pagInfo) {
+            pagInfo.textContent = `Seite ${currentPage} von ${totalPages} (${totalMatches} Aktivitäten)`;
+          }
+
+          const btnPrev = document.getElementById('btnPrevPage');
+          const btnNext = document.getElementById('btnNextPage');
+          if (btnPrev) btnPrev.disabled = (currentPage <= 1);
+          if (btnNext) btnNext.disabled = (currentPage >= totalPages);
+        } else {
+          const pagInfo = document.getElementById('paginationInfo');
+          if (pagInfo) pagInfo.textContent = `Zeige alle ${totalMatches} Aktivitäten`;
+          const btnPrev = document.getElementById('btnPrevPage');
+          const btnNext = document.getElementById('btnNextPage');
+          if (btnPrev) btnPrev.disabled = true;
+          if (btnNext) btnNext.disabled = true;
+        }
+
+        renderTableRows(pagedList);
+      }
+
+      // Update Filter Badge Text & Week Reset Button
+      function updateFilterBadge() {
+        const badgeText = document.getElementById('activeFilterText');
+        const resetWeekBtn = document.getElementById('btnResetWeekFilter');
+        if (!badgeText) return;
+
+        let label = 'Gesamter Zeitraum';
+        if (currentRange === '12w') label = 'Letzte 12 Wochen';
+        else if (currentRange === '4w') label = 'Letzte 4 Wochen';
+        else if (currentRange === 'month') label = 'Diesen Monat';
+        else if (currentRange === 'custom') {
+          label = `Benutzerdefiniert (${customStartDate || ''} bis ${customEndDate || ''})`;
+        }
+
+        if (selectedWeek) {
+          badgeText.textContent = `${label} · Woche ${selectedWeek}`;
+          if (resetWeekBtn) resetWeekBtn.style.display = 'inline-block';
+        } else {
+          badgeText.textContent = `${label} (${currentDateFilteredRuns.length} Läufe)`;
+          if (resetWeekBtn) resetWeekBtn.style.display = 'none';
+        }
+      }
+
+      // Set Date Range
+      function setDateRange(range) {
+        currentRange = range;
+        selectedWeek = null;
+        currentPage = 1;
+
+        const buttons = document.querySelectorAll('#dateFilterButtons .filter-btn');
+        buttons.forEach(btn => {
+          btn.classList.toggle('active', btn.getAttribute('data-range') === range);
+        });
+
+        const customInputs = document.getElementById('customDateRange');
+        if (customInputs) {
+          customInputs.style.display = (range === 'custom') ? 'flex' : 'none';
+        }
+
+        currentDateFilteredRuns = getFilteredRunsByDate(activities, range, customStartDate, customEndDate);
+        updateKPIs(currentDateFilteredRuns);
+
+        const newTrends = computeWeeklyTrends(currentDateFilteredRuns);
+        updateChartsWithTrends(newTrends, currentDateFilteredRuns);
+
+        updateFilterBadge();
+        applyTableFiltersAndRender();
+      }
+
+      // Setup Event Listeners
+      // 1. Date Range Buttons
+      const dateButtons = document.querySelectorAll('#dateFilterButtons .filter-btn');
+      dateButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const range = this.getAttribute('data-range');
+          setDateRange(range);
+        });
+      });
+
+      // 2. Custom Date Apply & Reset
+      const btnApplyCustom = document.getElementById('btnApplyCustomDates');
+      if (btnApplyCustom) {
+        btnApplyCustom.addEventListener('click', function() {
+          const startInp = document.getElementById('filterStartDate');
+          const endInp = document.getElementById('filterEndDate');
+          if (startInp && endInp) {
+            customStartDate = startInp.value;
+            customEndDate = endInp.value;
+            setDateRange('custom');
+          }
+        });
+      }
+
+      const btnResetDate = document.getElementById('btnResetDateFilter');
+      if (btnResetDate) {
+        btnResetDate.addEventListener('click', function() {
+          setDateRange('all');
+        });
+      }
+
+      // 3. Reset Week Filter
+      const btnResetWeek = document.getElementById('btnResetWeekFilter');
+      if (btnResetWeek) {
+        btnResetWeek.addEventListener('click', function() {
+          selectedWeek = null;
+          updateFilterBadge();
+          applyTableFiltersAndRender();
+        });
+      }
+
+      // 4. Search Filter
+      const searchInput = document.getElementById('runSearch');
+      if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+          searchQuery = e.target.value.toLowerCase().trim();
+          currentPage = 1;
+          applyTableFiltersAndRender();
+        });
+      }
+
+      // 5. Zone Filter
+      const zoneFilterSelect = document.getElementById('tableZoneFilter');
+      if (zoneFilterSelect) {
+        zoneFilterSelect.addEventListener('change', function(e) {
+          currentZoneFilter = e.target.value;
+          currentPage = 1;
+          applyTableFiltersAndRender();
+        });
+      }
+
+      // 6. Sortable Headers
+      const sortableHeaders = document.querySelectorAll('th.sortable');
+      sortableHeaders.forEach(th => {
+        th.addEventListener('click', function() {
+          const col = this.getAttribute('data-sort');
+          if (!col) return;
+
+          if (currentSortCol === col) {
+            currentSortDir = (currentSortDir === 'asc') ? 'desc' : 'asc';
+          } else {
+            currentSortCol = col;
+            currentSortDir = (col === 'name') ? 'asc' : 'desc';
+          }
+          applyTableFiltersAndRender();
+        });
+      });
+
+      // 7. Pagination Controls
+      const pageSizeSelect = document.getElementById('pageSizeSelect');
+      if (pageSizeSelect) {
+        pageSizeSelect.addEventListener('change', function(e) {
+          currentPageSize = e.target.value;
+          currentPage = 1;
+          applyTableFiltersAndRender();
+        });
+      }
+
+      const btnPrev = document.getElementById('btnPrevPage');
+      if (btnPrev) {
+        btnPrev.addEventListener('click', function() {
+          if (currentPage > 1) {
+            currentPage--;
+            applyTableFiltersAndRender();
+          }
+        });
+      }
+
+      const btnNext = document.getElementById('btnNextPage');
+      if (btnNext) {
+        btnNext.addEventListener('click', function() {
+          currentPage++;
+          applyTableFiltersAndRender();
+        });
+      }
+
+      // Chart.js Global Config & Initialization
       if (typeof Chart === 'undefined' || !trends || trends.length === 0) {
         return;
       }
@@ -892,9 +1713,7 @@
       Chart.defaults.borderColor = '#1e293b';
       Chart.defaults.font.family = "'Inter', sans-serif";
 
-      // -------------------------------------------------------------
-      // Chart 1: Volume & Training Load with 4-Week Progression Forecast
-      // -------------------------------------------------------------
+      // Chart 1: Volume & Load with click listener for week cross-filtering
       const ctxVolume = document.getElementById('chartWeeklyVolume');
       if (ctxVolume) {
         const histLabels = trends.map(t => t.iso_week);
@@ -907,16 +1726,13 @@
         const forecastLoads = volumeForecastList.map(vf => vf.projected_load);
 
         const allLabels = [...histLabels, ...forecastLabels];
-        
-        // Datasets: Historical distance vs Forecast distance
         const distActualData = [...histDistances, ...new Array(forecastLabels.length).fill(null)];
         const distForecastData = [...new Array(histLabels.length).fill(null), ...forecastDistances];
 
-        // Datasets: Historical load vs Forecast load
         const loadActualData = [...histLoads, ...new Array(forecastLabels.length).fill(null)];
         const loadForecastData = [...new Array(histLabels.length > 0 ? histLabels.length - 1 : 0).fill(null), histLoads[histLoads.length - 1] || null, ...forecastLoads];
 
-        new Chart(ctxVolume, {
+        chartVolume = new Chart(ctxVolume, {
           type: 'bar',
           data: {
             labels: allLabels,
@@ -966,6 +1782,18 @@
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
+            onClick: function(event, elements) {
+              if (elements && elements.length > 0) {
+                const idx = elements[0].index;
+                const rawLabel = chartVolume.data.labels[idx];
+                const clickedWeek = rawLabel ? rawLabel.split(' ')[0] : null;
+                if (clickedWeek && !clickedWeek.includes('Progn.')) {
+                  selectedWeek = (selectedWeek === clickedWeek) ? null : clickedWeek;
+                  updateFilterBadge();
+                  applyTableFiltersAndRender();
+                }
+              }
+            },
             scales: {
               y: {
                 type: 'linear',
@@ -994,9 +1822,7 @@
         });
       }
 
-      // -------------------------------------------------------------
-      // Chart 2: Stacked Zone Distribution (Z1 to Z5+)
-      // -------------------------------------------------------------
+      // Chart 2: Stacked Zone Distribution
       const ctxZone = document.getElementById('chartZoneDistribution');
       if (ctxZone) {
         const labels = trends.map(t => t.iso_week);
@@ -1006,7 +1832,7 @@
         const z4Pct = trends.map(t => (t.zone_breakdown_pct ? t.zone_breakdown_pct[3] : 0));
         const z5Pct = trends.map(t => (t.zone_breakdown_pct ? t.zone_breakdown_pct[4] : 0));
 
-        new Chart(ctxZone, {
+        chartZone = new Chart(ctxZone, {
           type: 'bar',
           data: {
             labels: labels,
@@ -1069,9 +1895,7 @@
         });
       }
 
-      // -------------------------------------------------------------
       // Chart 3: Form Curve (CTL, ATL, TSB)
-      // -------------------------------------------------------------
       const ctxForm = document.getElementById('chartFormTrend');
       if (ctxForm) {
         const formData = (forecast.form && forecast.form.timeline) ? forecast.form.timeline : [];
@@ -1080,7 +1904,7 @@
         const atls = formData.map(f => f.atl);
         const tsbs = formData.map(f => f.tsb);
 
-        new Chart(ctxForm, {
+        chartForm = new Chart(ctxForm, {
           type: 'line',
           data: {
             labels: formDates.length > 0 ? formDates : trends.map(t => t.iso_week),
@@ -1149,16 +1973,14 @@
         });
       }
 
-      // -------------------------------------------------------------
       // Chart 4: Aerobic Efficiency & Pace Trend
-      // -------------------------------------------------------------
       const ctxPaceHr = document.getElementById('chartPaceHr');
       if (ctxPaceHr) {
         const labels = trends.map(t => t.iso_week);
         const efs = trends.map(t => t.aerobic_ef !== null ? t.aerobic_ef : null);
         const paces = trends.map(t => t.avg_pace_s > 0 ? (t.avg_pace_s / 60.0).toFixed(2) : null);
 
-        new Chart(ctxPaceHr, {
+        chartPaceHr = new Chart(ctxPaceHr, {
           type: 'line',
           data: {
             labels: labels,
@@ -1199,7 +2021,7 @@
               y1: {
                 type: 'linear',
                 position: 'right',
-                reverse: true, // Faster pace is higher
+                reverse: true,
                 title: { display: true, text: 'Pace (min/km)' },
                 grid: { drawOnChartArea: false }
               }

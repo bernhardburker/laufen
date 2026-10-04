@@ -49,3 +49,12 @@ Feature: Generate visual HTML dashboard from running activities
     Then the process exits with code 0
     And the output HTML contains the custom dynamic AI insights
 
+  Scenario: Dashboard contains interactive date range filters, sorting controls, and dataset transparency
+    Given an activities dataset with multiple running activities and strava placeholders
+    And the standard dashboard template is available
+    When the dashboard generator is executed
+    Then the process exits with code 0
+    And the output HTML contains interactive date range filter buttons
+    And the output HTML contains sortable table columns and pagination controls
+    And the output HTML displays the data source transparency notice
+

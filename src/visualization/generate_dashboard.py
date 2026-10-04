@@ -429,10 +429,30 @@ def generate_dashboard(
 
     generation_date = datetime.now(timezone.utc).strftime("%d.%m.%Y %H:%M UTC")
 
+    strava_placeholders = [
+        a
+        for a in activities
+        if isinstance(a, dict) and a.get("source") == "STRAVA" and a.get("type") is None
+    ]
+    strava_count = len(strava_placeholders)
+
     if not processed_runs:
+        empty_datasource_html = ""
+        if strava_count > 0:
+            empty_datasource_html = (
+                f'<div class="datasource-banner">'
+                f'  <span class="datasource-icon">⚠️</span>'
+                f'  <div class="datasource-text">'
+                f'    <strong>Keine exportierbaren Läufe:</strong> Es wurden {strava_count} Aktivitäten aus Strava gefunden, '
+                f'    diese dürfen jedoch laut Strava-API-Vorgaben nicht als Rohdaten weitergegeben werden. '
+                f'    Bitte Garmin Connect direkt verbinden oder Aktivitäten manuell importieren.'
+                f'  </div>'
+                f'</div>'
+            )
         context = {
             "DASHBOARD_TITLE": title,
             "GENERATION_DATE": generation_date,
+            "DATA_SOURCE_INFO_HTML": empty_datasource_html,
             "TOTAL_DISTANCE_KM": "0.0",
             "TOTAL_RUNS": "0",
             "TOTAL_DURATION": "0m",
@@ -460,6 +480,22 @@ def generate_dashboard(
         }
     else:
         trends = aggregate_weekly_trends(runs, max_weeks=weeks)
+        datasource_info_html = ""
+        if strava_count > 0:
+            datasource_info_html = (
+                f'<div class="datasource-banner">'
+                f'  <span class="datasource-icon">💡</span>'
+                f'  <div class="datasource-text">'
+                f'    <strong>Datenquellen-Hinweis:</strong> Es werden aktuell <strong>{len(processed_runs)} Läufe</strong> '
+                f'    (Garmin Connect) vollständig analysiert. <strong>{strava_count} ältere Aktivitäten</strong> stammen aus Strava '
+                f'    und enthalten laut Strava-API-Bestimmungen keine Telemetriewerte über die Schnittstelle.<br>'
+                f'    <span class="datasource-tip">'
+                f'      Tipp: Für lückenlose historische Analysen in Intervals.icu unter <em>Einstellungen &rarr; Verbindungen &rarr; Garmin Connect</em> '
+                f'      auf <em>„Download old data“</em> klicken.'
+                f'    </span>'
+                f'  </div>'
+                f'</div>'
+            )
         total_dist_km = round(sum(r["distance_km"] for r in processed_runs), 2)
         total_time_s = sum(r["moving_time_s"] for r in processed_runs)
         total_runs_count = len(processed_runs)
@@ -547,6 +583,7 @@ def generate_dashboard(
         context = {
             "DASHBOARD_TITLE": title,
             "GENERATION_DATE": generation_date,
+            "DATA_SOURCE_INFO_HTML": datasource_info_html,
             "TOTAL_DISTANCE_KM": f"{total_dist_km:.1f}",
             "TOTAL_RUNS": str(total_runs_count),
             "TOTAL_DURATION": format_duration(total_time_s),
