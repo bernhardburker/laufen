@@ -2,63 +2,62 @@
   "athlete": {
     "id": "i697752",
     "name": "BerniBurker",
-    "classification": "Hobbyläufer (Basisaufbau)",
     "heart_rate": {
       "resting_hr": 51,
-      "max_hr": 183,
-      "lthr": 166,
+      "max_hr": 204,
+      "lthr": 178,
       "zones": {
         "z1_recovery": {
           "zone": 1,
           "name": "Recovery",
           "min": 0,
-          "max": 140
+          "max": 150
         },
         "z2_aerobic": {
           "zone": 2,
           "name": "Aerobic",
-          "min": 141,
-          "max": 148
+          "min": 151,
+          "max": 158
         },
         "z3_tempo": {
           "zone": 3,
           "name": "Tempo",
-          "min": 149,
-          "max": 156
+          "min": 159,
+          "max": 168
         },
         "z4_subthreshold": {
           "zone": 4,
           "name": "SubThreshold",
-          "min": 157,
-          "max": 165
+          "min": 169,
+          "max": 177
         },
         "z5_superthreshold": {
           "zone": 5,
           "name": "SuperThreshold",
-          "min": 166,
-          "max": 169
+          "min": 178,
+          "max": 181
         },
         "z6_aerobic_capacity": {
           "zone": 6,
           "name": "Aerobic Capacity",
-          "min": 170,
-          "max": 174
+          "min": 182,
+          "max": 186
         },
         "z7_anaerobic": {
           "zone": 7,
           "name": "Anaerobic",
-          "min": 175,
-          "max": 183
+          "min": 187,
+          "max": 204
         }
       },
       "raw_hr_zones": [
-        140,
-        148,
-        156,
-        165,
-        169,
-        174,
-        183
+        150,
+        158,
+        168,
+        177,
+        181,
+        186,
+        204
       ],
       "raw_zone_names": [
         "Recovery",
@@ -75,6 +74,7 @@
       "long_run": "06:40 - 07:15",
       "tempo_run": "05:45 - 06:00",
       "intervals_1k": "05:00 - 05:20"
-    }
+    },
+    "classification": "Hobbyläufer (Basisaufbau)"
   }
 }

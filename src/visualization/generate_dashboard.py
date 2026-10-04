@@ -396,6 +396,88 @@ def build_forecast_cards_html(predictions: List[Dict[str, Any]]) -> str:
     return "\n".join(cards)
 
 
+def build_zones_reference_html(athlete_profile: Dict[str, Any]) -> str:
+    ath = athlete_profile.get("athlete", {}) if isinstance(athlete_profile, dict) else {}
+    hr = ath.get("heart_rate", {}) if isinstance(ath, dict) else {}
+    zones_dict = hr.get("zones", {})
+    raw_zones = hr.get("raw_hr_zones") or []
+    lthr = hr.get("lthr") or 178
+
+    zone_colors = {
+        1: "#94a3b8",
+        2: "var(--emerald)",
+        3: "var(--amber)",
+        4: "var(--orange)",
+        5: "var(--rose)",
+        6: "#c084fc",
+        7: "#f43f5e",
+    }
+    zone_descs = {
+        1: "Sehr lockere aktive Erholung, Kapillarisierung & Stoffwechselaktivierung.",
+        2: "75–80% des Trainingsvolumens. Fettstoffwechsel, Mitochondrien, Sprechtest problemlos.",
+        3: "Zügiger Dauerlauf. Erhöhte Ermüdung, Sprechen in kurzen Sätzen. Dosiert einsetzen!",
+        4: f"Unterhalb der Schwelle (LTHR: {lthr} bpm). Hart aber kontrolliert, Tempohärte.",
+        5: "Oberhalb der Schwelle. Wettkampfspezifische Ausdauer, spürbarer Laktatanstieg.",
+        6: "VO2 Max / Aerobe Kapazität. Maximale Sauerstoffaufnahme, kurze harte Intervalle.",
+        7: "Anaerobe Kapazität / Sprint. Zielsprints, maximale Ausbelastung und Laktattoleranz.",
+    }
+
+    german_names = {
+        "recovery": "Regeneration",
+        "aerobic": "Grundlagenausdauer",
+        "tempo": "Tempo / Grauzone",
+        "subthreshold": "Schwellenbereich",
+        "superthreshold": "Über Schwelle",
+        "aerobic capacity": "VO2 Max",
+        "anaerobic": "Anaerob / Maximal",
+    }
+
+    items = []
+    if zones_dict:
+        for key, z_info in zones_dict.items():
+            z_num = int(z_info.get("zone", 1))
+            orig_name = z_info.get("name", f"Zone {z_num}")
+            de_name = german_names.get(orig_name.lower(), orig_name)
+            title_display = f"Z{z_num} {de_name} ({orig_name})" if de_name != orig_name else f"Z{z_num} {orig_name}"
+            z_min = int(z_info.get("min", 0))
+            z_max = int(z_info.get("max", 0))
+            color = zone_colors.get(z_num, "#94a3b8")
+            border = ' style="border-color: rgba(16, 185, 129, 0.4);"' if z_num == 2 else ""
+
+            range_str = f"&lt; {z_max + 1} bpm" if z_min <= 0 else f"{z_min} – {z_max} bpm"
+            desc = zone_descs.get(z_num, f"Intensitätszone {z_num} aus Intervals.icu.")
+            items.append(
+                f'          <div class="zone-item"{border}>\n'
+                f'            <div class="zone-item-header">\n'
+                f'              <span class="zone-name" style="color: {color};">{html.escape(title_display)}</span>\n'
+                f'              <span class="zone-range">{range_str}</span>\n'
+                f'            </div>\n'
+                f'            <div class="zone-desc">{desc}</div>\n'
+                f'          </div>'
+            )
+    elif raw_zones:
+        prev = 0
+        for i, cutoff in enumerate(raw_zones):
+            z_num = i + 1
+            color = zone_colors.get(z_num, "#94a3b8")
+            border = ' style="border-color: rgba(16, 185, 129, 0.4);"' if z_num == 2 else ""
+            z_min = prev + 1 if prev > 0 else 0
+            range_str = f"&lt; {cutoff + 1} bpm" if z_min <= 0 else f"{z_min} – {cutoff} bpm"
+            desc = zone_descs.get(z_num, f"Intensitätszone {z_num} aus Intervals.icu.")
+            items.append(
+                f'          <div class="zone-item"{border}>\n'
+                f'            <div class="zone-item-header">\n'
+                f'              <span class="zone-name" style="color: {color};">Z{z_num} Zone {z_num}</span>\n'
+                f'              <span class="zone-range">{range_str}</span>\n'
+                f'            </div>\n'
+                f'            <div class="zone-desc">{desc}</div>\n'
+                f'          </div>'
+            )
+            prev = int(cutoff)
+
+    return "\n".join(items)
+
+
 def generate_dashboard(
     input_file: Path,
     template_file: Path,
@@ -475,6 +557,7 @@ def generate_dashboard(
             "TRENDS_JSON": "[]",
             "ACTIVITIES_JSON": "[]",
             "ATHLETE_JSON": json.dumps(athlete_profile),
+            "ZONES_REFERENCE_HTML": build_zones_reference_html(athlete_profile),
             "FORECAST_JSON": "{}",
             "SUMMARY_JSON": "{}",
         }
@@ -603,6 +686,7 @@ def generate_dashboard(
             "TRENDS_JSON": json.dumps(trends, ensure_ascii=False),
             "ACTIVITIES_JSON": json.dumps(processed_runs, ensure_ascii=False),
             "ATHLETE_JSON": json.dumps(athlete_profile, ensure_ascii=False),
+            "ZONES_REFERENCE_HTML": build_zones_reference_html(athlete_profile),
             "FORECAST_JSON": json.dumps(forecast_payload, ensure_ascii=False),
             "SUMMARY_JSON": json.dumps(summary_data, ensure_ascii=False),
         }

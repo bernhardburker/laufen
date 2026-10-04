@@ -268,6 +268,32 @@ class DashboardGeneratorDriver:
         assert "fabReload" in content
         assert "pullToRefreshIndicator" in content
         assert "reloadPage" in content
+
+    def prepare_athlete_profile_with_custom_zones(self) -> None:
+        self.athlete_file = self.tmp_path / "custom_athlete.json"
+        data = {
+            "athlete": {
+                "id": "test-runner",
+                "name": "Test Runner",
+                "heart_rate": {
+                    "resting_hr": 50,
+                    "max_hr": 204,
+                    "lthr": 178,
+                    "raw_hr_zones": [150, 158, 168, 177, 181, 186, 204],
+                },
+            }
+        }
+        self.athlete_file.write_text(json.dumps(data), encoding="utf-8")
+
+    def run_generator_with_athlete_profile(self) -> None:
+        self.run_generator(extra_args=["--athlete", str(self.athlete_file)])
+
+    def assert_html_contains_calibrated_zones(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "151 – 158 bpm" in content
+        assert "159 – 168 bpm" in content
+        assert "169 – 177 bpm" in content
+        assert "LTHR: 178 bpm" in content
         assert "apple-mobile-web-app-capable" in content
         assert "Neu laden" in content
 
@@ -410,6 +436,21 @@ def then_html_volume_chart_preserves_forecast(driver: DashboardGeneratorDriver):
 @then("the output HTML contains reload controls and mobile refresh mechanisms")
 def then_html_contains_reload_controls(driver: DashboardGeneratorDriver):
     driver.assert_html_contains_reload_controls()
+
+
+@given("an athlete profile with custom heart rate zones")
+def given_athlete_profile_with_custom_zones(driver: DashboardGeneratorDriver):
+    driver.prepare_athlete_profile_with_custom_zones()
+
+
+@when("the dashboard generator is executed with the athlete profile")
+def when_generator_executed_with_athlete_profile(driver: DashboardGeneratorDriver):
+    driver.run_generator_with_athlete_profile()
+
+
+@then("the output HTML contains the calibrated zone ranges")
+def then_html_contains_calibrated_zones(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_calibrated_zones()
 
 
 

@@ -73,4 +73,12 @@ Feature: Generate visual HTML dashboard from running activities
     Then the process exits with code 0
     And the output HTML contains reload controls and mobile refresh mechanisms
 
+  Scenario: Dashboard contains dynamically calibrated heart rate zones from athlete profile
+    Given an activities dataset with multiple running activities
+    And the standard dashboard template is available
+    And an athlete profile with custom heart rate zones
+    When the dashboard generator is executed with the athlete profile
+    Then the process exits with code 0
+    And the output HTML contains the calibrated zone ranges
+
 

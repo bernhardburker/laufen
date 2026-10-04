@@ -1208,41 +1208,7 @@
       <section class="zones-card">
         <h3 class="zones-title">Herzfrequenz-Trainingszonen (Individuell kalibriert)</h3>
         <div class="zones-list">
-          <div class="zone-item">
-            <div class="zone-item-header">
-              <span class="zone-name" style="color: #94a3b8;">Z1 Regeneration</span>
-              <span class="zone-range">&lt; 141 bpm</span>
-            </div>
-            <div class="zone-desc">Sehr lockere aktive Erholung, Kapillarisierung &amp; Stoffwechselaktivierung.</div>
-          </div>
-          <div class="zone-item" style="border-color: rgba(16, 185, 129, 0.4);">
-            <div class="zone-item-header">
-              <span class="zone-name" style="color: var(--emerald);">Z2 Grundlagenausdauer</span>
-              <span class="zone-range">141 – 148 bpm</span>
-            </div>
-            <div class="zone-desc">75–80% des Trainingsvolumens. Fettstoffwechsel, Mitochondrien, Sprechtest problemlos.</div>
-          </div>
-          <div class="zone-item">
-            <div class="zone-item-header">
-              <span class="zone-name" style="color: var(--amber);">Z3 Tempo / Grauzone</span>
-              <span class="zone-range">149 – 156 bpm</span>
-            </div>
-            <div class="zone-desc">Zügiger Dauerlauf. Erhöhte Ermüdung, Sprechen nur in kurzen Sätzen. Dosiert einsetzen!</div>
-          </div>
-          <div class="zone-item">
-            <div class="zone-item-header">
-              <span class="zone-name" style="color: var(--orange);">Z4 Schwellenbereich</span>
-              <span class="zone-range">157 – 165 bpm</span>
-            </div>
-            <div class="zone-desc">Laktatschwelle (LTHR: 166 bpm). Hart aber kontrolliert, wettkampfspezifische Ausdauer.</div>
-          </div>
-          <div class="zone-item">
-            <div class="zone-item-header">
-              <span class="zone-name" style="color: var(--rose);">Z5+ VO2max &amp; Anaerob</span>
-              <span class="zone-range">&ge; 166 bpm</span>
-            </div>
-            <div class="zone-desc">Kurze, hochintensive Intervalle. Maximale Sauerstoffaufnahme und anaerobe Kapazität.</div>
-          </div>
+{{ ZONES_REFERENCE_HTML }}
         </div>
       </section>
 
@@ -2055,37 +2021,45 @@
         const z4Pct = trends.map(t => (t.zone_breakdown_pct ? t.zone_breakdown_pct[3] : 0));
         const z5Pct = trends.map(t => (t.zone_breakdown_pct ? t.zone_breakdown_pct[4] : 0));
 
+        const hrInfo = (athlete && athlete.athlete && athlete.athlete.heart_rate) || {};
+        const rawZones = hrInfo.raw_hr_zones || [150, 158, 168, 177, 181, 186, 204];
+        const z1Max = rawZones[0] || 150;
+        const z2Max = rawZones[1] || 158;
+        const z3Max = rawZones[2] || 168;
+        const z4Max = rawZones[3] || 177;
+        const z5Min = (rawZones.length >= 4 ? z4Max + 1 : (hrInfo.lthr || 178));
+
         chartZone = new Chart(ctxZone, {
           type: 'bar',
           data: {
             labels: labels,
             datasets: [
               {
-                label: 'Z1 Regeneration (<141 bpm)',
+                label: `Z1 Regeneration (<${z1Max + 1} bpm)`,
                 data: z1Pct,
                 backgroundColor: '#64748b',
                 stack: 'zones',
               },
               {
-                label: 'Z2 Grundlagenbereich (141-148 bpm)',
+                label: `Z2 Grundlagenbereich (${z1Max + 1}-${z2Max} bpm)`,
                 data: z2Pct,
                 backgroundColor: '#10b981',
                 stack: 'zones',
               },
               {
-                label: 'Z3 Tempo / Grauzone (149-156 bpm)',
+                label: `Z3 Tempo / Grauzone (${z2Max + 1}-${z3Max} bpm)`,
                 data: z3Pct,
                 backgroundColor: '#f59e0b',
                 stack: 'zones',
               },
               {
-                label: 'Z4 Schwelle (157-165 bpm)',
+                label: `Z4 Schwelle (${z3Max + 1}-${z4Max} bpm)`,
                 data: z4Pct,
                 backgroundColor: '#f97316',
                 stack: 'zones',
               },
               {
-                label: 'Z5+ VO2max / Anaerob (≥166 bpm)',
+                label: `Z5+ VO2max / Anaerob (≥${z5Min} bpm)`,
                 data: z5Pct,
                 backgroundColor: '#f43f5e',
                 stack: 'zones',
