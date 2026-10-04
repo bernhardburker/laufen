@@ -262,6 +262,16 @@ class DashboardGeneratorDriver:
         assert "flex-wrap: wrap" in content
         assert "@media (max-width: 768px)" in content
 
+    def assert_html_contains_reload_controls(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "btnReloadPage" in content
+        assert "fabReload" in content
+        assert "pullToRefreshIndicator" in content
+        assert "reloadPage" in content
+        assert "apple-mobile-web-app-capable" in content
+        assert "Neu laden" in content
+
+
 
 # 3. Fixture injecting the Driver
 @pytest.fixture
@@ -395,5 +405,11 @@ def then_html_contains_responsive_filters(driver: DashboardGeneratorDriver):
 @then("the output HTML volume chart preserves forecast visualization across date filters")
 def then_html_volume_chart_preserves_forecast(driver: DashboardGeneratorDriver):
     driver.assert_volume_chart_preserves_forecast_across_filters()
+
+
+@then("the output HTML contains reload controls and mobile refresh mechanisms")
+def then_html_contains_reload_controls(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_reload_controls()
+
 
 

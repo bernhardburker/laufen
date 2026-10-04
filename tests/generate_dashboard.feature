@@ -66,3 +66,11 @@ Feature: Generate visual HTML dashboard from running activities
     Then the process exits with code 0
     And the output HTML volume chart preserves forecast visualization across date filters
 
+  Scenario: Dashboard contains reload controls and mobile refresh mechanisms for iOS standalone web app
+    Given an activities dataset with multiple running activities
+    And the standard dashboard template is available
+    When the dashboard generator is executed
+    Then the process exits with code 0
+    And the output HTML contains reload controls and mobile refresh mechanisms
+
+
