@@ -27,3 +27,8 @@ Feature: Race predictions, volume forecasting, and training recommendations
     Then the prompt includes athlete heart rate zones and recent runs
     And the prompt instructs the AI coach on 80/20 zone discipline
 
+  Scenario: Parse structured JSON response from Antigravity AI Coach
+    Given a valid JSON response string from Antigravity AI Coach
+    When the coach response is parsed
+    Then the parsed summary contains status title, insights, and recommendations
+

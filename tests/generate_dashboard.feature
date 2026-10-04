@@ -41,3 +41,11 @@ Feature: Generate visual HTML dashboard from running activities
     And the output HTML contains training summary and coaching recommendations
     And the output HTML embeds race time predictions and volume forecast data
 
+  Scenario: Dashboard generator overrides summary when dynamic AI coach summary is provided
+    Given an activities dataset with multiple running activities
+    And the standard dashboard template is available
+    And an AI coach summary JSON file with custom dynamic insights
+    When the dashboard generator is executed with the AI coach summary file
+    Then the process exits with code 0
+    And the output HTML contains the custom dynamic AI insights
+

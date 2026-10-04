@@ -170,6 +170,42 @@ class DashboardGeneratorDriver:
         assert "Halbmarathon" in content
         assert "predictions" in content
 
+    def prepare_ai_summary_file(self) -> None:
+        self.ai_summary_file = self.tmp_path / "custom_ai_summary.json"
+        data = {
+            "status_title": "Dynamischer KI-Coach Status",
+            "status_badge": "KI-Analyse aktiv",
+            "status_level": "info",
+            "coach_commentary": "Exklusiver Coaching-Kommentar für Berni.",
+            "insights": [
+                {
+                    "title": "Maßgeschneiderte KI-Erkenntnis",
+                    "type": "info",
+                    "badge": "KI-Fokus",
+                    "text": "Erkenntnis generiert via Antigravity CLI.",
+                }
+            ],
+            "recommendations": [
+                {
+                    "title": "Individuelle KI-Empfehlung",
+                    "tag": "KI-Tipp",
+                    "tag_class": "tag-green",
+                    "text": "Empfehlung generiert via Antigravity CLI.",
+                }
+            ],
+        }
+        self.ai_summary_file.write_text(json.dumps(data), encoding="utf-8")
+
+    def run_generator_with_ai_summary(self) -> None:
+        self.run_generator(extra_args=["--ai-summary", str(self.ai_summary_file)])
+
+    def assert_html_contains_dynamic_ai_insights(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "Dynamischer KI-Coach Status" in content
+        assert "Maßgeschneiderte KI-Erkenntnis" in content
+        assert "Individuelle KI-Empfehlung" in content
+        assert "Exklusiver Coaching-Kommentar für Berni" in content
+
 
 # 3. Fixture injecting the Driver
 @pytest.fixture
@@ -258,4 +294,19 @@ def then_html_contains_summary(driver: DashboardGeneratorDriver):
 @then("the output HTML embeds race time predictions and volume forecast data")
 def then_html_contains_forecasts(driver: DashboardGeneratorDriver):
     driver.assert_html_contains_forecasts()
+
+
+@given("an AI coach summary JSON file with custom dynamic insights")
+def given_ai_summary_file(driver: DashboardGeneratorDriver):
+    driver.prepare_ai_summary_file()
+
+
+@when("the dashboard generator is executed with the AI coach summary file")
+def when_generator_executed_with_ai_summary(driver: DashboardGeneratorDriver):
+    driver.run_generator_with_ai_summary()
+
+
+@then("the output HTML contains the custom dynamic AI insights")
+def then_html_contains_dynamic_ai_insights(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_dynamic_ai_insights()
 

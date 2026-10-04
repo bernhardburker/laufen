@@ -82,8 +82,19 @@ if "$agy_bin" \
       fi
     fi
 
-    cp "$AI_OUTPUT_TMP" "$OUTPUT_FILE"
-    echo "==> AI Coach commentary successfully generated at: $OUTPUT_FILE"
+    # Parse structured JSON summary and extracted commentary
+    JSON_OUTPUT="$REPO_ROOT/data/ai_coach_summary.json"
+    if "$PYTHON_EXEC" "$REPO_ROOT/src/analysis/ai_coach.py" \
+        --parse-response "$AI_OUTPUT_TMP" \
+        --output-json "$JSON_OUTPUT" \
+        --output-md "$OUTPUT_FILE"; then
+      echo "==> Dynamic AI summary & recommendations saved to: $JSON_OUTPUT"
+    else
+      echo "Warning: Response was not valid JSON, saving raw output as commentary." >&2
+      cp "$AI_OUTPUT_TMP" "$OUTPUT_FILE"
+    fi
+
+    echo "==> AI Coach output successfully generated at: $OUTPUT_FILE"
     echo "----------------------------------------------------------------------"
     cat "$OUTPUT_FILE"
     echo "----------------------------------------------------------------------"

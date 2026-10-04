@@ -11,7 +11,7 @@ if str(PROJECT_ROOT) not in sys.path:
 import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from src.analysis.ai_coach import build_coach_prompt
+from src.analysis.ai_coach import build_coach_prompt, parse_coach_response
 from src.analysis.forecast import (
     calculate_fitness_form_trend,
     generate_training_summary,
@@ -35,6 +35,8 @@ class ForecastDriver:
         self.volume_forecast: List[Dict[str, Any]] = []
         self.form_data: Dict[str, Any] = {}
         self.summary: Dict[str, Any] = {}
+        self.raw_coach_response: str = ""
+        self.parsed_coach_data: Optional[Dict[str, Any]] = None
 
     def prepare_dataset_with_runs(self) -> None:
         self.runs = [
@@ -152,6 +154,41 @@ class ForecastDriver:
         assert "80/20" in self.ai_coach_prompt
         assert "Zone 2" in self.ai_coach_prompt or "Z2" in self.ai_coach_prompt
 
+    def prepare_raw_coach_response(self) -> None:
+        self.raw_coach_response = """```json
+{
+  "status_title": "Dynamischer Trainings-Fokus (KI)",
+  "status_badge": "80/20 Optimierung",
+  "status_level": "info",
+  "coach_commentary": "### Lieber Berni\\n\\nStarke Kontinuität!",
+  "insights": [
+    {
+      "title": "Grundlagenausdauer stärken",
+      "type": "warning",
+      "badge": "12% Z1/Z2",
+      "text": "Dein Puls driftet zu früh ab."
+    }
+  ],
+  "recommendations": [
+    {
+      "title": "Pace drosseln",
+      "tag": "Priorität 1",
+      "tag_class": "tag-amber",
+      "text": "Strikt unter 148 bpm bleiben."
+    }
+  ]
+}
+```"""
+
+    def parse_raw_coach_response(self) -> None:
+        self.parsed_coach_data = parse_coach_response(self.raw_coach_response)
+
+    def assert_parsed_summary(self) -> None:
+        assert self.parsed_coach_data is not None
+        assert self.parsed_coach_data["status_title"] == "Dynamischer Trainings-Fokus (KI)"
+        assert len(self.parsed_coach_data["insights"]) == 1
+        assert len(self.parsed_coach_data["recommendations"]) == 1
+
 
 # 3. Pytest Fixture
 @pytest.fixture
@@ -173,6 +210,11 @@ def given_weekly_trends(driver: ForecastDriver):
     driver.prepare_dataset_with_runs()
 
 
+@given("a valid JSON response string from Antigravity AI Coach")
+def given_valid_coach_json(driver: ForecastDriver):
+    driver.prepare_raw_coach_response()
+
+
 @when("race time predictions are calculated")
 def when_calculate_predictions(driver: ForecastDriver):
     driver.compute_predictions()
@@ -191,6 +233,11 @@ def when_generate_summary(driver: ForecastDriver):
 @when("an AI coach prompt is constructed")
 def when_construct_ai_coach_prompt(driver: ForecastDriver):
     driver.compute_ai_coach_prompt(driver.tmp_path)
+
+
+@when("the coach response is parsed")
+def when_parse_coach_response(driver: ForecastDriver):
+    driver.parse_raw_coach_response()
 
 
 @then("race predictions are returned for standard distances")
@@ -231,3 +278,8 @@ def then_prompt_includes_zones(driver: ForecastDriver):
 @then("the prompt instructs the AI coach on 80/20 zone discipline")
 def then_prompt_instructs_80_20(driver: ForecastDriver):
     driver.assert_prompt_instructs_on_80_20()
+
+
+@then("the parsed summary contains status title, insights, and recommendations")
+def then_assert_parsed_summary(driver: ForecastDriver):
+    driver.assert_parsed_summary()

@@ -3,13 +3,15 @@
 
 Extracts recent running activity metrics, training load, heart rate zone
 discipline, and athlete profile targets to prepare a targeted coaching prompt
-for Antigravity CLI (agy), and parses/integrates generated AI coaching notes.
+for Antigravity CLI (agy), and parses/integrates generated AI coaching notes
+and structured training summaries.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -54,7 +56,7 @@ def build_coach_prompt(
         return (
             "Du bist ein professioneller Lauf- und Ausdauertrainer. "
             "Es liegen aktuell noch keine Laufaktivitäten vor. "
-            "Gib dem Läufer eine kurze, motivierende Empfehlung für den Einstieg in das strukturierte Lauftraining."
+            "Gib dem Läufer eine kurze, motivierende Empfehlung für den Einstieg in das strukturierte Lauftraining als JSON."
         )
 
     processed_runs = []
@@ -123,7 +125,7 @@ def build_coach_prompt(
 
     prompt = f"""Du bist ein erfahrener Lauf- und Ausdauertrainer mit Spezialisierung auf sportwissenschaftliche Trainingssteuerung, Herzfrequenz-Zonen und polarisiertes Training (80/20-Methode nach Stephen Seiler / Matt Fitzgerald).
 
-Analysiere die aktuellen Trainingsdaten des Athleten (Berni) und erstelle einen prägnanten, professionellen und ehrlichen Coaching-Bericht auf Deutsch.
+Analysiere die aktuellen Trainingsdaten des Athleten (Berni) und erstelle die vollständige dynamische Trainings-Zusammenfassung und Handlungsempfehlungen für das Dashboard.
 
 ### Athleten-Profil:
 - Ruhepuls: {resting_hr} bpm | Maximalpuls: {max_hr} bpm
@@ -144,29 +146,97 @@ Analysiere die aktuellen Trainingsdaten des Athleten (Berni) und erstelle einen 
 ---
 
 ### Deine Coaching-Aufgabe:
-Formuliere ein persönliches, motivierendes und fachlich fundiertes Feedback in sauberem Markdown (ca. 180–300 Wörter).
+Erstelle eine vollständige, dynamische und ehrliche Trainingsbewertung.
+Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (kein Markdown-Backticks ```json davor oder danach, kein sonstiger Text außenherum) in folgender Struktur:
 
-Behandle folgende Schwerpunkte:
-1. **Trainings-Eindruck**: Zusammenfassung der Kontinuität und Belastbarkeit.
-2. **Kardiovaskuläre Analyse & Zonen-Disziplin**:
-   - Gehe explizit auf die Herzfrequenz und den Z1/Z2-Anteil ein.
-   - Sprich offen an, falls der Läufer zu oft in der "Grauzone" (Zone 3/4 über {z2_max} bpm) trainiert, statt echten Fettstoffwechsel und aerobe Basis in Zone 2 aufzubauen.
-3. **Konkrete Wochenaufgabe für die nächste Woche**:
-   - Eine genaue Vorgabe (z.B. Ziel-Herzfrequenz < {z2_max} bpm, empfohlene Pace 6:45–7:15 min/km, Verteilung auf 2-3 Läufe inkl. eines kontrollierten langen Laufs).
-
-Schreibe direkt und ansprechbar ("Du"), sachlich, fundiert und ohne unnötige Floskeln. Keine Meta-Erklärungen, gib direkt den Markdown-Text aus.
+{{
+  "status_title": "Prägnanter Status-Titel (z.B. Aufbauphase mit Optimierungspotenzial / Z2-Fokus nötig)",
+  "status_badge": "Kurzer Badge-Text (z.B. Intensität drosseln / Hervorragende Basis)",
+  "status_level": "warning" oder "success" oder "info",
+  "coach_commentary": "Dein persönlicher, motivierender Coaching-Brief an Berni als Markdown formatiert (ca. 180-260 Wörter) mit Absätzen, Überschriften (###) und einer konkreten Wochenaufgabe für nächste Woche.",
+  "insights": [
+    {{
+      "title": "Titel der Erkenntnis (z.B. Intensitätsfalle / Zu hohes Tempo)",
+      "type": "warning" oder "success" oder "info",
+      "badge": "Kurzer Tag (z.B. 10.6% Z1/Z2)",
+      "text": "Detaillierte, faktenbasierte Erklärung mit deinen echten gemessenen Werten..."
+    }},
+    {{
+      "title": "Zweite Erkenntnis (z.B. Trainingsvolumen & Kontinuität)",
+      "type": "info",
+      "badge": "Ø 13.1 km / Wo.",
+      "text": "Einschätzung zu Umfang, Regelmäßigkeit und Long Run..."
+    }}
+  ],
+  "recommendations": [
+    {{
+      "title": "Titel Empfehlung 1 (z.B. Pace bei Grundlagenläufen bewusst drosseln)",
+      "tag": "Priorität 1: Grundlagenausdauer",
+      "tag_class": "tag-amber",
+      "text": "Konkrete Praxisanweisung (z.B. Pace 6:45-7:15 min/km, Puls strikt unter {z2_max} bpm)..."
+    }},
+    {{
+      "title": "Titel Empfehlung 2 (z.B. Klare Reiztrennung / Polarisiertes 80/20)",
+      "tag": "Trainingsstruktur",
+      "tag_class": "tag-cyan",
+      "text": "Trennung zwischen 80% lockerer Z2-Basis und gezielten Schwellenreizen an LTHR {lthr} bpm..."
+    }},
+    {{
+      "title": "Titel Empfehlung 3 (z.B. Volumen nach der 10%-Regel steigern)",
+      "tag": "Verletzungsprävention",
+      "tag_class": "tag-green",
+      "text": "Empfehlung für das nächste Wochenziel und optionale Laufeinheiten..."
+    }}
+  ]
+}}
 """
     return prompt.strip()
 
 
+def parse_coach_response(raw_text: str) -> Optional[Dict[str, Any]]:
+    """Parse and validate JSON response from Antigravity AI Coach."""
+    if not raw_text or not raw_text.strip():
+        return None
+
+    cleaned = raw_text.strip()
+    # Strip markdown code block if present
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", cleaned)
+    if match:
+        cleaned = match.group(1).strip()
+    else:
+        # Find first { and last }
+        start = cleaned.find("{")
+        end = cleaned.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            cleaned = cleaned[start : end + 1]
+
+    try:
+        data = json.loads(cleaned)
+        if not isinstance(data, dict):
+            return None
+
+        # Validate minimum expected fields
+        if "status_title" in data and "insights" in data and "recommendations" in data:
+            return data
+    except Exception:
+        pass
+
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Prepare AI coach prompt or parse AI coach commentary."
+        description="Prepare AI coach prompt or parse AI coach response."
     )
     parser.add_argument(
         "--prepare-prompt",
         action="store_true",
-        help="Generate AI Coach prompt to stdout",
+        help="Generate AI Coach prompt",
+    )
+    parser.add_argument(
+        "--parse-response",
+        type=Path,
+        help="Parse raw agy response file and save structured JSON and commentary",
     )
     parser.add_argument(
         "--input",
@@ -187,8 +257,39 @@ def main() -> int:
         type=Path,
         help="Write generated prompt directly to file",
     )
+    parser.add_argument(
+        "--output-json",
+        type=Path,
+        default=PROJECT_ROOT / "data" / "ai_coach_summary.json",
+        help="Path to write parsed structured JSON summary",
+    )
+    parser.add_argument(
+        "--output-md",
+        type=Path,
+        default=PROJECT_ROOT / "data" / "ai_coach_commentary.md",
+        help="Path to write extracted Markdown commentary",
+    )
 
     args = parser.parse_args()
+
+    if args.parse_response:
+        if not args.parse_response.exists():
+            print(f"Error: Response file not found: {args.parse_response}", file=sys.stderr)
+            return 1
+        raw_text = args.parse_response.read_text(encoding="utf-8")
+        parsed = parse_coach_response(raw_text)
+        if not parsed:
+            print("Warning: Could not parse valid structured JSON from agy response.", file=sys.stderr)
+            return 1
+
+        args.output_json.parent.mkdir(parents=True, exist_ok=True)
+        args.output_json.write_text(json.dumps(parsed, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"Structured AI summary saved: {args.output_json}")
+
+        if "coach_commentary" in parsed and parsed["coach_commentary"]:
+            args.output_md.write_text(parsed["coach_commentary"], encoding="utf-8")
+            print(f"Extracted AI commentary saved: {args.output_md}")
+        return 0
 
     try:
         prompt = build_coach_prompt(args.input, args.athlete)
