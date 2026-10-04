@@ -144,15 +144,31 @@ if [[ ! -d "$VENV_DIR" || ! -x "$VENV_DIR/bin/python" ]]; then
     if ! "$SYS_PYTHON" -m venv "$VENV_DIR" 2>/dev/null; then
       # Fallback: create venv without pip (handles Debian/Ubuntu without python3-venv ensurepip)
       "$SYS_PYTHON" -m venv --without-pip "$VENV_DIR"
-      # If reference pip exists in repo root venv, bootstrap it into the new venv
-      if [[ -f "$SCRIPT_DIR/.venv/bin/pip" && ! -f "$VENV_DIR/bin/pip" && -d "$SCRIPT_DIR/.venv/lib" ]]; then
-        cp -r "$SCRIPT_DIR/.venv/lib"/python*/site-packages/pip* "$VENV_DIR/lib"/python*/site-packages/ 2>/dev/null || true
-        cp "$SCRIPT_DIR/.venv/bin/pip"* "$VENV_DIR/bin/" 2>/dev/null || true
+      # If reference pip exists in repo root venv or local user workspace, bootstrap it into the new venv
+      REF_PIP=""
+      if [[ -f "$SCRIPT_DIR/.venv/bin/pip" && -d "$SCRIPT_DIR/.venv/lib" ]]; then
+        REF_PIP="$SCRIPT_DIR/.venv"
+      elif [[ -f "/home/berni/laufen/.venv/bin/pip" && -d "/home/berni/laufen/.venv/lib" ]]; then
+        REF_PIP="/home/berni/laufen/.venv"
+      fi
+
+      if [[ -n "$REF_PIP" && ! -f "$VENV_DIR/bin/pip" ]]; then
+        cp -r "$REF_PIP/lib"/python*/site-packages/pip* "$VENV_DIR/lib"/python*/site-packages/ 2>/dev/null || true
+        cp "$REF_PIP/bin/pip"* "$VENV_DIR/bin/" 2>/dev/null || true
         for p in "$VENV_DIR/bin/pip"*; do
           if [[ -f "$p" ]]; then
             sed -i "1s|.*|#\!$VENV_DIR/bin/python|" "$p" 2>/dev/null || true
           fi
         done
+      fi
+
+      if [[ ! -x "$VENV_DIR/bin/pip" ]]; then
+        # Bootstrap pip via get-pip.py
+        curl -sSL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py 2>/dev/null || true
+        if [[ -f /tmp/get-pip.py ]]; then
+          "$VENV_DIR/bin/python" /tmp/get-pip.py -q 2>/dev/null || true
+          rm -f /tmp/get-pip.py
+        fi
       fi
     fi
     if [[ -f "$WORKSPACE_ROOT/requirements.txt" && -x "$VENV_DIR/bin/pip" ]]; then

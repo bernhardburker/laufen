@@ -47,20 +47,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python (GitHub-hosted fallback)
         uses: actions/setup-python@v5
         continue-on-error: true
         with:
           python-version: '3.13'
 
-      - name: Install dependencies
+      - name: Initialize environment and install dependencies
         run: |
-          python3 -m pip install --upgrade pip || true
-          python3 -m pip install -r requirements.txt || pip install -r requirements.txt
+          chmod +x ./init.sh
+          ./init.sh
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
 
       - name: Run automated test suite
         run: |
-          pytest tests/ || .venv/bin/pytest tests/
+          pytest tests/
 
       - name: Fetch activities from Intervals.icu
         env:
