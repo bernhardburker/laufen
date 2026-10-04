@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -24,8 +25,8 @@ def parse_arguments() -> argparse.Namespace:
         "--input",
         "-i",
         type=Path,
-        default=Path("data/intervals_activities.json"),
-        help="Path to activity JSON file (default: data/intervals_activities.json)",
+        default=Path(os.getenv("ACTIVITIES_PATH", "data/intervals_activities.json")),
+        help="Path to activity JSON file (default: data/intervals_activities.json or ACTIVITIES_PATH)",
     )
     parser.add_argument(
         "--limit",
