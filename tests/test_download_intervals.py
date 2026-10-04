@@ -75,6 +75,7 @@ class IntervalsDownloadDriver:
         self.mock_server_thread: threading.Thread | None = None
         self.mock_server_port: int | None = None
         self.output_file = tmp_path / "intervals_activities.json"
+        self.env["DOTENV_PATH"] = str(tmp_path / ".env")
 
     def unset_api_key(self) -> None:
         self.env.pop("INTERVALS_API_KEY", None)

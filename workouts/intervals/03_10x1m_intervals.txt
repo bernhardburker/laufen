@@ -1,0 +1,12 @@
+# 10x 1m Intervalle (Pace 05:10-05:25 min/km)
+# 10 min Warmup, 10x 1m Belastung mit 30s Trabpause, 10 min Auslaufen
+
+Warmup
+- 10m Z1-Z2 HR
+
+10x
+- 1m 05:10-05:25/km Pace "Schnell & sauber laufen"
+- 30s Recovery "Locker traben"
+
+Cooldown
+- 10m Z1 HR

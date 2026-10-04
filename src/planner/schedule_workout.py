@@ -298,7 +298,8 @@ def send_workout_event(
 
 def main() -> None:
     project_root = Path(__file__).resolve().parent.parent.parent
-    load_env_file(project_root / ".env")
+    dotenv_path = os.getenv("DOTENV_PATH")
+    load_env_file(Path(dotenv_path) if dotenv_path else project_root / ".env")
 
     parser = argparse.ArgumentParser(
         description="Creates and schedules structured workouts on Intervals.icu."

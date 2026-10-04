@@ -105,7 +105,8 @@ def fetch_intervals_activities(
 def main() -> None:
     # 1. Projektpfad & .env prüfen
     project_root = Path(__file__).resolve().parent.parent.parent
-    load_env_file(project_root / ".env")
+    dotenv_path = os.getenv("DOTENV_PATH")
+    load_env_file(Path(dotenv_path) if dotenv_path else project_root / ".env")
 
     # 2. Argumente parsen
     parser = argparse.ArgumentParser(

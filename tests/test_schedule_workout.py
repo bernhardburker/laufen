@@ -52,6 +52,7 @@ class WorkoutScheduleDriver:
         self.mock_server: http.server.HTTPServer | None = None
         self.mock_server_thread: threading.Thread | None = None
         self.mock_server_port: int | None = None
+        self.env["DOTENV_PATH"] = str(tmp_path / ".env")
         MockIntervalsEventHandler.received_requests.clear()
 
     def unset_api_key(self) -> None:
