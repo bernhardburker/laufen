@@ -21,6 +21,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.analysis.coach_history import (
+    find_runs_since,
+    get_open_recommendation,
+    initialize_cold_start_history,
+    load_coach_history,
+    update_history_with_coach_review,
+)
 from src.analysis.forecast import calculate_fitness_form_trend, predict_race_times
 from src.analysis.trends import (
     aggregate_weekly_trends,
@@ -131,6 +138,7 @@ def save_athlete_classification(
 def build_coach_prompt(
     activities_file: Path,
     athlete_file: Optional[Path] = None,
+    history_file: Optional[Path] = None,
     save_classification: bool = True,
 ) -> str:
     """Prepare a detailed, context-rich prompt for Antigravity AI Coach."""
@@ -224,6 +232,38 @@ def build_coach_prompt(
             f"- {p['name']}: {p['predicted_time_str']} (Pace: {p['target_pace_str']}) - {p['readiness']}"
         )
 
+    # Incorporate Coach History & Feedback Loop Context
+    history_section = ""
+    history_list = load_coach_history(history_file) if history_file and history_file.is_file() else []
+    open_rec = get_open_recommendation(history_list)
+    if open_rec:
+        rec_date = open_rec.get("date", "Unbekannt")
+        rec_text = open_rec.get("recommendation", "")
+        runs_since = find_runs_since(processed_runs, rec_date)
+        runs_since_lines = []
+        for r in runs_since:
+            d_s = str(r.get("date", ""))[:10]
+            z_pct = round((r.get("z1_z2_seconds", 0) / r.get("total_zone_seconds", 1)) * 100.0, 1) if r.get("total_zone_seconds", 0) > 0 else 0.0
+            runs_since_lines.append(
+                f"  * {d_s} | {r.get('name', 'Lauf')}: {r.get('distance_km', 0.0):.2f} km, Pace: {r.get('pace_str', '-')}, Ø Puls: {int(round(r.get('avg_hr', 0)))} bpm, Z1/Z2: {z_pct}%, Load: {int(round(r.get('training_load', 0)))}"
+            )
+
+        runs_since_str = "\n".join(runs_since_lines) if runs_since_lines else "  * Noch keine neuen Läufe seit dieser Empfehlung eingetragen."
+
+        history_section = f"""
+### Bisheriges Coaching-Gedächtnis & Vorgaben (Feedback-Schleife):
+- Bisherige offene Empfehlung (vom {rec_date}):
+  "{rec_text}"
+- Seitdem absolvierte Läufe ({len(runs_since)} Einheit(en)):
+{runs_since_str}
+
+### Feedback-Schleife & Adaptive Trainingssteuerung:
+Analysiere ehrlich und nüchtern den Abgleich zwischen der letzten Vorgabe und den tatsächlich absolvierten Läufen:
+1. Compliance: Hat der Athlet die Empfehlung befolgt, oder ist er z.B. zu schnell gelaufen, hat einen Tempolauf / Intervalle eingeschoben oder Einheiten ausgelassen?
+2. Adaptive Steuerung: Wenn der Athlet ungeplant einen intensiven Tempolauf oder Schwellenlauf absolviert hat, schimpfe nicht, sondern reagiere adaptiv – plane als Nächstes gezielt eine lockere Einheit / aktive Regeneration (Zone 1/2) ein, um Überlastung zu verhindern.
+3. Physiologischer Effekt: Was lässt sich aus den Daten über die aerobe Entwicklung, Pace/Puls-Verhältnis und Ermüdung (TSB) ablesen?
+"""
+
     prompt = f"""Du bist ein erfahrener Lauf- und Ausdauertrainer mit Spezialisierung auf sportwissenschaftliche Trainingssteuerung, Herzfrequenz-Zonen und polarisiertes Training (80/20-Methode nach Stephen Seiler / Matt Fitzgerald).
 
 Analysiere die aktuellen Trainingsdaten des Athleten ({athlete_name}) und erstelle eine vollständige, dynamische Trainings-Zusammenfassung und Handlungsempfehlungen für das Dashboard.
@@ -245,7 +285,7 @@ Analysiere die aktuellen Trainingsdaten des Athleten ({athlete_name}) und erstel
 - Bisherige Zone 1 & 2 Disziplin im gesamten Zeitraum: {overall_z1_z2_pct}% (Soll: ~80%)
 - Aktuelle Form (TSB): {form_data['current_tsb']:+.1f} (Fitness CTL: {form_data['latest_ctl']}, Ermüdung ATL: {form_data['latest_atl']})
 - Aktuelles Pensum: Ø {avg_weekly_km:.1f} km / Woche bei Ø {avg_runs_per_week:.1f} Läufen
-
+{history_section}
 ### Letzte Aktivitäten:
 {chr(10).join(runs_lines)}
 
@@ -266,6 +306,15 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (kein Markdown-Backticks 
   "status_badge": "Kurzer Badge-Text (z.B. Intensität drosseln / Z2-Defizit / Pensum stabilisieren)",
   "status_level": "warning" oder "info" oder "success",
   "coach_commentary": "Dein ehrlicher, bodenständiger Coaching-Brief an {athlete_name} als Markdown formatiert (ca. 160-220 Wörter) mit Absätzen, Überschriften (###) und einer konkreten Wochenaufgabe für nächste Woche. Bleibe nüchtern, sachlich und realistisch – absolut keine Übertreibungen oder Schmeicheleien.",
+  "history_evaluation": {{
+    "compliance_status": "erfüllt" oder "angepasst_nach_tempo" oder "teilweise" oder "verfehlt",
+    "actual_summary": "Nüchterne Zusammenfassung der seit der letzten Vorgabe absolvierten Läufe...",
+    "effect_analysis": "Messbarer physiologischer Effekt (Pace/Puls-Verhältnis, Ermüdung, Zonen)...",
+    "next_recommendation": "Konkrete nächste Aufgabe / Trainingsanweisung...",
+    "next_workout_type": "easy_run" oder "intervals" oder "tempo_run" oder "recovery_run",
+    "next_target_hr": {z2_max},
+    "next_duration_min": 45
+  }},
   "insights": [
     {{
       "title": "Titel der Erkenntnis (z.B. Intensitätsfalle / Fehlende aerobe Basis)",
@@ -365,6 +414,12 @@ def main() -> int:
         help="Path to athlete profile JSON",
     )
     parser.add_argument(
+        "--history",
+        type=Path,
+        default=PROJECT_ROOT / "data" / "coach_history.json",
+        help="Path to coach history JSON",
+    )
+    parser.add_argument(
         "--output-prompt",
         type=Path,
         help="Write generated prompt directly to file",
@@ -394,6 +449,7 @@ def main() -> int:
             print("Warning: Could not parse valid structured JSON from agy response.", file=sys.stderr)
             return 1
 
+        profile = {}
         if args.athlete and args.athlete.is_file():
             profile = load_athlete_profile(args.athlete)
             athlete_info = profile.get("athlete", {})
@@ -410,10 +466,30 @@ def main() -> int:
         if "coach_commentary" in parsed and parsed["coach_commentary"]:
             args.output_md.write_text(parsed["coach_commentary"], encoding="utf-8")
             print(f"Extracted AI commentary saved: {args.output_md}")
+
+        # Update coach history if evaluation present
+        if "history_evaluation" in parsed and isinstance(parsed["history_evaluation"], dict):
+            activities = load_activities(args.input) if args.input.is_file() else []
+            runs = filter_runs(activities)
+            history = load_coach_history(args.history)
+            if not history and runs:
+                history = initialize_cold_start_history(runs, profile, args.history)
+            open_rec = get_open_recommendation(history)
+            rec_date = open_rec.get("date", "2000-01-01") if open_rec else "2000-01-01"
+            runs_since = find_runs_since(runs, rec_date)
+            update_history_with_coach_review(
+                history=history,
+                review_data=parsed["history_evaluation"],
+                runs_since=runs_since,
+                athlete_profile=profile,
+                history_file=args.history,
+            )
+            print(f"Coach history successfully updated: {args.history}")
+
         return 0
 
     try:
-        prompt = build_coach_prompt(args.input, args.athlete)
+        prompt = build_coach_prompt(args.input, args.athlete, history_file=args.history)
         if args.output_prompt:
             args.output_prompt.parent.mkdir(parents=True, exist_ok=True)
             args.output_prompt.write_text(prompt, encoding="utf-8")

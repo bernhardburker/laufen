@@ -55,6 +55,7 @@ echo "==> Generating AI coach prompt from training data..."
 "$PYTHON_EXEC" "$REPO_ROOT/src/analysis/ai_coach.py" \
   --input "$ACTIVITIES_FILE" \
   --athlete "$ATHLETE_FILE" \
+  --history "$REPO_ROOT/data/coach_history.json" \
   --output-prompt "$PROMPT_TMP"
 
 MODEL="${AGY_MODEL:-Gemini 3.7 Flash (Medium)}"
@@ -86,7 +87,9 @@ if "$agy_bin" \
     JSON_OUTPUT="$REPO_ROOT/data/ai_coach_summary.json"
     if "$PYTHON_EXEC" "$REPO_ROOT/src/analysis/ai_coach.py" \
         --parse-response "$AI_OUTPUT_TMP" \
+        --input "$ACTIVITIES_FILE" \
         --athlete "$ATHLETE_FILE" \
+        --history "$REPO_ROOT/data/coach_history.json" \
         --output-json "$JSON_OUTPUT" \
         --output-md "$OUTPUT_FILE"; then
       echo "==> Dynamic AI summary & recommendations saved to: $JSON_OUTPUT"

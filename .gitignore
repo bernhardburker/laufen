@@ -36,7 +36,8 @@ tokens.json
 garmin_tokens/
 
 # Data & Cache
-data/
+data/*
+!data/coach_history.json
 *.fit
 *.tcx
 *.gpx

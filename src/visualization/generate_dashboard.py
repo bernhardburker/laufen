@@ -24,6 +24,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.analysis.coach_history import load_coach_history
 from src.analysis.forecast import (
     calculate_fitness_form_trend,
     generate_training_summary,
@@ -101,6 +102,12 @@ def parse_arguments() -> argparse.Namespace:
         type=Path,
         default=PROJECT_ROOT / "config" / "athlete.json",
         help="Path to athlete profile JSON (default: config/athlete.json)",
+    )
+    parser.add_argument(
+        "--coach-history",
+        type=Path,
+        default=PROJECT_ROOT / "data" / "coach_history.json",
+        help="Path to coach history JSON (default: data/coach_history.json)",
     )
     return parser.parse_args()
 
@@ -262,10 +269,81 @@ def render_markdown_to_html(md_text: str) -> str:
     return "\n".join(html_lines)
 
 
+def build_coach_history_html(history: List[Dict[str, Any]]) -> str:
+    if not history:
+        return ""
+
+    rows: List[str] = []
+    for entry in reversed(history):
+        date_str = html.escape(str(entry.get("date", "-"))[:10])
+        rec_text = html.escape(str(entry.get("recommendation", "-")))
+        actual_text = html.escape(str(entry.get("actual", "-")))
+        effect_text = html.escape(str(entry.get("effect", "-")))
+        status = str(entry.get("status", "offen")).lower()
+
+        if status == "erfüllt":
+            status_badge = '<span class="tag tag-green">✓ Erfüllt</span>'
+        elif status == "angepasst_nach_tempo":
+            status_badge = '<span class="tag tag-cyan">⚡ Adaptiert (Tempo)</span>'
+        elif status == "verfehlt":
+            status_badge = '<span class="tag tag-amber">⚠ Verfehlt</span>'
+        elif status == "teilweise":
+            status_badge = '<span class="tag tag-amber">~ Teilweise</span>'
+        else:
+            status_badge = '<span class="tag" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3);">⏳ Offen</span>'
+
+        rows.append(
+            f"<tr>"
+            f"<td style=\"white-space: nowrap; font-weight: 600;\">{date_str}</td>"
+            f"<td>{rec_text}</td>"
+            f"<td>{actual_text}</td>"
+            f"<td style=\"text-align: center;\">{status_badge}</td>"
+            f"<td>{effect_text}</td>"
+            f"</tr>"
+        )
+
+    rows_html = "".join(rows)
+    return f"""
+    <div class="coach-history-card" style="margin-top: 24px; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 20px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="badge-dot" style="background-color: var(--cyan); box-shadow: 0 0 8px var(--cyan);"></span>
+          <h3 style="font-size: 1.05rem; font-weight: 700; color: #f8fafc; margin: 0;">🧠 Coach-Gedächtnis &amp; Feedback-Schleife</h3>
+        </div>
+        <span class="tag tag-cyan">{len(history)} Zyklen erfasst</span>
+      </div>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0; margin-bottom: 16px;">
+        Nüchterne Verlaufskontrolle: Was hat der Trainer empfohlen, was wurde gelaufen und welcher physiologische Effekt ist messbar?
+      </p>
+      <div class="table-container" style="overflow-x: auto;">
+        <table class="activities-table">
+          <thead>
+            <tr>
+              <th style="width: 105px;">Datum</th>
+              <th>Empfehlung des Coaches</th>
+              <th>Tatsächliche Umsetzung (Abgleich)</th>
+              <th style="width: 140px; text-align: center;">Status</th>
+              <th>Gemessener Effekt / Trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows_html}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    """
+
+
 def build_summary_html(
-    summary: Dict[str, Any], ai_coach_markdown: Optional[str] = None
+    summary: Dict[str, Any],
+    ai_coach_markdown: Optional[str] = None,
+    coach_history: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
+    coach_history_block = build_coach_history_html(coach_history or [])
     if not summary or not summary.get("insights"):
+        if coach_history_block:
+            return f'<section class="summary-section">{coach_history_block}</section>'
         return ""
 
     badge_level = summary.get("status_level", "info")
@@ -363,6 +441,7 @@ def build_summary_html(
           </div>
         </div>
       </div>
+      {coach_history_block}
     </section>
     """
 
@@ -487,6 +566,7 @@ def generate_dashboard(
     ai_coach_file: Optional[Path] = None,
     ai_summary_file: Optional[Path] = None,
     athlete_file: Optional[Path] = None,
+    coach_history_file: Optional[Path] = None,
 ) -> None:
     if not input_file.exists():
         raise FileNotFoundError(f"Input file not found: {input_file}")
@@ -651,9 +731,20 @@ def generate_dashboard(
             except Exception:
                 ai_coach_text = None
 
+        target_history_file = (
+            coach_history_file
+            if coach_history_file is not None
+            else (PROJECT_ROOT / "data" / "coach_history.json")
+        )
+        coach_history = (
+            load_coach_history(target_history_file)
+            if target_history_file and target_history_file.is_file()
+            else []
+        )
+
         table_rows = build_table_rows(processed_runs)
         summary_html = build_summary_html(
-            summary_data, ai_coach_markdown=ai_coach_text
+            summary_data, ai_coach_markdown=ai_coach_text, coach_history=coach_history
         )
         forecast_html = build_forecast_cards_html(predictions)
 
@@ -665,6 +756,7 @@ def generate_dashboard(
 
         context = {
             "DASHBOARD_TITLE": title,
+            "COACH_HISTORY_HTML": build_coach_history_html(coach_history),
             "GENERATION_DATE": generation_date,
             "DATA_SOURCE_INFO_HTML": datasource_info_html,
             "TOTAL_DISTANCE_KM": f"{total_dist_km:.1f}",
@@ -716,6 +808,7 @@ def main() -> int:
             ai_coach_file=args.ai_coach,
             ai_summary_file=args.ai_summary,
             athlete_file=args.athlete,
+            coach_history_file=args.coach_history,
         )
         return 0
     except FileNotFoundError as e:

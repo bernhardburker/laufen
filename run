@@ -37,6 +37,7 @@ Commands:
   report            Display combined recent runs & weekly trends
   runs              Display recent running activities table
   trends            Display weekly trends, volume & zone discipline
+  history           Display Coach memory, past recommendations & feedback loop
   dashboard         Generate HTML dashboard (dist/index.html)
   preview [PORT]    Build dashboard and launch local webserver (default: 8080)
   plan [ARGS...]    Create or schedule structured workouts to Intervals.icu
@@ -48,6 +49,7 @@ Examples:
   ./run sync
   ./run sync-profile
   ./run report
+  ./run history
   ./run dashboard
   ./run preview 8080
   ./run plan --type easy_run --duration 45m --date tomorrow
@@ -87,6 +89,9 @@ case "$COMMAND" in
     ;;
   trends)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/trends.py" "$@"
+    ;;
+  history)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/coach_history.py" "$@"
     ;;
   dashboard)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/visualization/generate_dashboard.py" "$@"

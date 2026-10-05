@@ -25,9 +25,9 @@ on:
       - '.github/scripts/**'
       - 'config/**'
 
-# Set permissions for GitHub Pages deployment
+# Set permissions for GitHub Pages deployment and coach history persistence
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -46,6 +46,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Initialize environment and install dependencies
         run: |
@@ -89,13 +91,30 @@ jobs:
           echo "## 🤖 KI-Laufcoach Analyse (Antigravity AI)" >> "$GITHUB_STEP_SUMMARY"
           cat data/ai_coach_commentary.md >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Persist Coach History to Repository
+        if: always() && hashFiles('data/coach_history.json') != ''
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action [Coach Memory]"
+          if ! git diff --quiet data/coach_history.json; then
+            echo "Persisting updated coach history to repository..."
+            git add data/coach_history.json
+            git commit -m "chore(coach): update coach history and feedback loop [skip ci]"
+            git pull --rebase origin main || true
+            git push origin main || echo "::warning ::Could not push coach history to main"
+          else
+            echo "No changes in coach history."
+          fi
+
       - name: Generate HTML Dashboard
         run: |
           python3 src/visualization/generate_dashboard.py \
             --input data/intervals_activities.json \
             --template templates/dashboard.html \
             --output dist/index.html \
-            --ai-coach data/ai_coach_commentary.md
+            --ai-coach data/ai_coach_commentary.md \
+            --ai-summary data/ai_coach_summary.json \
+            --coach-history data/coach_history.json
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
