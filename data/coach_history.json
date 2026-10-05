@@ -5,8 +5,18 @@
     "recommendation": "Grundlagenläufe strikt unter 158 bpm steuern (Zone 2). Pace ignorieren, bei Steigungen gehen.",
     "target_type": "easy_run",
     "target_hr_max": 158,
+    "status": "erfüllt",
+    "actual": "Die Vorgabe wurde beim Easy Run am 05.10. punktgenau umgesetzt: 5,92 km in 47 min bei Ø 150 bpm und 99,8 % Zeit in Zone 1/2.",
+    "effect": "Die strikte Tempodrosselung (Pace 8:01 /km) hielt die kardiovaskuläre Last gering (Load 45). Dies ermöglicht aktive Erholung bei gleichzeitigem aeroben Reiz ohne weitere Anhäufung von Ermüdung."
+  },
+  {
+    "id": "cycle-002",
+    "date": "2026-10-05",
+    "recommendation": "Den eingeschlagenen Weg fortsetzen: Weiterer Grundlagenlauf (45 Min.) strikt unter 158 bpm, um die aerobe Kapazität und Fettstoffwechselbasis schrittweise zu festigen.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
     "status": "offen",
-    "actual": "Ausgangsbasis: Solide 54.0% in Zone 1/2 registriert.",
-    "effect": "Initialer Startpunkt (Basisvermessung). Noch keine Effekte aufgezeichnet."
+    "actual": "Ausstehend (wird nach den nächsten Läufen analysiert)",
+    "effect": "-"
   }
 ]
