@@ -15,6 +15,16 @@
     "recommendation": "Den eingeschlagenen Weg fortsetzen: Weiterer Grundlagenlauf (45 Min.) strikt unter 158 bpm, um die aerobe Kapazität und Fettstoffwechselbasis schrittweise zu festigen.",
     "target_type": "easy_run",
     "target_hr_max": 158,
+    "status": "erfüllt",
+    "actual": "Die Vorgabe eines 45-minütigen Grundlagenlaufs unter 158 bpm wurde am 05.10. punktgenau umgesetzt (5,92 km in 47 min, Ø 150 bpm, 99,8 % in Z1/Z2).",
+    "effect": "Die strikte Tempodrosselung (8:01 min/km) hielt das Herzkreislaufsystem im rein aeroben Fettstoffwechselbereich, vermied Laktatanhäufung und hielt den Trainings-Stress (Load 45) regenerationsverträglich."
+  },
+  {
+    "id": "cycle-003",
+    "date": "2026-10-06",
+    "recommendation": "Diesen Ansatz verstetigen: Ein weiterer Zone-2-Dauerlauf (45 Min.) mit Herzfrequenzdeckel bei 158 bpm zur schrittweisen Ökonomisierung des Herz-Kreislauf-Systems.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
     "status": "offen",
     "actual": "Ausstehend (wird nach den nächsten Läufen analysiert)",
     "effect": "-"
