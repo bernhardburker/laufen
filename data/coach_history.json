@@ -25,6 +25,16 @@
     "recommendation": "Diesen Ansatz verstetigen: Ein weiterer Zone-2-Dauerlauf (45 Min.) mit Herzfrequenzdeckel bei 158 bpm zur schrittweisen Ökonomisierung des Herz-Kreislauf-Systems.",
     "target_type": "easy_run",
     "target_hr_max": 158,
+    "status": "teilweise",
+    "actual": "Seit der letzten Empfehlung vom 06.10.2026 wurde noch keine neue Aktivität aufgezeichnet. Der vorangegangene Lauf vom 05.10. (47 Min., 150 bpm, 99.8% Z1/Z2) hat die geforderte Z2-Disziplin mustergültig umgesetzt.",
+    "effect": "Die Formwerte (CTL 12.5, ATL 14.5, TSB -2.0) zeigen eine ausgeglichene Ermüdung. Der 99.8%-Z1/Z2-Lauf zeigt, dass bei disziplinierter Tempodrosselung (Pace 8:01 /km) eine echte aerobe Entlastung stattfindet, die das Herzkreislaufsystem schont."
+  },
+  {
+    "id": "cycle-004",
+    "date": "2026-10-07",
+    "recommendation": "Offene Einheit absolvieren: 45 Minuten Grundlagenlauf im aeroben Bereich mit Herzfrequenz-Obergrenze bei 158 bpm.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
     "status": "offen",
     "actual": "Ausstehend (wird nach den nächsten Läufen analysiert)",
     "effect": "-"
