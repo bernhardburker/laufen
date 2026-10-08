@@ -35,6 +35,16 @@
     "recommendation": "Offene Einheit absolvieren: 45 Minuten Grundlagenlauf im aeroben Bereich mit Herzfrequenz-Obergrenze bei 158 bpm.",
     "target_type": "easy_run",
     "target_hr_max": 158,
+    "status": "teilweise",
+    "actual": "Am 08.10. wurden 7,05 km in 49 min absolviert. Der Durchschnittspuls lag mit 155 bpm im Soll (< 158 bpm), der Z1/Z2-Anteil betrug jedoch nur 61,6 %, da die Intensität phasenweise in Zone 3 abdriftete.",
+    "effect": "Die aerobe Entlastung gegenüber dem September ist sichtbar, aber der kardiale Drift gegen Ende der Einheit zeigt, dass das Grundlagentempo noch zu forciert gewählt wurde. Der TSB von -3,6 signalisiert eine leichte, aber gut verkraftbare Ermüdung."
+  },
+  {
+    "id": "cycle-005",
+    "date": "2026-10-08",
+    "recommendation": "45 Minuten Grundlagenlauf im aeroben Bereich mit strikter Herzfrequenz-Obergrenze bei 158 bpm. Bei Pulsanstieg konsequent Gehpausen einlegen.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
     "status": "offen",
     "actual": "Ausstehend (wird nach den nächsten Läufen analysiert)",
     "effect": "-"
