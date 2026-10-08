@@ -38,6 +38,7 @@ Commands:
   runs              Display recent running activities table
   trends            Display weekly trends, volume & zone discipline
   history           Display Coach memory, past recommendations & feedback loop
+  review [ARGS...]  Incrementally review unanalyzed runs and cache results
   dashboard         Generate HTML dashboard (dist/index.html)
   preview [PORT]    Build dashboard and launch local webserver (default: 8080)
   plan [ARGS...]    Create or schedule structured workouts to Intervals.icu
@@ -92,6 +93,9 @@ case "$COMMAND" in
     ;;
   history)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/coach_history.py" "$@"
+    ;;
+  review|reviews)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/run_reviewer.py" "$@"
     ;;
   dashboard)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/visualization/generate_dashboard.py" "$@"

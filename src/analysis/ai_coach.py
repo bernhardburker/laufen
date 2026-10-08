@@ -23,12 +23,14 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.analysis.coach_history import (
     find_runs_since,
+    get_evaluated_run_ids,
     get_open_recommendation,
     initialize_cold_start_history,
     load_coach_history,
     update_history_with_coach_review,
 )
 from src.analysis.forecast import calculate_fitness_form_trend, predict_race_times
+from src.analysis.run_reviewer import load_run_reviews
 from src.analysis.trends import (
     aggregate_weekly_trends,
     calculate_run_metrics,
@@ -139,6 +141,7 @@ def build_coach_prompt(
     activities_file: Path,
     athlete_file: Optional[Path] = None,
     history_file: Optional[Path] = None,
+    reviews_file: Optional[Path] = None,
     save_classification: bool = True,
 ) -> str:
     """Prepare a detailed, context-rich prompt for Antigravity AI Coach."""
@@ -148,6 +151,10 @@ def build_coach_prompt(
     athlete_info = athlete_profile.get("athlete", {})
     athlete_name = extract_athlete_display_name(athlete_info)
     full_name = athlete_info.get("name") or athlete_name
+
+    # Load persistent run reviews cache if available
+    rev_path = reviews_file or (PROJECT_ROOT / "data" / "run_reviews.json")
+    reviews_cache = load_run_reviews(rev_path) if rev_path and rev_path.is_file() else {}
 
     if not runs:
         return (
@@ -214,9 +221,28 @@ def build_coach_prompt(
         tot_sec = r.get("total_zone_seconds", 0)
         z_pct = round((z_sec / tot_sec) * 100.0, 1) if tot_sec > 0 else 0.0
         load = int(r.get("training_load", 0))
-        runs_lines.append(
-            f"- {date_str} | {name}: {dist:.2f} km in {r['moving_time_str']} (Pace: {pace}, Puls: {hr} bpm, Z1/Z2-Anteil: {z_pct}%, Load: {load})"
-        )
+
+        run_id = str(r.get("id"))
+        cached_rev = reviews_cache.get(run_id)
+        if cached_rev:
+            max_val = cached_rev.get("max_hr") or int(r.get("max_heartrate") or 0)
+            cadence = cached_rev.get("cadence_spm") or 0
+            cadence_str = f", Kadenz: {int(cadence)} spm" if cadence > 0 else ""
+            max_hr_str = f", Max Puls: {max_val} bpm" if max_val > 0 else ""
+            rev_details = cached_rev.get("review", {})
+            rating_lbl = rev_details.get("rating_label", "")
+            summary_txt = rev_details.get("summary", "")
+            z_dist_txt = rev_details.get("zone_distribution_text", "")
+
+            runs_lines.append(
+                f"- {date_str} | {name}: {dist:.2f} km in {r['moving_time_str']} (Pace: {pace}, Ø Puls: {hr} bpm{max_hr_str}{cadence_str}, Z1/Z2-Anteil: {z_pct}%, Load: {load})\n"
+                f"  * Detail-Zonen: {z_dist_txt}\n"
+                f"  * Einzel-Review: [{rating_lbl}] {summary_txt}"
+            )
+        else:
+            runs_lines.append(
+                f"- {date_str} | {name}: {dist:.2f} km in {r['moving_time_str']} (Pace: {pace}, Puls: {hr} bpm, Z1/Z2-Anteil: {z_pct}%, Load: {load})"
+            )
 
     # Format trends for prompt
     trends_lines = []
@@ -239,14 +265,30 @@ def build_coach_prompt(
     if open_rec:
         rec_date = open_rec.get("date", "Unbekannt")
         rec_text = open_rec.get("recommendation", "")
-        runs_since = find_runs_since(processed_runs, rec_date)
+        evaluated_ids = get_evaluated_run_ids(history_list)
+        runs_since = find_runs_since(processed_runs, rec_date, exclude_run_ids=evaluated_ids)
         runs_since_lines = []
         for r in runs_since:
             d_s = str(r.get("date", ""))[:10]
             z_pct = round((r.get("z1_z2_seconds", 0) / r.get("total_zone_seconds", 1)) * 100.0, 1) if r.get("total_zone_seconds", 0) > 0 else 0.0
-            runs_since_lines.append(
-                f"  * {d_s} | {r.get('name', 'Lauf')}: {r.get('distance_km', 0.0):.2f} km, Pace: {r.get('pace_str', '-')}, Ø Puls: {int(round(r.get('avg_hr', 0)))} bpm, Z1/Z2: {z_pct}%, Load: {int(round(r.get('training_load', 0)))}"
-            )
+            r_id = str(r.get("id"))
+            cached_rev = reviews_cache.get(r_id)
+            if cached_rev:
+                rev_details = cached_rev.get("review", {})
+                r_lbl = rev_details.get("rating_label", "")
+                r_sum = rev_details.get("summary", "")
+                z_dist = rev_details.get("zone_distribution_text", "")
+                cad = int(cached_rev.get("cadence_spm") or 0)
+                cad_s = f", Kadenz: {cad} spm" if cad > 0 else ""
+                runs_since_lines.append(
+                    f"  * {d_s} | {r.get('name', 'Lauf')}: {r.get('distance_km', 0.0):.2f} km, Pace: {r.get('pace_str', '-')}, Ø Puls: {int(round(r.get('avg_hr', 0)))} bpm (Max: {cached_rev.get('max_hr')} bpm{cad_s}), Z1/Z2: {z_pct}%, Load: {int(round(r.get('training_load', 0)))}\n"
+                    f"    - Zonen: {z_dist}\n"
+                    f"    - Review: [{r_lbl}] {r_sum}"
+                )
+            else:
+                runs_since_lines.append(
+                    f"  * {d_s} | {r.get('name', 'Lauf')}: {r.get('distance_km', 0.0):.2f} km, Pace: {r.get('pace_str', '-')}, Ø Puls: {int(round(r.get('avg_hr', 0)))} bpm, Z1/Z2: {z_pct}%, Load: {int(round(r.get('training_load', 0)))}"
+                )
 
         runs_since_str = "\n".join(runs_since_lines) if runs_since_lines else "  * Noch keine neuen Läufe seit dieser Empfehlung eingetragen."
 
@@ -420,6 +462,12 @@ def main() -> int:
         help="Path to coach history JSON",
     )
     parser.add_argument(
+        "--reviews",
+        type=Path,
+        default=PROJECT_ROOT / "data" / "run_reviews.json",
+        help="Path to per-run reviews JSON cache",
+    )
+    parser.add_argument(
         "--output-prompt",
         type=Path,
         help="Write generated prompt directly to file",
@@ -476,20 +524,29 @@ def main() -> int:
                 history = initialize_cold_start_history(runs, profile, args.history)
             open_rec = get_open_recommendation(history)
             rec_date = open_rec.get("date", "2000-01-01") if open_rec else "2000-01-01"
-            runs_since = find_runs_since(runs, rec_date)
-            update_history_with_coach_review(
-                history=history,
-                review_data=parsed["history_evaluation"],
-                runs_since=runs_since,
-                athlete_profile=profile,
-                history_file=args.history,
-            )
-            print(f"Coach history successfully updated: {args.history}")
+            evaluated_ids = get_evaluated_run_ids(history)
+            runs_since = find_runs_since(runs, rec_date, exclude_run_ids=evaluated_ids)
+            if runs_since:
+                update_history_with_coach_review(
+                    history=history,
+                    review_data=parsed["history_evaluation"],
+                    runs_since=runs_since,
+                    athlete_profile=profile,
+                    history_file=args.history,
+                )
+                print(f"Coach history successfully updated: {args.history}")
+            else:
+                print("No new runs since current open recommendation. History remains unchanged.")
 
         return 0
 
     try:
-        prompt = build_coach_prompt(args.input, args.athlete, history_file=args.history)
+        prompt = build_coach_prompt(
+            args.input,
+            args.athlete,
+            history_file=args.history,
+            reviews_file=args.reviews,
+        )
         if args.output_prompt:
             args.output_prompt.parent.mkdir(parents=True, exist_ok=True)
             args.output_prompt.write_text(prompt, encoding="utf-8")

@@ -297,6 +297,47 @@ class DashboardGeneratorDriver:
         assert "apple-mobile-web-app-capable" in content
         assert "Neu laden" in content
 
+    def prepare_dataset_with_reviews(self) -> None:
+        self.prepare_dataset_with_runs()
+        self.reviews_file = self.tmp_path / "test_run_reviews.json"
+        data = {
+            "run-001": {
+                "id": "run-001",
+                "cadence_spm": 158.0,
+                "review": {
+                    "rating": "optimal",
+                    "rating_label": "Optimaler Grundlagenlauf",
+                    "summary": "Exzellente aerobe Zonendisziplin.",
+                    "coach_tip": "Weiter so für Fettstoffwechselaufbau.",
+                },
+            }
+        }
+        self.reviews_file.write_text(json.dumps(data), encoding="utf-8")
+
+    def run_generator_with_reviews(self) -> None:
+        self.run_generator(extra_args=["--run-reviews", str(self.reviews_file)])
+
+    def assert_html_contains_responsive_activity_cards(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "run-row" in content
+        assert "col-activity" in content
+        assert "col-dist" in content
+        assert "data-label=" in content
+        assert "#runsTable tr.run-row" in content
+
+    def assert_html_contains_expandable_review_details(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "run-review-details" in content
+        assert "run-review-summary" in content
+        assert "Optimaler Grundlagenlauf" in content
+        assert "Exzellente aerobe Zonendisziplin" in content
+        assert "Analyse anzeigen" in content
+
+    def assert_html_contains_compact_kpi_grid(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert ".kpi-grid" in content
+        assert "repeat(2, 1fr)" in content
+
 
 
 # 3. Fixture injecting the Driver
@@ -451,6 +492,31 @@ def when_generator_executed_with_athlete_profile(driver: DashboardGeneratorDrive
 @then("the output HTML contains the calibrated zone ranges")
 def then_html_contains_calibrated_zones(driver: DashboardGeneratorDriver):
     driver.assert_html_contains_calibrated_zones()
+
+
+@given("an activities dataset with multiple running activities and coach reviews")
+def given_dataset_with_runs_and_reviews(driver: DashboardGeneratorDriver):
+    driver.prepare_dataset_with_reviews()
+
+
+@when("the dashboard generator is executed with reviews data")
+def when_generator_executed_with_reviews(driver: DashboardGeneratorDriver):
+    driver.run_generator_with_reviews()
+
+
+@then("the output HTML contains responsive mobile styling for activity cards")
+def then_html_contains_responsive_cards(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_responsive_activity_cards()
+
+
+@then("the output HTML contains expandable run review details")
+def then_html_contains_expandable_reviews(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_expandable_review_details()
+
+
+@then("the output HTML contains compact two-column KPI grid for mobile")
+def then_html_contains_compact_kpi(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_compact_kpi_grid()
 
 
 

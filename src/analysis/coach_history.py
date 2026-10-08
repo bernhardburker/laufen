@@ -56,13 +56,31 @@ def get_open_recommendation(history: List[Dict[str, Any]]) -> Optional[Dict[str,
     return None
 
 
+def get_evaluated_run_ids(history: List[Dict[str, Any]]) -> set:
+    """Returns set of all run IDs that have already been evaluated in past coaching cycles."""
+    evaluated = set()
+    for entry in history:
+        for rid in entry.get("evaluated_run_ids", []):
+            evaluated.add(str(rid))
+    return evaluated
+
+
 def find_runs_since(
-    runs: List[Dict[str, Any]], since_date_str: str
+    runs: List[Dict[str, Any]],
+    since_date_str: str,
+    exclude_run_ids: Optional[Any] = None,
 ) -> List[Dict[str, Any]]:
-    """Filters running activities completed on or after a given ISO date string (YYYY-MM-DD)."""
+    """Filters running activities completed on or after a given ISO date string (YYYY-MM-DD),
+    excluding runs that were already evaluated in previous coaching cycles.
+    """
     target_prefix = since_date_str[:10]
     matched: List[Dict[str, Any]] = []
+    excluded = set(str(x) for x in exclude_run_ids) if exclude_run_ids else set()
+
     for r in runs:
+        r_id = str(r.get("id"))
+        if r_id in excluded:
+            continue
         date_raw = str(r.get("start_date_local") or r.get("date") or "")[:10]
         if date_raw and date_raw >= target_prefix:
             matched.append(r)
@@ -175,6 +193,9 @@ def update_history_with_coach_review(
                 date_s = str(m.get("date", ""))[:10]
                 run_summaries.append(f"{date_s}: {m.get('distance_km', 0):.1f} km (Ø {int(round(m.get('avg_hr', 0)))} bpm)")
             open_entry["actual"] = f"{len(runs_since)} Läufe absolviert ({', '.join(run_summaries)})"
+
+        if runs_since:
+            open_entry["evaluated_run_ids"] = [str(r.get("id")) for r in runs_since]
 
         if review_data.get("effect_analysis"):
             open_entry["effect"] = review_data["effect_analysis"]

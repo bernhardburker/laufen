@@ -25,6 +25,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.analysis.coach_history import load_coach_history
+from src.analysis.run_reviewer import load_run_reviews
 from src.analysis.forecast import (
     calculate_fitness_form_trend,
     generate_training_summary,
@@ -109,6 +110,12 @@ def parse_arguments() -> argparse.Namespace:
         default=PROJECT_ROOT / "data" / "coach_history.json",
         help="Path to coach history JSON (default: data/coach_history.json)",
     )
+    parser.add_argument(
+        "--run-reviews",
+        type=Path,
+        default=PROJECT_ROOT / "data" / "run_reviews.json",
+        help="Path to per-run reviews JSON cache (default: data/run_reviews.json)",
+    )
     return parser.parse_args()
 
 
@@ -123,7 +130,10 @@ def load_athlete_profile(file_path: Optional[Path] = None) -> Dict[str, Any]:
     return {}
 
 
-def build_table_rows(processed_runs: List[Dict[str, Any]]) -> str:
+def build_table_rows(
+    processed_runs: List[Dict[str, Any]],
+    run_reviews: Optional[Dict[str, Any]] = None,
+) -> str:
     if not processed_runs:
         return (
             '<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 24px;">'
@@ -147,6 +157,45 @@ def build_table_rows(processed_runs: List[Dict[str, Any]]) -> str:
         avg_hr_str = f"{int(round(avg_hr))} bpm" if avg_hr > 0 else "-"
 
         max_hr = run.get("max_heartrate")
+
+        run_id = str(run.get("id"))
+        rev_info = (run_reviews or {}).get(run_id)
+        review_html = ""
+        cadence_str = ""
+        if rev_info:
+            r_eval = rev_info.get("review", {})
+            rating = r_eval.get("rating", "grauzone")
+            badge_class = (
+                "tag-green"
+                if rating == "optimal"
+                else ("tag-cyan" if rating in ("solide", "intensiv") else "tag-amber")
+            )
+            r_label = html.escape(r_eval.get("rating_label", ""))
+            r_summary = html.escape(r_eval.get("summary", ""))
+            cad = int(rev_info.get("cadence_spm") or 0)
+            if cad > 0:
+                cadence_str = f' <span style="color: var(--text-muted); font-size: 0.75rem;">({cad} spm)</span>'
+            coach_tip = html.escape(r_eval.get("coach_tip", ""))
+            tip_html = (
+                f'<div class="run-review-tip">💡 {coach_tip}</div>'
+                if coach_tip
+                else ""
+            )
+            review_html = (
+                f'<details class="run-review-details">'
+                f'<summary class="run-review-summary">'
+                f'<span class="tag {badge_class}">{r_label}</span>'
+                f'<span class="review-toggle-hint">Analyse anzeigen <span class="chevron">▼</span></span>'
+                f'</summary>'
+                f'<div class="run-review-content">'
+                f'<div class="run-review-text">{r_summary}</div>'
+                f'{tip_html}'
+                f'</div>'
+                f'</details>'
+            )
+            if not max_hr:
+                max_hr = rev_info.get("max_hr")
+
         max_hr_str = f"{int(round(max_hr))} bpm" if max_hr else "-"
 
         z1_z2_sec = run.get("z1_z2_seconds", 0)
@@ -161,18 +210,20 @@ def build_table_rows(processed_runs: List[Dict[str, Any]]) -> str:
         load_val = run.get("training_load", 0.0)
         load_str = f"{int(round(load_val))}" if load_val > 0 else "-"
 
+        name_cell = f"<strong>{name}</strong>{cadence_str}{review_html}"
+
         row = (
-            f"<tr>"
-            f"<td>{date_str}</td>"
-            f"<td><strong>{name}</strong></td>"
-            f"<td>{dist_km:.2f} km</td>"
-            f"<td>{dur_str}</td>"
-            f"<td>{pace_str}</td>"
-            f"<td>{avg_hr_str}</td>"
-            f"<td>{max_hr_str}</td>"
-            f"<td>{z_badge}</td>"
-            f"<td>{load_str}</td>"
-            f"</tr>"
+            f'<tr class="run-row" data-run-id="{run_id}">'
+            f'<td class="col-date" data-label="Datum">{date_str}</td>'
+            f'<td class="col-activity" data-label="Aktivität">{name_cell}</td>'
+            f'<td class="col-dist" data-label="Distanz">{dist_km:.2f} km</td>'
+            f'<td class="col-duration" data-label="Dauer">{dur_str}</td>'
+            f'<td class="col-pace" data-label="Ø Pace">{pace_str}</td>'
+            f'<td class="col-hr" data-label="Ø Puls">{avg_hr_str}</td>'
+            f'<td class="col-maxhr" data-label="Max Puls">{max_hr_str}</td>'
+            f'<td class="col-zpct" data-label="Z1/Z2 %">{z_badge}</td>'
+            f'<td class="col-load" data-label="Belastung">{load_str}</td>'
+            f'</tr>'
         )
         rows.append(row)
 
@@ -567,6 +618,7 @@ def generate_dashboard(
     ai_summary_file: Optional[Path] = None,
     athlete_file: Optional[Path] = None,
     coach_history_file: Optional[Path] = None,
+    run_reviews_file: Optional[Path] = None,
 ) -> None:
     if not input_file.exists():
         raise FileNotFoundError(f"Input file not found: {input_file}")
@@ -636,6 +688,7 @@ def generate_dashboard(
             ),
             "TRENDS_JSON": "[]",
             "ACTIVITIES_JSON": "[]",
+            "REVIEWS_JSON": "{}",
             "ATHLETE_JSON": json.dumps(athlete_profile),
             "ZONES_REFERENCE_HTML": build_zones_reference_html(athlete_profile),
             "FORECAST_JSON": "{}",
@@ -742,7 +795,18 @@ def generate_dashboard(
             else []
         )
 
-        table_rows = build_table_rows(processed_runs)
+        target_reviews_file = (
+            run_reviews_file
+            if run_reviews_file is not None
+            else (PROJECT_ROOT / "data" / "run_reviews.json")
+        )
+        run_reviews = (
+            load_run_reviews(target_reviews_file)
+            if target_reviews_file and target_reviews_file.is_file()
+            else {}
+        )
+
+        table_rows = build_table_rows(processed_runs, run_reviews=run_reviews)
         summary_html = build_summary_html(
             summary_data, ai_coach_markdown=ai_coach_text, coach_history=coach_history
         )
@@ -777,6 +841,7 @@ def generate_dashboard(
             "RUNS_TABLE_ROWS": table_rows,
             "TRENDS_JSON": json.dumps(trends, ensure_ascii=False),
             "ACTIVITIES_JSON": json.dumps(processed_runs, ensure_ascii=False),
+            "REVIEWS_JSON": json.dumps(run_reviews, ensure_ascii=False),
             "ATHLETE_JSON": json.dumps(athlete_profile, ensure_ascii=False),
             "ZONES_REFERENCE_HTML": build_zones_reference_html(athlete_profile),
             "FORECAST_JSON": json.dumps(forecast_payload, ensure_ascii=False),
@@ -809,6 +874,7 @@ def main() -> int:
             ai_summary_file=args.ai_summary,
             athlete_file=args.athlete,
             coach_history_file=args.coach_history,
+            run_reviews_file=args.run_reviews,
         )
         return 0
     except FileNotFoundError as e:

@@ -75,6 +75,13 @@ jobs:
             echo "[]" > data/intervals_activities.json
           fi
 
+      - name: Review unanalyzed runs and update cache
+        run: |
+          python3 src/analysis/run_reviewer.py \
+            --input data/intervals_activities.json \
+            --reviews data/run_reviews.json \
+            --athlete config/athlete.json
+
       - name: Generate Agentic AI Coach Review (agy)
         id: ai_coach
         continue-on-error: true
@@ -91,19 +98,19 @@ jobs:
           echo "## 🤖 KI-Laufcoach Analyse (Antigravity AI)" >> "$GITHUB_STEP_SUMMARY"
           cat data/ai_coach_commentary.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Persist Coach History to Repository
-        if: always() && hashFiles('data/coach_history.json') != ''
+      - name: Persist Coach History & Run Reviews to Repository
+        if: always() && (hashFiles('data/coach_history.json') != '' || hashFiles('data/run_reviews.json') != '')
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action [Coach Memory]"
-          if ! git diff --quiet data/coach_history.json; then
-            echo "Persisting updated coach history to repository..."
-            git add data/coach_history.json
-            git commit -m "chore(coach): update coach history and feedback loop [skip ci]"
+          if ! git diff --quiet data/coach_history.json data/run_reviews.json; then
+            echo "Persisting updated coach history and run reviews to repository..."
+            git add data/coach_history.json data/run_reviews.json
+            git commit -m "chore(coach): update coach history and run reviews [skip ci]"
             git pull --rebase origin main || true
-            git push origin main || echo "::warning ::Could not push coach history to main"
+            git push origin main || echo "::warning ::Could not push coach updates to main"
           else
-            echo "No changes in coach history."
+            echo "No changes in coach history or run reviews."
           fi
 
       - name: Generate HTML Dashboard
@@ -114,7 +121,8 @@ jobs:
             --output dist/index.html \
             --ai-coach data/ai_coach_commentary.md \
             --ai-summary data/ai_coach_summary.json \
-            --coach-history data/coach_history.json
+            --coach-history data/coach_history.json \
+            --run-reviews data/run_reviews.json
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

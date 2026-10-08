@@ -718,6 +718,80 @@
       border: 1px solid rgba(192, 132, 252, 0.25);
     }
 
+    /* Run Review & Expandable Details */
+    .run-review-details {
+      margin-top: 6px;
+    }
+
+    .run-review-summary {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      list-style: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .run-review-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .review-toggle-hint {
+      font-size: 0.72rem;
+      color: var(--cyan);
+      opacity: 0.85;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: opacity 0.15s ease;
+    }
+
+    .review-toggle-hint:hover {
+      opacity: 1;
+    }
+
+    .review-toggle-hint .chevron {
+      display: inline-block;
+      font-size: 0.65rem;
+      transition: transform 0.2s ease;
+    }
+
+    .run-review-details[open] .review-toggle-hint .chevron {
+      transform: rotate(180deg);
+    }
+
+    .run-review-content {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: rgba(11, 15, 25, 0.65);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-left: 3px solid var(--cyan);
+      border-radius: 6px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .run-review-text {
+      white-space: normal;
+    }
+
+    .run-review-tip {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+      color: #38bdf8;
+      font-size: 0.76rem;
+      white-space: normal;
+    }
+
+    td.col-activity {
+      white-space: normal;
+      min-width: 250px;
+    }
+
     .empty-banner {
       display: {{ EMPTY_STATE_DISPLAY }};
       text-align: center;
@@ -872,36 +946,76 @@
         font-size: 0.78rem;
       }
 
+      /* KPI Grid: Compact 2-column layout on mobile */
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .kpi-card {
+        padding: 12px;
+      }
+
+      .kpi-title {
+        font-size: 0.7rem;
+      }
+
+      .kpi-value {
+        font-size: 1.35rem;
+        margin: 4px 0 2px;
+      }
+
+      .kpi-sub {
+        font-size: 0.72rem;
+      }
+
+      .kpi-card:last-child {
+        grid-column: 1 / -1;
+      }
+
+      /* Filter Bar: Swipeable pill buttons */
       .filter-bar {
-        padding: 12px 14px;
+        padding: 10px 12px;
         flex-direction: column;
         align-items: stretch;
-        gap: 12px;
+        gap: 10px;
       }
 
       .filter-group {
         flex-direction: column;
         align-items: flex-start;
-        gap: 8px;
+        gap: 6px;
         width: 100%;
+        overflow: hidden;
       }
 
       .filter-buttons {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
         width: 100%;
-        gap: 4px;
+        gap: 6px;
+        padding: 2px;
+      }
+
+      .filter-buttons::-webkit-scrollbar {
+        display: none;
       }
 
       .filter-btn {
-        flex: 1 1 auto;
-        padding: 6px 10px;
-        font-size: 0.8rem;
+        flex: 0 0 auto;
+        padding: 6px 12px;
+        font-size: 0.78rem;
         text-align: center;
+        white-space: nowrap;
       }
 
       .custom-range-inputs {
         width: 100%;
+        flex-wrap: wrap;
       }
 
       .custom-range-inputs .date-input {
@@ -912,6 +1026,204 @@
       .filter-status-meta {
         width: 100%;
         justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      /* Charts: Optimized height */
+      .charts-grid {
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      .chart-card {
+        padding: 14px;
+      }
+
+      .chart-container {
+        height: 220px;
+      }
+
+      .chart-header h2 {
+        font-size: 0.95rem;
+      }
+
+      /* Table to Mobile Card Transformation */
+      .table-card {
+        padding: 14px;
+      }
+
+      .table-wrap {
+        overflow-x: visible;
+      }
+
+      #runsTable {
+        display: block;
+        width: 100%;
+        border: none;
+      }
+
+      #runsTable thead {
+        display: none;
+      }
+
+      #runsTable tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      #runsTable tr.run-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-areas:
+          "date date dist"
+          "activity activity activity"
+          "dur pace hr"
+          "maxhr zpct load";
+        background: rgba(255, 255, 255, 0.025);
+        border: 1px solid var(--card-border);
+        border-radius: 12px;
+        padding: 12px 14px;
+        gap: 8px 10px;
+        transition: border-color 0.15s ease, background 0.15s ease;
+      }
+
+      #runsTable tr.run-row:hover {
+        border-color: rgba(56, 189, 248, 0.4);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      #runsTable td.col-date {
+        grid-area: date;
+        padding: 0;
+        border: none;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+      }
+
+      #runsTable td.col-dist {
+        grid-area: dist;
+        padding: 0;
+        border: none;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--cyan);
+        text-align: right;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+
+      #runsTable td.col-activity {
+        grid-area: activity;
+        padding: 0;
+        border: none;
+        white-space: normal;
+        margin: 2px 0 6px 0;
+        line-height: 1.4;
+      }
+
+      #runsTable td.col-activity strong {
+        font-size: 0.95rem;
+        color: var(--text-main);
+      }
+
+      #runsTable td.col-duration { grid-area: dur; }
+      #runsTable td.col-pace { grid-area: pace; }
+      #runsTable td.col-hr { grid-area: hr; }
+      #runsTable td.col-maxhr { grid-area: maxhr; }
+      #runsTable td.col-zpct { grid-area: zpct; }
+      #runsTable td.col-load { grid-area: load; }
+
+      #runsTable td.col-duration,
+      #runsTable td.col-pace,
+      #runsTable td.col-hr,
+      #runsTable td.col-maxhr,
+      #runsTable td.col-zpct,
+      #runsTable td.col-load {
+        padding: 6px 8px;
+        border: none;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 6px;
+        font-size: 0.82rem;
+        color: var(--text-main);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        white-space: nowrap;
+      }
+
+      #runsTable td.col-duration::before,
+      #runsTable td.col-pace::before,
+      #runsTable td.col-hr::before,
+      #runsTable td.col-maxhr::before,
+      #runsTable td.col-zpct::before,
+      #runsTable td.col-load::before {
+        content: attr(data-label);
+        font-size: 0.64rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-sub);
+        margin-bottom: 2px;
+        font-weight: 500;
+      }
+
+      .table-header-tools {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+
+      .table-header-tools > div {
+        width: 100%;
+      }
+
+      .filter-select, .search-input {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .table-footer-tools {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      .table-footer-tools > div {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+      }
+
+      /* Coach History Table Mobile Transformation */
+      .coach-history-card .activities-table,
+      .coach-history-card .activities-table tbody {
+        display: block;
+        width: 100%;
+      }
+
+      .coach-history-card .activities-table thead {
+        display: none;
+      }
+
+      .coach-history-card .activities-table tr {
+        display: flex;
+        flex-direction: column;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--card-border);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        gap: 6px;
+      }
+
+      .coach-history-card .activities-table td {
+        border: none;
+        padding: 2px 0;
+        white-space: normal !important;
       }
     }
 
@@ -1290,6 +1602,9 @@
   <script id="summaryData" type="application/json">
     {{ SUMMARY_JSON }}
   </script>
+  <script id="reviewsData" type="application/json">
+    {{ REVIEWS_JSON }}
+  </script>
 
   <!-- Interactive Charts & Search Script -->
   <script>
@@ -1300,6 +1615,7 @@
       let forecast = {};
       let summary = {};
       let athlete = {};
+      let runReviews = {};
 
       try {
         trends = JSON.parse(document.getElementById('trendsData').textContent || '[]');
@@ -1325,6 +1641,11 @@
         athlete = JSON.parse(document.getElementById('athleteData').textContent || '{}');
       } catch (e) {
         console.warn('Could not parse athleteData', e);
+      }
+      try {
+        runReviews = JSON.parse(document.getElementById('reviewsData').textContent || '{}');
+      } catch (e) {
+        console.warn('Could not parse reviewsData', e);
       }
 
       // Format helpers
@@ -1363,7 +1684,14 @@
       let currentSortCol = 'date';
       let currentSortDir = 'desc';
       let currentPage = 1;
-      let currentPageSize = 'all';
+      let isMobile = (window.innerWidth <= 768);
+      let currentPageSize = isMobile ? '10' : 'all';
+
+      // Setup page size selector initial value
+      const initialPageSizeEl = document.getElementById('pageSizeSelect');
+      if (initialPageSizeEl) {
+        initialPageSizeEl.value = currentPageSize;
+      }
 
       let currentDateFilteredRuns = [...activities];
 
@@ -1595,6 +1923,7 @@
         }
 
         const htmlRows = runsToDisplay.map(run => {
+          const runId = String(run.id || '');
           const dateStr = (run.date || '').substring(0, 10) || 'N/A';
           const name = escapeHtml(run.name || 'Lauf');
           const distKm = (run.distance_km || 0).toFixed(2);
@@ -1619,16 +1948,48 @@
           const loadVal = run.training_load || 0;
           const loadStr = loadVal > 0 ? `${Math.round(loadVal)}` : '-';
 
-          return `<tr>
-            <td>${dateStr}</td>
-            <td><strong>${name}</strong></td>
-            <td>${distKm} km</td>
-            <td>${durStr}</td>
-            <td>${paceStr}</td>
-            <td>${avgHrStr}</td>
-            <td>${maxHrStr}</td>
-            <td>${zBadge}</td>
-            <td>${loadStr}</td>
+          const revInfo = runReviews[runId];
+          let cadenceStr = '';
+          let reviewHtml = '';
+
+          if (revInfo) {
+            const rEval = revInfo.review || {};
+            const rating = rEval.rating || 'grauzone';
+            const badgeClass = (rating === 'optimal') ? 'tag-green' : ((rating === 'solide' || rating === 'intensiv') ? 'tag-cyan' : 'tag-amber');
+            const rLabel = escapeHtml(rEval.rating_label || '');
+            const rSummary = escapeHtml(rEval.summary || '');
+            const cad = Math.round(revInfo.cadence_spm || 0);
+            if (cad > 0) {
+              cadenceStr = ` <span style="color: var(--text-muted); font-size: 0.75rem;">(${cad} spm)</span>`;
+            }
+            const coachTip = escapeHtml(rEval.coach_tip || '');
+            const tipHtml = coachTip ? `<div class="run-review-tip">💡 ${coachTip}</div>` : '';
+            reviewHtml = `
+              <details class="run-review-details">
+                <summary class="run-review-summary">
+                  <span class="tag ${badgeClass}">${rLabel}</span>
+                  <span class="review-toggle-hint">Analyse anzeigen <span class="chevron">▼</span></span>
+                </summary>
+                <div class="run-review-content">
+                  <div class="run-review-text">${rSummary}</div>
+                  ${tipHtml}
+                </div>
+              </details>
+            `;
+          }
+
+          const nameCell = `<strong>${name}</strong>${cadenceStr}${reviewHtml}`;
+
+          return `<tr class="run-row" data-run-id="${runId}">
+            <td class="col-date" data-label="Datum">${dateStr}</td>
+            <td class="col-activity" data-label="Aktivität">${nameCell}</td>
+            <td class="col-dist" data-label="Distanz">${distKm} km</td>
+            <td class="col-duration" data-label="Dauer">${durStr}</td>
+            <td class="col-pace" data-label="Ø Pace">${paceStr}</td>
+            <td class="col-hr" data-label="Ø Puls">${avgHrStr}</td>
+            <td class="col-maxhr" data-label="Max Puls">${maxHrStr}</td>
+            <td class="col-zpct" data-label="Z1/Z2 %">${zBadge}</td>
+            <td class="col-load" data-label="Belastung">${loadStr}</td>
           </tr>`;
         });
 
@@ -1886,6 +2247,11 @@
           currentPage++;
           applyTableFiltersAndRender();
         });
+      }
+
+      // Initialize mobile pagination if on smaller screen
+      if (isMobile) {
+        applyTableFiltersAndRender();
       }
 
       // Chart.js Global Config & Initialization

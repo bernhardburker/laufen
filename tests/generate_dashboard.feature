@@ -81,4 +81,13 @@ Feature: Generate visual HTML dashboard from running activities
     Then the process exits with code 0
     And the output HTML contains the calibrated zone ranges
 
+  Scenario: Dashboard contains responsive mobile layout and expandable run analysis cards
+    Given an activities dataset with multiple running activities and coach reviews
+    And the standard dashboard template is available
+    When the dashboard generator is executed with reviews data
+    Then the process exits with code 0
+    And the output HTML contains responsive mobile styling for activity cards
+    And the output HTML contains expandable run review details
+    And the output HTML contains compact two-column KPI grid for mobile
+
 

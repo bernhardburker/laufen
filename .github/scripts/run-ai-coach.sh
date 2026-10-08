@@ -51,11 +51,18 @@ cleanup() {
 }
 trap cleanup EXIT
 
+echo "==> Reviewing unanalyzed runs and updating deep metrics cache..."
+"$PYTHON_EXEC" "$REPO_ROOT/src/analysis/run_reviewer.py" \
+  --input "$ACTIVITIES_FILE" \
+  --reviews "$REPO_ROOT/data/run_reviews.json" \
+  --athlete "$ATHLETE_FILE" || true
+
 echo "==> Generating AI coach prompt from training data..."
 "$PYTHON_EXEC" "$REPO_ROOT/src/analysis/ai_coach.py" \
   --input "$ACTIVITIES_FILE" \
   --athlete "$ATHLETE_FILE" \
   --history "$REPO_ROOT/data/coach_history.json" \
+  --reviews "$REPO_ROOT/data/run_reviews.json" \
   --output-prompt "$PROMPT_TMP"
 
 MODEL="${AGY_MODEL:-Gemini 3.7 Flash (Medium)}"

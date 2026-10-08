@@ -6,43 +6,29 @@
     "target_type": "easy_run",
     "target_hr_max": 158,
     "status": "erfüllt",
-    "actual": "Die Vorgabe wurde beim Easy Run am 05.10. punktgenau umgesetzt: 5,92 km in 47 min bei Ø 150 bpm und 99,8 % Zeit in Zone 1/2.",
-    "effect": "Die strikte Tempodrosselung (Pace 8:01 /km) hielt die kardiovaskuläre Last gering (Load 45). Dies ermöglicht aktive Erholung bei gleichzeitigem aeroben Reiz ohne weitere Anhäufung von Ermüdung."
+    "actual": "Die Vorgabe, strikt unter 158 bpm zu bleiben und das Tempo zu ignorieren, wurde beim 45-minütigen Easy Run am 05.10. hervorragend umgesetzt (5,92 km, Ø 150 bpm, 99,8 % Z1/Z2 bei 8:01 min/km).",
+    "effect": "Die deutliche Temporeduktion hielt die kardiovaskuläre Belastung im rein aeroben Fettstoffwechselbereich. Der Trainingsreiz war mit Load 45 optimal dosiert, um die aerobe Basis zu stärken, ohne die Ermüdung (ATL 25,5 / TSB -11,0) weiter unkontrolliert in die Höhe zu treiben.",
+    "evaluated_run_ids": [
+      "i193925536"
+    ]
   },
   {
     "id": "cycle-002",
-    "date": "2026-10-05",
-    "recommendation": "Den eingeschlagenen Weg fortsetzen: Weiterer Grundlagenlauf (45 Min.) strikt unter 158 bpm, um die aerobe Kapazität und Fettstoffwechselbasis schrittweise zu festigen.",
+    "date": "2026-10-08",
+    "recommendation": "Nächsten Grundlagenlauf über 45-50 Minuten ansetzen. Herzfrequenz weiterhin strikt unter 158 bpm deckeln und keine Tempoambitionen hegen.",
     "target_type": "easy_run",
     "target_hr_max": 158,
-    "status": "erfüllt",
-    "actual": "Die Vorgabe eines 45-minütigen Grundlagenlaufs unter 158 bpm wurde am 05.10. punktgenau umgesetzt (5,92 km in 47 min, Ø 150 bpm, 99,8 % in Z1/Z2).",
-    "effect": "Die strikte Tempodrosselung (8:01 min/km) hielt das Herzkreislaufsystem im rein aeroben Fettstoffwechselbereich, vermied Laktatanhäufung und hielt den Trainings-Stress (Load 45) regenerationsverträglich."
+    "status": "teilweise",
+    "actual": "Die Vorgabe (45-50 Min. Grundlagenlauf unter 158 bpm) wurde vom Umfang her mit 49 Min. (7.05 km) exakt erfüllt. Der Durchschnittspuls lag mit 155 bpm im Soll, allerdings führte ein aerober Drift zu 19m 11s in Zone 3 mit Spitzen bis 164 bpm.",
+    "effect": "Die aerobe Basis stabilisiert sich (W41 Z1/Z2 bei 80.3 %), jedoch zeigt der Herzfrequenzdrift bei anhaltender Belastung über 35 Minuten eine noch limitierte aerobe Ermüdungsresistenz. TSB von -3.6 signalisiert eine kontrollierte, unkritische Belastung.",
+    "evaluated_run_ids": [
+      "i194924144"
+    ]
   },
   {
     "id": "cycle-003",
-    "date": "2026-10-06",
-    "recommendation": "Diesen Ansatz verstetigen: Ein weiterer Zone-2-Dauerlauf (45 Min.) mit Herzfrequenzdeckel bei 158 bpm zur schrittweisen Ökonomisierung des Herz-Kreislauf-Systems.",
-    "target_type": "easy_run",
-    "target_hr_max": 158,
-    "status": "teilweise",
-    "actual": "Seit der letzten Empfehlung vom 06.10.2026 wurde noch keine neue Aktivität aufgezeichnet. Der vorangegangene Lauf vom 05.10. (47 Min., 150 bpm, 99.8% Z1/Z2) hat die geforderte Z2-Disziplin mustergültig umgesetzt.",
-    "effect": "Die Formwerte (CTL 12.5, ATL 14.5, TSB -2.0) zeigen eine ausgeglichene Ermüdung. Der 99.8%-Z1/Z2-Lauf zeigt, dass bei disziplinierter Tempodrosselung (Pace 8:01 /km) eine echte aerobe Entlastung stattfindet, die das Herzkreislaufsystem schont."
-  },
-  {
-    "id": "cycle-004",
-    "date": "2026-10-07",
-    "recommendation": "Offene Einheit absolvieren: 45 Minuten Grundlagenlauf im aeroben Bereich mit Herzfrequenz-Obergrenze bei 158 bpm.",
-    "target_type": "easy_run",
-    "target_hr_max": 158,
-    "status": "teilweise",
-    "actual": "Am 08.10. wurden 7,05 km in 49 min absolviert. Der Durchschnittspuls lag mit 155 bpm im Soll (< 158 bpm), der Z1/Z2-Anteil betrug jedoch nur 61,6 %, da die Intensität phasenweise in Zone 3 abdriftete.",
-    "effect": "Die aerobe Entlastung gegenüber dem September ist sichtbar, aber der kardiale Drift gegen Ende der Einheit zeigt, dass das Grundlagentempo noch zu forciert gewählt wurde. Der TSB von -3,6 signalisiert eine leichte, aber gut verkraftbare Ermüdung."
-  },
-  {
-    "id": "cycle-005",
     "date": "2026-10-08",
-    "recommendation": "45 Minuten Grundlagenlauf im aeroben Bereich mit strikter Herzfrequenz-Obergrenze bei 158 bpm. Bei Pulsanstieg konsequent Gehpausen einlegen.",
+    "recommendation": "Nächsten Grundlagenlauf über 45-50 Minuten ansetzen. Tempo aktiv reduzieren oder kurze Gehpausen nutzen, sobald die Herzfrequenz 155 bpm übersteigt, um den Z3-Drift vollständig zu vermeiden.",
     "target_type": "easy_run",
     "target_hr_max": 158,
     "status": "offen",

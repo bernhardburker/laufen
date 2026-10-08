@@ -1,0 +1,4794 @@
+{
+  "i193925536": {
+    "id": "i193925536",
+    "date": "2026-10-05T18:19:16",
+    "name": "Gerasdorf bei Wien - Easy Run (45m)",
+    "distance_km": 5.92,
+    "moving_time_s": 2852,
+    "moving_time_str": "47m",
+    "pace_str": "8:02 /km",
+    "avg_hr": 150.0,
+    "max_hr": 160,
+    "cadence_spm": 148.9,
+    "elevation_gain_m": 20.7,
+    "training_load": 45.0,
+    "z1_z2_pct": 99.8,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 1151,
+        "time_str": "19m 11s",
+        "pct": 40.3
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1698,
+        "time_str": "28m 18s",
+        "pct": 59.5
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 5,
+        "time_str": "5s",
+        "pct": 0.2
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "4x 7m55s 149bpm",
+      "1x 2m52s 153bpm",
+      "2x 5m16s 150bpm",
+      "1x 2m33s 149bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (99.8% in Z1/Z2). Die Herzfrequenz blieb mit Ø 150 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 19m 11s, Z2: 28m 18s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Ø 148 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 19m 11s | Z2: 28m 18s | Z3: 5s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:00:15.761002"
+  },
+  "i192499724": {
+    "id": "i192499724",
+    "date": "2026-10-02T07:33:11",
+    "name": "Wien Laufen",
+    "distance_km": 7.04,
+    "moving_time_s": 2556,
+    "moving_time_str": "42m",
+    "pace_str": "6:03 /km",
+    "avg_hr": 166.0,
+    "max_hr": 177,
+    "cadence_spm": 155.2,
+    "elevation_gain_m": 45.9,
+    "training_load": 57.0,
+    "z1_z2_pct": 11.2,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 124,
+        "time_str": "2m 04s",
+        "pct": 4.8
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 163,
+        "time_str": "2m 43s",
+        "pct": 6.4
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1039,
+        "time_str": "17m 19s",
+        "pct": 40.6
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 1232,
+        "time_str": "20m 32s",
+        "pct": 48.2
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 5m51s 150bpm",
+      "6x 6m19s 168bpm",
+      "1x 13s 176bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 11.2% in Z1/Z2, dafür 17m 19s in Zone 3 und 20m 32s in Zone 4. Ø Puls 166 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Ø 155 spm liegt im soliden, ökonomischen Freizeit-Bereich.",
+      "zone_distribution_text": "Z1: 2m 04s | Z2: 2m 43s | Z3: 17m 19s | Z4: 20m 32s"
+    },
+    "analyzed_at": "2026-10-08T16:00:15.761002"
+  },
+  "i191250886": {
+    "id": "i191250886",
+    "date": "2026-09-28T17:29:41",
+    "name": "Gerasdorf bei Wien Laufen",
+    "distance_km": 5.11,
+    "moving_time_s": 2066,
+    "moving_time_str": "34m",
+    "pace_str": "6:44 /km",
+    "avg_hr": 155.0,
+    "max_hr": 173,
+    "cadence_spm": 154.3,
+    "elevation_gain_m": 12.3,
+    "training_load": 39.0,
+    "z1_z2_pct": 36.8,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 359,
+        "time_str": "5m 59s",
+        "pct": 17.4
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 401,
+        "time_str": "6m 41s",
+        "pct": 19.4
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 893,
+        "time_str": "14m 53s",
+        "pct": 43.2
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 415,
+        "time_str": "6m 55s",
+        "pct": 20.1
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 9m1s 129bpm",
+      "3x 6m44s 162bpm",
+      "1x 7m54s 164bpm",
+      "1x 48s 171bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 36.8% in Z1/Z2, dafür 14m 53s in Zone 3 und 6m 55s in Zone 4. Ø Puls 155 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Ø 154 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 5m 59s | Z2: 6m 41s | Z3: 14m 53s | Z4: 6m 55s"
+    },
+    "analyzed_at": "2026-10-08T16:00:15.761002"
+  },
+  "i187831836": {
+    "id": "i187831836",
+    "date": "2026-09-18T07:00:29",
+    "name": "Wien Laufen",
+    "distance_km": 7.02,
+    "moving_time_s": 2720,
+    "moving_time_str": "45m",
+    "pace_str": "6:27 /km",
+    "avg_hr": 154.0,
+    "max_hr": 169,
+    "cadence_spm": 155.1,
+    "elevation_gain_m": 46.2,
+    "training_load": 49.0,
+    "z1_z2_pct": 32.0,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 592,
+        "time_str": "9m 52s",
+        "pct": 21.7
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 279,
+        "time_str": "4m 39s",
+        "pct": 10.2
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1829,
+        "time_str": "30m 29s",
+        "pct": 67.2
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 22,
+        "time_str": "22s",
+        "pct": 0.8
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m25s 120bpm",
+      "1x 7m5s 138bpm",
+      "5x 6m30s 164bpm",
+      "1x 6s 169bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 32.0% in Z1/Z2, dafür 30m 29s in Zone 3 und 22s in Zone 4. Ø Puls 154 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Ø 155 spm liegt im soliden, ökonomischen Freizeit-Bereich.",
+      "zone_distribution_text": "Z1: 9m 52s | Z2: 4m 39s | Z3: 30m 29s | Z4: 22s"
+    },
+    "analyzed_at": "2026-10-08T16:00:15.761002"
+  },
+  "i187052590": {
+    "id": "i187052590",
+    "date": "2026-09-15T19:28:01",
+    "name": "Evening Run",
+    "distance_km": 6.04,
+    "moving_time_s": 2385,
+    "moving_time_str": "39m",
+    "pace_str": "6:35 /km",
+    "avg_hr": 158.0,
+    "max_hr": 175,
+    "cadence_spm": 153.1,
+    "elevation_gain_m": 19.7,
+    "training_load": 45.0,
+    "z1_z2_pct": 27.3,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 435,
+        "time_str": "7m 15s",
+        "pct": 18.2
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 217,
+        "time_str": "3m 37s",
+        "pct": 9.1
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1560,
+        "time_str": "26m",
+        "pct": 65.4
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 175,
+        "time_str": "2m 55s",
+        "pct": 7.3
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m38s 130bpm",
+      "5x 6m36s 162bpm",
+      "1x 11s 174bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 27.3% in Z1/Z2, dafür 26m in Zone 3 und 2m 55s in Zone 4. Ø Puls 158 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Ø 153 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 7m 15s | Z2: 3m 37s | Z3: 26m | Z4: 2m 55s"
+    },
+    "analyzed_at": "2026-10-08T16:00:15.761002"
+  },
+  "i186129566": {
+    "id": "i186129566",
+    "date": "2026-09-13T09:22:57",
+    "name": "Gerasdorf bei Wien Laufen",
+    "distance_km": 6.68,
+    "moving_time_s": 2496,
+    "moving_time_str": "41m",
+    "pace_str": "6:14 /km",
+    "avg_hr": 165.0,
+    "max_hr": 180,
+    "cadence_spm": 156.0,
+    "elevation_gain_m": 20.9,
+    "training_load": 54.0,
+    "z1_z2_pct": 18.3,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 251,
+        "time_str": "4m 11s",
+        "pct": 10.0
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 206,
+        "time_str": "3m 26s",
+        "pct": 8.2
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1070,
+        "time_str": "17m 50s",
+        "pct": 42.8
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 856,
+        "time_str": "14m 16s",
+        "pct": 34.3
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 115,
+        "time_str": "1m 55s",
+        "pct": 4.6
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m22s 141bpm",
+      "3x 5m11s 168bpm",
+      "3x 6m35s 168bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 18.3% in Z1/Z2, dafür 17m 50s in Zone 3 und 14m 16s in Zone 4. Ø Puls 165 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Ø 156 spm liegt im soliden, ökonomischen Freizeit-Bereich.",
+      "zone_distribution_text": "Z1: 4m 11s | Z2: 3m 26s | Z3: 17m 50s | Z4: 14m 16s"
+    },
+    "analyzed_at": "2026-10-08T16:00:15.761002"
+  },
+  "i184261704": {
+    "id": "i184261704",
+    "date": "2026-09-07T16:22:28",
+    "name": "Gerasdorf bei Wien Laufen",
+    "distance_km": 9.05,
+    "moving_time_s": 3614,
+    "moving_time_str": "1h 00m",
+    "pace_str": "6:39 /km",
+    "avg_hr": 170.0,
+    "max_hr": 178,
+    "cadence_spm": 154.1,
+    "elevation_gain_m": 20.8,
+    "training_load": 88.0,
+    "z1_z2_pct": 10.5,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 122,
+        "time_str": "2m 02s",
+        "pct": 3.4
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 256,
+        "time_str": "4m 16s",
+        "pct": 7.1
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 375,
+        "time_str": "6m 15s",
+        "pct": 10.4
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 2841,
+        "time_str": "47m 21s",
+        "pct": 78.6
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 21,
+        "time_str": "21s",
+        "pct": 0.6
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m45s 143bpm",
+      "8x 6m41s 173bpm",
+      "1x 19s 171bpm"
+    ],
+    "intensity_class": "schwellenlauf",
+    "review": {
+      "rating": "intensiv",
+      "rating_label": "Gezielter Schwellen- / Tempolauf",
+      "summary": "Intensive Belastung nahe der Laktatschwelle (178 bpm). 47m 21s in Zone 4 bei Ø 170 bpm (Max: 178 bpm). Training Load: 88.",
+      "coach_tip": "Wichtiger Reiz für Tempohärte – erfordert nun mindestens 48 Stunden lockere Regeneration.",
+      "cadence_feedback": "Ø 154 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 2m 02s | Z2: 4m 16s | Z3: 6m 15s | Z4: 47m 21s"
+    },
+    "analyzed_at": "2026-10-08T16:00:15.761002"
+  },
+  "i182940313": {
+    "id": "i182940313",
+    "date": "2026-09-03T18:18:32",
+    "name": "Gerasdorf bei Wien Laufen",
+    "distance_km": 5.98,
+    "moving_time_s": 2253,
+    "moving_time_str": "37m",
+    "pace_str": "6:17 /km",
+    "avg_hr": 161.0,
+    "max_hr": 174,
+    "cadence_spm": 155.7,
+    "elevation_gain_m": 13.5,
+    "training_load": 46.0,
+    "z1_z2_pct": 23.7,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 199,
+        "time_str": "3m 19s",
+        "pct": 8.8
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 335,
+        "time_str": "5m 35s",
+        "pct": 14.9
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1217,
+        "time_str": "20m 17s",
+        "pct": 54.0
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 503,
+        "time_str": "8m 23s",
+        "pct": 22.3
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m21s 142bpm",
+      "5x 6m16s 164bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 23.7% in Z1/Z2, dafür 20m 17s in Zone 3 und 8m 23s in Zone 4. Ø Puls 161 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Ø 155 spm liegt im soliden, ökonomischen Freizeit-Bereich.",
+      "zone_distribution_text": "Z1: 3m 19s | Z2: 5m 35s | Z3: 20m 17s | Z4: 8m 23s"
+    },
+    "analyzed_at": "2026-10-08T16:00:15.761002"
+  },
+  "i182158240": {
+    "id": "i182158240",
+    "date": "2026-09-01T18:16:06",
+    "name": "Gerasdorf bei Wien Laufen",
+    "distance_km": 5.58,
+    "moving_time_s": 2152,
+    "moving_time_str": "35m",
+    "pace_str": "6:26 /km",
+    "avg_hr": 159.0,
+    "max_hr": 173,
+    "cadence_spm": 154.2,
+    "elevation_gain_m": 18.3,
+    "training_load": 42.0,
+    "z1_z2_pct": 33.4,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 253,
+        "time_str": "4m 13s",
+        "pct": 11.8
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 467,
+        "time_str": "7m 47s",
+        "pct": 21.7
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1202,
+        "time_str": "20m 02s",
+        "pct": 55.8
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 231,
+        "time_str": "3m 51s",
+        "pct": 10.7
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "5x 6m30s 158bpm",
+      "1x 3m28s 170bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 33.4% in Z1/Z2, dafür 20m 02s in Zone 3 und 3m 51s in Zone 4. Ø Puls 159 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Ø 154 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 4m 13s | Z2: 7m 47s | Z3: 20m 02s | Z4: 3m 51s"
+    },
+    "analyzed_at": "2026-10-08T16:00:15.761002"
+  },
+  "i193522829": {
+    "id": "i193522829",
+    "date": "2026-08-28T17:21:54",
+    "name": "Afternoon Run",
+    "distance_km": 3.12,
+    "moving_time_s": 1302,
+    "moving_time_str": "21m",
+    "pace_str": "6:57 /km",
+    "avg_hr": 165.0,
+    "max_hr": 176,
+    "cadence_spm": 147.7,
+    "elevation_gain_m": 8.5,
+    "training_load": 29.0,
+    "z1_z2_pct": 20.4,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 125,
+        "time_str": "2m 05s",
+        "pct": 9.6
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 141,
+        "time_str": "2m 21s",
+        "pct": 10.8
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 402,
+        "time_str": "6m 42s",
+        "pct": 30.8
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 637,
+        "time_str": "10m 37s",
+        "pct": 48.8
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "3x 6m48s 165bpm",
+      "1x 82s 161bpm"
+    ],
+    "intensity_class": "schwellenlauf",
+    "review": {
+      "rating": "intensiv",
+      "rating_label": "Gezielter Schwellen- / Tempolauf",
+      "summary": "Intensive Belastung nahe der Laktatschwelle (178 bpm). 10m 37s in Zone 4 bei Ø 165 bpm (Max: 176 bpm). Training Load: 29.",
+      "coach_tip": "Wichtiger Reiz für Tempohärte – erfordert nun mindestens 48 Stunden lockere Regeneration.",
+      "cadence_feedback": "Ø 147 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 2m 05s | Z2: 2m 21s | Z3: 6m 42s | Z4: 10m 37s"
+    },
+    "analyzed_at": "2026-10-08T16:00:15.761002"
+  },
+  "i193522975": {
+    "id": "i193522975",
+    "date": "2026-08-23T09:04:32",
+    "name": "Morning Run",
+    "distance_km": 10.07,
+    "moving_time_s": 4344,
+    "moving_time_str": "1h 12m",
+    "pace_str": "7:11 /km",
+    "avg_hr": 161.0,
+    "max_hr": 174,
+    "cadence_spm": 154.6,
+    "elevation_gain_m": 29.2,
+    "training_load": 88.0,
+    "z1_z2_pct": 25.9,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 637,
+        "time_str": "10m 37s",
+        "pct": 14.7
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 487,
+        "time_str": "8m 07s",
+        "pct": 11.2
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1660,
+        "time_str": "27m 40s",
+        "pct": 38.2
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 1561,
+        "time_str": "26m 01s",
+        "pct": 35.9
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 7m28s 134bpm",
+      "1x 8m20s 150bpm",
+      "8x 7m13s 166bpm",
+      "1x 29s 172bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 25.9% in Z1/Z2, dafür 27m 40s in Zone 3 und 26m 01s in Zone 4. Ø Puls 161 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Ø 154 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 10m 37s | Z2: 8m 07s | Z3: 27m 40s | Z4: 26m 01s"
+    },
+    "analyzed_at": "2026-10-08T16:00:20.008264"
+  },
+  "i193525752": {
+    "id": "i193525752",
+    "date": "2026-08-19T18:42:49",
+    "name": "Abendlauf",
+    "distance_km": 5.01,
+    "moving_time_s": 1767,
+    "moving_time_str": "29m",
+    "pace_str": "5:53 /km",
+    "avg_hr": 171.0,
+    "max_hr": 185,
+    "cadence_spm": 158.1,
+    "elevation_gain_m": 18.4,
+    "training_load": 44.0,
+    "z1_z2_pct": 10.8,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 88,
+        "time_str": "1m 28s",
+        "pct": 5.0
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 104,
+        "time_str": "1m 44s",
+        "pct": 5.9
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 257,
+        "time_str": "4m 17s",
+        "pct": 14.5
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 885,
+        "time_str": "14m 45s",
+        "pct": 50.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 365,
+        "time_str": "6m 05s",
+        "pct": 20.6
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 71,
+        "time_str": "1m 11s",
+        "pct": 4.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "5x 5m53s 171bpm",
+      "1x 3s 184bpm"
+    ],
+    "intensity_class": "schwellen_intervall",
+    "review": {
+      "rating": "intensiv",
+      "rating_label": "Gezielter Schwellen- / Tempolauf",
+      "summary": "Intensive Belastung nahe der Laktatschwelle (178 bpm). 14m 45s in Zone 4 bei Ø 171 bpm (Max: 185 bpm). Training Load: 44.",
+      "coach_tip": "Wichtiger Reiz für Tempohärte – erfordert nun mindestens 48 Stunden lockere Regeneration.",
+      "cadence_feedback": "Ø 158 spm liegt im soliden, ökonomischen Freizeit-Bereich.",
+      "zone_distribution_text": "Z1: 1m 28s | Z2: 1m 44s | Z3: 4m 17s | Z4: 14m 45s"
+    },
+    "analyzed_at": "2026-10-08T16:00:20.008264"
+  },
+  "i193525732": {
+    "id": "i193525732",
+    "date": "2026-08-17T07:11:13",
+    "name": "Morning Run",
+    "distance_km": 5.05,
+    "moving_time_s": 2026,
+    "moving_time_str": "33m",
+    "pace_str": "6:41 /km",
+    "avg_hr": 157.0,
+    "max_hr": 169,
+    "cadence_spm": 155.0,
+    "elevation_gain_m": 17.0,
+    "training_load": 37.0,
+    "z1_z2_pct": 45.6,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 297,
+        "time_str": "4m 57s",
+        "pct": 14.6
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 628,
+        "time_str": "10m 28s",
+        "pct": 31.0
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1072,
+        "time_str": "17m 52s",
+        "pct": 52.8
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 32,
+        "time_str": "32s",
+        "pct": 1.6
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "5x 6m41s 157bpm",
+      "1x 25s 160bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 45.6% in Z1/Z2, dafür 17m 52s in Zone 3 und 32s in Zone 4. Ø Puls 157 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Ø 155 spm liegt im soliden, ökonomischen Freizeit-Bereich.",
+      "zone_distribution_text": "Z1: 4m 57s | Z2: 10m 28s | Z3: 17m 52s | Z4: 32s"
+    },
+    "analyzed_at": "2026-10-08T16:00:20.008264"
+  },
+  "i193525707": {
+    "id": "i193525707",
+    "date": "2026-08-11T19:45:24",
+    "name": "Evening Run",
+    "distance_km": 4.42,
+    "moving_time_s": 1830,
+    "moving_time_str": "30m",
+    "pace_str": "6:54 /km",
+    "avg_hr": 156.0,
+    "max_hr": 168,
+    "cadence_spm": 155.1,
+    "elevation_gain_m": 9.9,
+    "training_load": 33.0,
+    "z1_z2_pct": 45.3,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 226,
+        "time_str": "3m 46s",
+        "pct": 12.3
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 604,
+        "time_str": "10m 04s",
+        "pct": 33.0
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1002,
+        "time_str": "16m 42s",
+        "pct": 54.7
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "4x 6m55s 155bpm",
+      "1x 3m15s 161bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 45.3% in Z1/Z2, dafür 16m 42s in Zone 3 und 0s in Zone 4. Ø Puls 156 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Ø 155 spm liegt im soliden, ökonomischen Freizeit-Bereich.",
+      "zone_distribution_text": "Z1: 3m 46s | Z2: 10m 04s | Z3: 16m 42s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:00:20.008264"
+  },
+  "i193525690": {
+    "id": "i193525690",
+    "date": "2026-08-09T09:15:29",
+    "name": "Morning Run",
+    "distance_km": 7.33,
+    "moving_time_s": 3658,
+    "moving_time_str": "1h 00m",
+    "pace_str": "8:19 /km",
+    "avg_hr": 149.0,
+    "max_hr": 166,
+    "cadence_spm": 154.0,
+    "elevation_gain_m": 22.0,
+    "training_load": 56.0,
+    "z1_z2_pct": 81.4,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 1967,
+        "time_str": "32m 47s",
+        "pct": 53.8
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1012,
+        "time_str": "16m 52s",
+        "pct": 27.7
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 680,
+        "time_str": "11m 20s",
+        "pct": 18.6
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 7m46s 133bpm",
+      "6x 8m27s 150bpm",
+      "1x 2m35s 161bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "solide",
+      "rating_label": "Solider Grundlagenlauf mit Spitzen",
+      "summary": "Guter Grundlagenanteil (81.4% in Z1/Z2), jedoch 11m 20s in Zone 3 verbracht. Spitzenpuls lag bei 166 bpm (Obergrenze: 158 bpm).",
+      "coach_tip": "An leichten Steigungen früher Druck herausnehmen, um nicht in Zone 3 abzudriften.",
+      "cadence_feedback": "Ø 154 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 32m 47s | Z2: 16m 52s | Z3: 11m 20s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:00:20.008264"
+  },
+  "i193525677": {
+    "id": "i193525677",
+    "date": "2026-08-07T19:30:09",
+    "name": "Abendlauf",
+    "distance_km": 6.28,
+    "moving_time_s": 2431,
+    "moving_time_str": "40m",
+    "pace_str": "6:27 /km",
+    "avg_hr": 167.0,
+    "max_hr": 177,
+    "cadence_spm": 156.5,
+    "elevation_gain_m": 19.7,
+    "training_load": 55.0,
+    "z1_z2_pct": 13.6,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 91,
+        "time_str": "1m 31s",
+        "pct": 3.7
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 241,
+        "time_str": "4m 01s",
+        "pct": 9.9
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 499,
+        "time_str": "8m 19s",
+        "pct": 20.5
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 1603,
+        "time_str": "26m 43s",
+        "pct": 65.9
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m47s 150bpm",
+      "3x 3m15s 168bpm",
+      "3x 5m46s 170bpm",
+      "1x 6m49s 172bpm"
+    ],
+    "intensity_class": "schwellenlauf",
+    "review": {
+      "rating": "intensiv",
+      "rating_label": "Gezielter Schwellen- / Tempolauf",
+      "summary": "Intensive Belastung nahe der Laktatschwelle (178 bpm). 26m 43s in Zone 4 bei Ø 167 bpm (Max: 177 bpm). Training Load: 55.",
+      "coach_tip": "Wichtiger Reiz für Tempohärte – erfordert nun mindestens 48 Stunden lockere Regeneration.",
+      "cadence_feedback": "Ø 156 spm liegt im soliden, ökonomischen Freizeit-Bereich.",
+      "zone_distribution_text": "Z1: 1m 31s | Z2: 4m 01s | Z3: 8m 19s | Z4: 26m 43s"
+    },
+    "analyzed_at": "2026-10-08T16:00:20.008264"
+  },
+  "i193525653": {
+    "id": "i193525653",
+    "date": "2026-08-02T19:58:33",
+    "name": "Evening Run",
+    "distance_km": 6.11,
+    "moving_time_s": 2467,
+    "moving_time_str": "41m",
+    "pace_str": "6:44 /km",
+    "avg_hr": 165.0,
+    "max_hr": 180,
+    "cadence_spm": 154.0,
+    "elevation_gain_m": 20.9,
+    "training_load": 53.0,
+    "z1_z2_pct": 16.8,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 39,
+        "time_str": "39s",
+        "pct": 1.6
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 377,
+        "time_str": "6m 17s",
+        "pct": 15.3
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1304,
+        "time_str": "21m 44s",
+        "pct": 52.8
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 676,
+        "time_str": "11m 16s",
+        "pct": 27.4
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 73,
+        "time_str": "1m 13s",
+        "pct": 3.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "6x 6m45s 165bpm",
+      "1x 42s 175bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 16.8% in Z1/Z2, dafür 21m 44s in Zone 3 und 11m 16s in Zone 4. Ø Puls 165 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Ø 154 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 39s | Z2: 6m 17s | Z3: 21m 44s | Z4: 11m 16s"
+    },
+    "analyzed_at": "2026-10-08T16:00:20.008264"
+  },
+  "i193525632": {
+    "id": "i193525632",
+    "date": "2026-07-28T18:49:02",
+    "name": "Evening Run",
+    "distance_km": 7.38,
+    "moving_time_s": 3081,
+    "moving_time_str": "51m",
+    "pace_str": "6:57 /km",
+    "avg_hr": 168.0,
+    "max_hr": 177,
+    "cadence_spm": 153.2,
+    "elevation_gain_m": 17.0,
+    "training_load": 71.0,
+    "z1_z2_pct": 9.6,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 159,
+        "time_str": "2m 39s",
+        "pct": 5.2
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 137,
+        "time_str": "2m 17s",
+        "pct": 4.4
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 772,
+        "time_str": "12m 52s",
+        "pct": 25.0
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 2014,
+        "time_str": "33m 34s",
+        "pct": 65.3
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "7x 6m58s 167bpm",
+      "1x 2m40s 175bpm"
+    ],
+    "intensity_class": "schwellenlauf",
+    "review": {
+      "rating": "intensiv",
+      "rating_label": "Gezielter Schwellen- / Tempolauf",
+      "summary": "Intensive Belastung nahe der Laktatschwelle (178 bpm). 33m 34s in Zone 4 bei Ø 168 bpm (Max: 177 bpm). Training Load: 71.",
+      "coach_tip": "Wichtiger Reiz für Tempohärte – erfordert nun mindestens 48 Stunden lockere Regeneration.",
+      "cadence_feedback": "Ø 153 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 2m 39s | Z2: 2m 17s | Z3: 12m 52s | Z4: 33m 34s"
+    },
+    "analyzed_at": "2026-10-08T16:00:20.008264"
+  },
+  "i193525619": {
+    "id": "i193525619",
+    "date": "2026-07-21T20:03:55",
+    "name": "Evening Run",
+    "distance_km": 5.27,
+    "moving_time_s": 2199,
+    "moving_time_str": "36m",
+    "pace_str": "6:57 /km",
+    "avg_hr": 154.0,
+    "max_hr": 162,
+    "cadence_spm": 153.9,
+    "elevation_gain_m": 16.0,
+    "training_load": 38.0,
+    "z1_z2_pct": 72.5,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 229,
+        "time_str": "3m 49s",
+        "pct": 10.4
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1365,
+        "time_str": "22m 45s",
+        "pct": 62.0
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 606,
+        "time_str": "10m 06s",
+        "pct": 27.5
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 7m 138bpm",
+      "4x 6m59s 157bpm",
+      "1x 1m50s 159bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "solide",
+      "rating_label": "Solider Grundlagenlauf mit Spitzen",
+      "summary": "Guter Grundlagenanteil (72.5% in Z1/Z2), jedoch 10m 06s in Zone 3 verbracht. Spitzenpuls lag bei 162 bpm (Obergrenze: 158 bpm).",
+      "coach_tip": "An leichten Steigungen früher Druck herausnehmen, um nicht in Zone 3 abzudriften.",
+      "cadence_feedback": "Ø 153 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 3m 49s | Z2: 22m 45s | Z3: 10m 06s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:00:20.008264"
+  },
+  "i193525600": {
+    "id": "i193525600",
+    "date": "2026-07-19T08:52:03",
+    "name": "Morning Run",
+    "distance_km": 7.63,
+    "moving_time_s": 3605,
+    "moving_time_str": "1h 00m",
+    "pace_str": "7:52 /km",
+    "avg_hr": 155.0,
+    "max_hr": 165,
+    "cadence_spm": 150.8,
+    "elevation_gain_m": 25.9,
+    "training_load": 63.0,
+    "z1_z2_pct": 73.6,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 495,
+        "time_str": "8m 15s",
+        "pct": 13.7
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 2159,
+        "time_str": "35m 59s",
+        "pct": 59.9
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 953,
+        "time_str": "15m 53s",
+        "pct": 26.4
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "7x 7m52s 154bpm",
+      "1x 5m 160bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "solide",
+      "rating_label": "Solider Grundlagenlauf mit Spitzen",
+      "summary": "Guter Grundlagenanteil (73.6% in Z1/Z2), jedoch 15m 53s in Zone 3 verbracht. Spitzenpuls lag bei 165 bpm (Obergrenze: 158 bpm).",
+      "coach_tip": "An leichten Steigungen früher Druck herausnehmen, um nicht in Zone 3 abzudriften.",
+      "cadence_feedback": "Ø 150 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 8m 15s | Z2: 35m 59s | Z3: 15m 53s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:00:20.008264"
+  },
+  "i194924144": {
+    "id": "i194924144",
+    "date": "2026-10-08T07:11:28",
+    "name": "Wien Laufen",
+    "distance_km": 7.05,
+    "moving_time_s": 2998,
+    "moving_time_str": "49m",
+    "pace_str": "7:05 /km",
+    "avg_hr": 155.0,
+    "max_hr": 164,
+    "cadence_spm": 154.5,
+    "elevation_gain_m": 47.7,
+    "training_load": 53.0,
+    "z1_z2_pct": 61.6,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 312,
+        "time_str": "5m 12s",
+        "pct": 10.4
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1537,
+        "time_str": "25m 37s",
+        "pct": 51.2
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1151,
+        "time_str": "19m 11s",
+        "pct": 38.4
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m33s 134bpm",
+      "6x 7m22s 157bpm",
+      "1x 22s 161bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "solide",
+      "rating_label": "Überwiegend aerob mit Z3-Drift",
+      "summary": "Solider Grundlagenschwerpunkt (61.6% in Z1/Z2), jedoch 19m 11s in Zone 3 abgedriftet. Ø Puls lag mit 155 bpm im Soll (< 158 bpm), jedoch kletterte der Maximalpuls auf 164 bpm.",
+      "coach_tip": "An Steigungen oder in der zweiten Hälfte früher Tempo herausnehmen, um nicht in Zone 3 abzudriften.",
+      "cadence_feedback": "Ø 154 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 5m 12s | Z2: 25m 37s | Z3: 19m 11s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:34:06.099569"
+  },
+  "i193525586": {
+    "id": "i193525586",
+    "date": "2026-07-17T17:41:14",
+    "name": "Lauf am Nachmittag",
+    "distance_km": 5.21,
+    "moving_time_s": 2078,
+    "moving_time_str": "34m",
+    "pace_str": "6:39 /km",
+    "avg_hr": 162.0,
+    "max_hr": 171,
+    "cadence_spm": 153.9,
+    "elevation_gain_m": 16.1,
+    "training_load": 42.0,
+    "z1_z2_pct": 13.6,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 120,
+        "time_str": "2m",
+        "pct": 5.8
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 162,
+        "time_str": "2m 42s",
+        "pct": 7.8
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1708,
+        "time_str": "28m 28s",
+        "pct": 82.2
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 88,
+        "time_str": "1m 28s",
+        "pct": 4.2
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "5x 6m43s 161bpm",
+      "1x 81s 169bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 13.6% in Z1/Z2, dafür 28m 28s in Zone 3 und 1m 28s in Zone 4. Ø Puls 162 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Ø 153 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 2m | Z2: 2m 42s | Z3: 28m 28s | Z4: 1m 28s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525564": {
+    "id": "i193525564",
+    "date": "2026-07-14T17:51:51",
+    "name": "Afternoon Run",
+    "distance_km": 5.33,
+    "moving_time_s": 2720,
+    "moving_time_str": "45m",
+    "pace_str": "8:30 /km",
+    "avg_hr": 156.0,
+    "max_hr": 169,
+    "cadence_spm": 154.0,
+    "elevation_gain_m": 14.7,
+    "training_load": 49.0,
+    "z1_z2_pct": 56.0,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 194,
+        "time_str": "3m 14s",
+        "pct": 7.1
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1331,
+        "time_str": "22m 11s",
+        "pct": 48.9
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1183,
+        "time_str": "19m 43s",
+        "pct": 43.5
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 14,
+        "time_str": "14s",
+        "pct": 0.5
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "5x 8m34s 155bpm",
+      "1x 2m42s 167bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 56.0% in Z1/Z2, dafür 19m 43s in Zone 3 und 14s in Zone 4. Ø Puls 156 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Ø 154 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 3m 14s | Z2: 22m 11s | Z3: 19m 43s | Z4: 14s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525553": {
+    "id": "i193525553",
+    "date": "2026-07-12T18:46:25",
+    "name": "Abendlauf",
+    "distance_km": 5.17,
+    "moving_time_s": 2466,
+    "moving_time_str": "41m",
+    "pace_str": "7:57 /km",
+    "avg_hr": 151.0,
+    "max_hr": 160,
+    "cadence_spm": 155.0,
+    "elevation_gain_m": 17.1,
+    "training_load": 39.0,
+    "z1_z2_pct": 98.1,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 752,
+        "time_str": "12m 32s",
+        "pct": 30.5
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1669,
+        "time_str": "27m 49s",
+        "pct": 67.6
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 48,
+        "time_str": "48s",
+        "pct": 1.9
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "5x 7m59s 150bpm",
+      "1x 79s 154bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (98.1% in Z1/Z2). Die Herzfrequenz blieb mit Ø 151 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 12m 32s, Z2: 27m 49s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Ø 155 spm liegt im soliden, ökonomischen Freizeit-Bereich.",
+      "zone_distribution_text": "Z1: 12m 32s | Z2: 27m 49s | Z3: 48s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525538": {
+    "id": "i193525538",
+    "date": "2026-07-10T18:46:59",
+    "name": "Evening Run",
+    "distance_km": 5.01,
+    "moving_time_s": 2320,
+    "moving_time_str": "38m",
+    "pace_str": "7:43 /km",
+    "avg_hr": 153.0,
+    "max_hr": 161,
+    "cadence_spm": 154.4,
+    "elevation_gain_m": 12.2,
+    "training_load": 39.0,
+    "z1_z2_pct": 89.1,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 229,
+        "time_str": "3m 49s",
+        "pct": 9.9
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1841,
+        "time_str": "30m 41s",
+        "pct": 79.3
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 252,
+        "time_str": "4m 12s",
+        "pct": 10.9
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m46s 139bpm",
+      "1x 7m8s 157bpm",
+      "3x 8m16s 155bpm",
+      "1x 5s 157bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (89.1% in Z1/Z2). Die Herzfrequenz blieb mit Ø 153 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 3m 49s, Z2: 30m 41s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Ø 154 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 3m 49s | Z2: 30m 41s | Z3: 4m 12s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525519": {
+    "id": "i193525519",
+    "date": "2026-06-29T19:06:41",
+    "name": "Abendlauf",
+    "distance_km": 4.18,
+    "moving_time_s": 1731,
+    "moving_time_str": "28m",
+    "pace_str": "6:54 /km",
+    "avg_hr": 155.0,
+    "max_hr": 168,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 12.3,
+    "training_load": 31.0,
+    "z1_z2_pct": 46.8,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 429,
+        "time_str": "7m 09s",
+        "pct": 24.8
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 382,
+        "time_str": "6m 22s",
+        "pct": 22.0
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 922,
+        "time_str": "15m 22s",
+        "pct": 53.2
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 30m27s 155bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 46.8% in Z1/Z2, dafür 15m 22s in Zone 3 und 0s in Zone 4. Ø Puls 155 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 7m 09s | Z2: 6m 22s | Z3: 15m 22s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525503": {
+    "id": "i193525503",
+    "date": "2026-06-25T19:39:43",
+    "name": "Abendlauf",
+    "distance_km": 4.26,
+    "moving_time_s": 1865,
+    "moving_time_str": "31m",
+    "pace_str": "7:18 /km",
+    "avg_hr": 153.0,
+    "max_hr": 163,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 13.5,
+    "training_load": 31.0,
+    "z1_z2_pct": 75.6,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 492,
+        "time_str": "8m 12s",
+        "pct": 26.4
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 919,
+        "time_str": "15m 19s",
+        "pct": 49.2
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 455,
+        "time_str": "7m 35s",
+        "pct": 24.4
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 31m7s 152bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "solide",
+      "rating_label": "Solider Grundlagenlauf mit Spitzen",
+      "summary": "Guter Grundlagenanteil (75.6% in Z1/Z2), jedoch 7m 35s in Zone 3 verbracht. Spitzenpuls lag bei 163 bpm (Obergrenze: 158 bpm).",
+      "coach_tip": "An leichten Steigungen früher Druck herausnehmen, um nicht in Zone 3 abzudriften.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 8m 12s | Z2: 15m 19s | Z3: 7m 35s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525488": {
+    "id": "i193525488",
+    "date": "2026-06-18T19:06:44",
+    "name": "Lauf am Abend",
+    "distance_km": 4.32,
+    "moving_time_s": 1839,
+    "moving_time_str": "30m",
+    "pace_str": "7:06 /km",
+    "avg_hr": 0.0,
+    "max_hr": 0,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 11.0,
+    "training_load": 0.0,
+    "z1_z2_pct": 0.0,
+    "zone_breakdown": {},
+    "intervals": [],
+    "intensity_class": "gemischte_intensitaet",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 0.0% in Z1/Z2, dafür 0s in Zone 3 und 0s in Zone 4. Ø Puls 0 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 0s | Z2: 0s | Z3: 0s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525458": {
+    "id": "i193525458",
+    "date": "2026-06-16T16:48:37",
+    "name": "Lauf am Nachmittag",
+    "distance_km": 5.65,
+    "moving_time_s": 2208,
+    "moving_time_str": "36m",
+    "pace_str": "6:31 /km",
+    "avg_hr": 157.0,
+    "max_hr": 168,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 14.9,
+    "training_load": 41.0,
+    "z1_z2_pct": 38.2,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 349,
+        "time_str": "5m 49s",
+        "pct": 15.8
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 495,
+        "time_str": "8m 15s",
+        "pct": 22.4
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1365,
+        "time_str": "22m 45s",
+        "pct": 61.8
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 36m50s 157bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 38.2% in Z1/Z2, dafür 22m 45s in Zone 3 und 0s in Zone 4. Ø Puls 157 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 5m 49s | Z2: 8m 15s | Z3: 22m 45s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525426": {
+    "id": "i193525426",
+    "date": "2026-06-14T09:33:25",
+    "name": "Lauf am Morgen",
+    "distance_km": 6.26,
+    "moving_time_s": 2582,
+    "moving_time_str": "43m",
+    "pace_str": "6:52 /km",
+    "avg_hr": 155.0,
+    "max_hr": 166,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 22.2,
+    "training_load": 46.0,
+    "z1_z2_pct": 60.9,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 422,
+        "time_str": "7m 02s",
+        "pct": 16.3
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1150,
+        "time_str": "19m 10s",
+        "pct": 44.5
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1011,
+        "time_str": "16m 51s",
+        "pct": 39.1
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 43m4s 155bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 60.9% in Z1/Z2, dafür 16m 51s in Zone 3 und 0s in Zone 4. Ø Puls 155 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 7m 02s | Z2: 19m 10s | Z3: 16m 51s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525447": {
+    "id": "i193525447",
+    "date": "2026-06-14T09:33:25",
+    "name": "Lauf am Morgen",
+    "distance_km": 6.26,
+    "moving_time_s": 2582,
+    "moving_time_str": "43m",
+    "pace_str": "6:52 /km",
+    "avg_hr": 155.0,
+    "max_hr": 166,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 22.2,
+    "training_load": 46.0,
+    "z1_z2_pct": 60.9,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 422,
+        "time_str": "7m 02s",
+        "pct": 16.3
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1150,
+        "time_str": "19m 10s",
+        "pct": 44.5
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1011,
+        "time_str": "16m 51s",
+        "pct": 39.1
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 43m4s 155bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 60.9% in Z1/Z2, dafür 16m 51s in Zone 3 und 0s in Zone 4. Ø Puls 155 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 7m 02s | Z2: 19m 10s | Z3: 16m 51s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525408": {
+    "id": "i193525408",
+    "date": "2026-06-12T20:07:53",
+    "name": "Abendlauf",
+    "distance_km": 5.15,
+    "moving_time_s": 1919,
+    "moving_time_str": "31m",
+    "pace_str": "6:13 /km",
+    "avg_hr": 155.0,
+    "max_hr": 172,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 9.7,
+    "training_load": 34.0,
+    "z1_z2_pct": 48.4,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 337,
+        "time_str": "5m 37s",
+        "pct": 17.5
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 593,
+        "time_str": "9m 53s",
+        "pct": 30.9
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 906,
+        "time_str": "15m 06s",
+        "pct": 47.2
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 85,
+        "time_str": "1m 25s",
+        "pct": 4.4
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 32m51s 154bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 48.4% in Z1/Z2, dafür 15m 06s in Zone 3 und 1m 25s in Zone 4. Ø Puls 155 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 5m 37s | Z2: 9m 53s | Z3: 15m 06s | Z4: 1m 25s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525378": {
+    "id": "i193525378",
+    "date": "2026-06-09T17:29:08",
+    "name": "Lauf am Nachmittag",
+    "distance_km": 5.38,
+    "moving_time_s": 2152,
+    "moving_time_str": "35m",
+    "pace_str": "6:40 /km",
+    "avg_hr": 154.0,
+    "max_hr": 168,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 15.9,
+    "training_load": 37.0,
+    "z1_z2_pct": 64.1,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 528,
+        "time_str": "8m 48s",
+        "pct": 24.6
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 848,
+        "time_str": "14m 08s",
+        "pct": 39.5
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 772,
+        "time_str": "12m 52s",
+        "pct": 35.9
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 35m49s 154bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 64.1% in Z1/Z2, dafür 12m 52s in Zone 3 und 0s in Zone 4. Ø Puls 154 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 8m 48s | Z2: 14m 08s | Z3: 12m 52s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525361": {
+    "id": "i193525361",
+    "date": "2026-06-07T08:57:32",
+    "name": "Lauf am Morgen",
+    "distance_km": 5.1,
+    "moving_time_s": 2036,
+    "moving_time_str": "33m",
+    "pace_str": "6:39 /km",
+    "avg_hr": 155.0,
+    "max_hr": 176,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 13.4,
+    "training_load": 36.0,
+    "z1_z2_pct": 60.5,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 561,
+        "time_str": "9m 21s",
+        "pct": 27.5
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 672,
+        "time_str": "11m 12s",
+        "pct": 33.0
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 434,
+        "time_str": "7m 14s",
+        "pct": 21.3
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 370,
+        "time_str": "6m 10s",
+        "pct": 18.2
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 33m58s 154bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 60.5% in Z1/Z2, dafür 7m 14s in Zone 3 und 6m 10s in Zone 4. Ø Puls 155 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 9m 21s | Z2: 11m 12s | Z3: 7m 14s | Z4: 6m 10s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525345": {
+    "id": "i193525345",
+    "date": "2026-06-05T18:02:33",
+    "name": "Abendlauf",
+    "distance_km": 5.0,
+    "moving_time_s": 1831,
+    "moving_time_str": "30m",
+    "pace_str": "6:06 /km",
+    "avg_hr": 155.0,
+    "max_hr": 168,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 9.8,
+    "training_load": 33.0,
+    "z1_z2_pct": 38.4,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 465,
+        "time_str": "7m 45s",
+        "pct": 25.4
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 239,
+        "time_str": "3m 59s",
+        "pct": 13.0
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1128,
+        "time_str": "18m 48s",
+        "pct": 61.6
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 30m33s 155bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 38.4% in Z1/Z2, dafür 18m 48s in Zone 3 und 0s in Zone 4. Ø Puls 155 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 7m 45s | Z2: 3m 59s | Z3: 18m 48s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525324": {
+    "id": "i193525324",
+    "date": "2026-02-27T15:54:05",
+    "name": "Afternoon Run",
+    "distance_km": 6.3,
+    "moving_time_s": 2497,
+    "moving_time_str": "41m",
+    "pace_str": "6:36 /km",
+    "avg_hr": 163.0,
+    "max_hr": 172,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 20.9,
+    "training_load": 52.0,
+    "z1_z2_pct": 14.5,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 230,
+        "time_str": "3m 50s",
+        "pct": 9.2
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 131,
+        "time_str": "2m 11s",
+        "pct": 5.2
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1688,
+        "time_str": "28m 08s",
+        "pct": 67.6
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 448,
+        "time_str": "7m 28s",
+        "pct": 17.9
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m38s 146bpm",
+      "5x 6m37s 166bpm",
+      "1x 2m8s 167bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 14.5% in Z1/Z2, dafür 28m 08s in Zone 3 und 7m 28s in Zone 4. Ø Puls 163 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 3m 50s | Z2: 2m 11s | Z3: 28m 08s | Z4: 7m 28s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525309": {
+    "id": "i193525309",
+    "date": "2026-02-17T16:53:48",
+    "name": "Afternoon Run",
+    "distance_km": 5.12,
+    "moving_time_s": 2042,
+    "moving_time_str": "34m",
+    "pace_str": "6:39 /km",
+    "avg_hr": 158.0,
+    "max_hr": 169,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 15.8,
+    "training_load": 39.0,
+    "z1_z2_pct": 29.7,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 222,
+        "time_str": "3m 42s",
+        "pct": 10.9
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 384,
+        "time_str": "6m 24s",
+        "pct": 18.8
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1434,
+        "time_str": "23m 54s",
+        "pct": 70.2
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 2,
+        "time_str": "2s",
+        "pct": 0.1
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m39s 141bpm",
+      "3x 6m40s 162bpm",
+      "1x 8m58s 160bpm",
+      "1x 52s 163bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 29.7% in Z1/Z2, dafür 23m 54s in Zone 3 und 2s in Zone 4. Ø Puls 158 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 3m 42s | Z2: 6m 24s | Z3: 23m 54s | Z4: 2s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525303": {
+    "id": "i193525303",
+    "date": "2026-02-17T16:52:52",
+    "name": "Afternoon Run",
+    "distance_km": 0.08,
+    "moving_time_s": 36,
+    "moving_time_str": "0m",
+    "pace_str": "7:30 /km",
+    "avg_hr": 103.0,
+    "max_hr": 113,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 0.0,
+    "training_load": 0.0,
+    "z1_z2_pct": 100.0,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 36,
+        "time_str": "36s",
+        "pct": 100.0
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 44s 103bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (100.0% in Z1/Z2). Die Herzfrequenz blieb mit Ø 103 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 36s, Z2: 0s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 36s | Z2: 0s | Z3: 0s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525280": {
+    "id": "i193525280",
+    "date": "2026-02-10T16:39:47",
+    "name": "Afternoon Run",
+    "distance_km": 1.43,
+    "moving_time_s": 532,
+    "moving_time_str": "8m",
+    "pace_str": "6:12 /km",
+    "avg_hr": 159.0,
+    "max_hr": 171,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 12.2,
+    "training_load": 10.0,
+    "z1_z2_pct": 29.7,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 110,
+        "time_str": "1m 50s",
+        "pct": 20.7
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 48,
+        "time_str": "48s",
+        "pct": 9.0
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 244,
+        "time_str": "4m 04s",
+        "pct": 45.9
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 130,
+        "time_str": "2m 10s",
+        "pct": 24.4
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 8m48s 137bpm",
+      "1x 26m40s 166bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 29.7% in Z1/Z2, dafür 4m 04s in Zone 3 und 2m 10s in Zone 4. Ø Puls 159 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 1m 50s | Z2: 48s | Z3: 4m 04s | Z4: 2m 10s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525261": {
+    "id": "i193525261",
+    "date": "2026-01-04T09:45:16",
+    "name": "Morning Run",
+    "distance_km": 5.33,
+    "moving_time_s": 2114,
+    "moving_time_str": "35m",
+    "pace_str": "6:37 /km",
+    "avg_hr": 159.0,
+    "max_hr": 172,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 14.7,
+    "training_load": 41.0,
+    "z1_z2_pct": 50.5,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 169,
+        "time_str": "2m 49s",
+        "pct": 8.0
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 898,
+        "time_str": "14m 58s",
+        "pct": 42.5
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 753,
+        "time_str": "12m 33s",
+        "pct": 35.6
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 294,
+        "time_str": "4m 54s",
+        "pct": 13.9
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "5x 6m39s 158bpm",
+      "1x 2m19s 165bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 50.5% in Z1/Z2, dafür 12m 33s in Zone 3 und 4m 54s in Zone 4. Ø Puls 159 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 2m 49s | Z2: 14m 58s | Z3: 12m 33s | Z4: 4m 54s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525251": {
+    "id": "i193525251",
+    "date": "2025-12-14T10:58:37",
+    "name": "Morning Run",
+    "distance_km": 0.4,
+    "moving_time_s": 431,
+    "moving_time_str": "7m",
+    "pace_str": "17:58 /km",
+    "avg_hr": 77.0,
+    "max_hr": 125,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 0.0,
+    "training_load": 2.0,
+    "z1_z2_pct": 100.0,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 435,
+        "time_str": "7m 15s",
+        "pct": 100.0
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 19m28s 77bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (100.0% in Z1/Z2). Die Herzfrequenz blieb mit Ø 77 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 7m 15s, Z2: 0s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 7m 15s | Z2: 0s | Z3: 0s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525222": {
+    "id": "i193525222",
+    "date": "2025-12-14T09:45:41",
+    "name": "Morning Run",
+    "distance_km": 6.61,
+    "moving_time_s": 3099,
+    "moving_time_str": "51m",
+    "pace_str": "7:49 /km",
+    "avg_hr": 151.0,
+    "max_hr": 173,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 23.3,
+    "training_load": 52.0,
+    "z1_z2_pct": 89.8,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 531,
+        "time_str": "8m 51s",
+        "pct": 17.1
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 2252,
+        "time_str": "37m 32s",
+        "pct": 72.7
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 297,
+        "time_str": "4m 57s",
+        "pct": 9.6
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 19,
+        "time_str": "19s",
+        "pct": 0.6
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "5x 7m47s 152bpm",
+      "1x 12m57s 141bpm",
+      "1x 4m19s 158bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (89.8% in Z1/Z2). Die Herzfrequenz blieb mit Ø 151 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 8m 51s, Z2: 37m 32s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 8m 51s | Z2: 37m 32s | Z3: 4m 57s | Z4: 19s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525206": {
+    "id": "i193525206",
+    "date": "2025-11-24T12:11:16",
+    "name": "Lunch Run",
+    "distance_km": 7.06,
+    "moving_time_s": 2715,
+    "moving_time_str": "45m",
+    "pace_str": "6:25 /km",
+    "avg_hr": 155.0,
+    "max_hr": 166,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 22.1,
+    "training_load": 48.0,
+    "z1_z2_pct": 60.0,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 347,
+        "time_str": "5m 47s",
+        "pct": 12.8
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1283,
+        "time_str": "21m 23s",
+        "pct": 47.3
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1085,
+        "time_str": "18m 05s",
+        "pct": 40.0
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m41s 139bpm",
+      "6x 6m24s 158bpm",
+      "1x 30s 157bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 60.0% in Z1/Z2, dafür 18m 05s in Zone 3 und 0s in Zone 4. Ø Puls 155 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 5m 47s | Z2: 21m 23s | Z3: 18m 05s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525183": {
+    "id": "i193525183",
+    "date": "2025-11-21T16:47:23",
+    "name": "Afternoon Run",
+    "distance_km": 10.46,
+    "moving_time_s": 4097,
+    "moving_time_str": "1h 08m",
+    "pace_str": "6:32 /km",
+    "avg_hr": 158.0,
+    "max_hr": 167,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 25.7,
+    "training_load": 76.0,
+    "z1_z2_pct": 42.2,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 375,
+        "time_str": "6m 15s",
+        "pct": 9.2
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1355,
+        "time_str": "22m 35s",
+        "pct": 33.1
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 2367,
+        "time_str": "39m 27s",
+        "pct": 57.8
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 7m20s 141bpm",
+      "9x 6m28s 159bpm",
+      "1x 3m3s 162bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 42.2% in Z1/Z2, dafür 39m 27s in Zone 3 und 0s in Zone 4. Ø Puls 158 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 6m 15s | Z2: 22m 35s | Z3: 39m 27s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525154": {
+    "id": "i193525154",
+    "date": "2025-11-17T16:03:27",
+    "name": "Afternoon Run",
+    "distance_km": 7.73,
+    "moving_time_s": 3154,
+    "moving_time_str": "52m",
+    "pace_str": "6:48 /km",
+    "avg_hr": 157.0,
+    "max_hr": 168,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 24.7,
+    "training_load": 57.0,
+    "z1_z2_pct": 61.4,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 251,
+        "time_str": "4m 11s",
+        "pct": 8.0
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1687,
+        "time_str": "28m 07s",
+        "pct": 53.5
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1216,
+        "time_str": "20m 16s",
+        "pct": 38.6
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "6x 6m58s 155bpm",
+      "2x 5m30s 160bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 61.4% in Z1/Z2, dafür 20m 16s in Zone 3 und 0s in Zone 4. Ø Puls 157 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 4m 11s | Z2: 28m 07s | Z3: 20m 16s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525130": {
+    "id": "i193525130",
+    "date": "2025-11-09T08:08:27",
+    "name": "Morning Run",
+    "distance_km": 6.91,
+    "moving_time_s": 2932,
+    "moving_time_str": "48m",
+    "pace_str": "7:04 /km",
+    "avg_hr": 151.0,
+    "max_hr": 160,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 23.3,
+    "training_load": 47.0,
+    "z1_z2_pct": 98.8,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 589,
+        "time_str": "9m 49s",
+        "pct": 20.1
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 2307,
+        "time_str": "38m 27s",
+        "pct": 78.7
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 36,
+        "time_str": "36s",
+        "pct": 1.2
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 7m9s 136bpm",
+      "6x 7m2s 153bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (98.8% in Z1/Z2). Die Herzfrequenz blieb mit Ø 151 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 9m 49s, Z2: 38m 27s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 9m 49s | Z2: 38m 27s | Z3: 36s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525110": {
+    "id": "i193525110",
+    "date": "2025-11-07T15:18:05",
+    "name": "Afternoon Run",
+    "distance_km": 6.45,
+    "moving_time_s": 2749,
+    "moving_time_str": "45m",
+    "pace_str": "7:06 /km",
+    "avg_hr": 151.0,
+    "max_hr": 158,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 19.7,
+    "training_load": 41.0,
+    "z1_z2_pct": 100.0,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 1284,
+        "time_str": "21m 24s",
+        "pct": 46.8
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1462,
+        "time_str": "24m 22s",
+        "pct": 53.2
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m30s 120bpm",
+      "5x 7m15s 151bpm",
+      "1x 3m28s 151bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (100.0% in Z1/Z2). Die Herzfrequenz blieb mit Ø 151 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 21m 24s, Z2: 24m 22s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 21m 24s | Z2: 24m 22s | Z3: 0s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525089": {
+    "id": "i193525089",
+    "date": "2025-11-03T16:22:37",
+    "name": "Afternoon Run",
+    "distance_km": 7.1,
+    "moving_time_s": 2879,
+    "moving_time_str": "47m",
+    "pace_str": "6:45 /km",
+    "avg_hr": 155.0,
+    "max_hr": 170,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 24.5,
+    "training_load": 51.0,
+    "z1_z2_pct": 60.5,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 588,
+        "time_str": "9m 48s",
+        "pct": 20.4
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1154,
+        "time_str": "19m 14s",
+        "pct": 40.1
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1061,
+        "time_str": "17m 41s",
+        "pct": 36.9
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 76,
+        "time_str": "1m 16s",
+        "pct": 2.6
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "7x 6m44s 155bpm",
+      "1x 1m51s 149bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 60.5% in Z1/Z2, dafür 17m 41s in Zone 3 und 1m 16s in Zone 4. Ø Puls 155 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 9m 48s | Z2: 19m 14s | Z3: 17m 41s | Z4: 1m 16s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525072": {
+    "id": "i193525072",
+    "date": "2025-11-01T15:56:57",
+    "name": "Afternoon Run",
+    "distance_km": 6.32,
+    "moving_time_s": 2653,
+    "moving_time_str": "44m",
+    "pace_str": "7:00 /km",
+    "avg_hr": 153.0,
+    "max_hr": 162,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 22.1,
+    "training_load": 44.0,
+    "z1_z2_pct": 96.3,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 509,
+        "time_str": "8m 29s",
+        "pct": 19.2
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 2043,
+        "time_str": "34m 03s",
+        "pct": 77.1
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 97,
+        "time_str": "1m 37s",
+        "pct": 3.7
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "6x 7m1s 152bpm",
+      "1x 2m21s 157bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (96.3% in Z1/Z2). Die Herzfrequenz blieb mit Ø 153 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 8m 29s, Z2: 34m 03s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 8m 29s | Z2: 34m 03s | Z3: 1m 37s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525050": {
+    "id": "i193525050",
+    "date": "2025-10-26T16:02:30",
+    "name": "Afternoon Run",
+    "distance_km": 5.61,
+    "moving_time_s": 2236,
+    "moving_time_str": "37m",
+    "pace_str": "6:39 /km",
+    "avg_hr": 151.0,
+    "max_hr": 158,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 13.4,
+    "training_load": 36.0,
+    "z1_z2_pct": 100.0,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 683,
+        "time_str": "11m 23s",
+        "pct": 30.5
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1553,
+        "time_str": "25m 53s",
+        "pct": 69.5
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "5x 6m43s 150bpm",
+      "1x 3m59s 151bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (100.0% in Z1/Z2). Die Herzfrequenz blieb mit Ø 151 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 11m 23s, Z2: 25m 53s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 11m 23s | Z2: 25m 53s | Z3: 0s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525032": {
+    "id": "i193525032",
+    "date": "2025-10-20T16:34:42",
+    "name": "Afternoon Run",
+    "distance_km": 7.97,
+    "moving_time_s": 3113,
+    "moving_time_str": "51m",
+    "pace_str": "6:31 /km",
+    "avg_hr": 159.0,
+    "max_hr": 170,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 18.5,
+    "training_load": 60.0,
+    "z1_z2_pct": 34.1,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 374,
+        "time_str": "6m 14s",
+        "pct": 12.0
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 686,
+        "time_str": "11m 26s",
+        "pct": 22.0
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 2014,
+        "time_str": "33m 34s",
+        "pct": 64.7
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 39,
+        "time_str": "39s",
+        "pct": 1.3
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "8x 6m31s 159bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 34.1% in Z1/Z2, dafür 33m 34s in Zone 3 und 39s in Zone 4. Ø Puls 159 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 6m 14s | Z2: 11m 26s | Z3: 33m 34s | Z4: 39s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525017": {
+    "id": "i193525017",
+    "date": "2025-10-17T17:39:55",
+    "name": "Afternoon Run",
+    "distance_km": 6.61,
+    "moving_time_s": 2612,
+    "moving_time_str": "43m",
+    "pace_str": "6:35 /km",
+    "avg_hr": 156.0,
+    "max_hr": 170,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 13.5,
+    "training_load": 47.0,
+    "z1_z2_pct": 50.3,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 505,
+        "time_str": "8m 25s",
+        "pct": 19.3
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 809,
+        "time_str": "13m 29s",
+        "pct": 31.0
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1292,
+        "time_str": "21m 32s",
+        "pct": 49.5
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 6,
+        "time_str": "6s",
+        "pct": 0.2
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m47s 136bpm",
+      "5x 6m33s 159bpm",
+      "1x 4m11s 161bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 50.3% in Z1/Z2, dafür 21m 32s in Zone 3 und 6s in Zone 4. Ø Puls 156 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 8m 25s | Z2: 13m 29s | Z3: 21m 32s | Z4: 6s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193525000": {
+    "id": "i193525000",
+    "date": "2025-10-13T18:17:35",
+    "name": "Evening Run",
+    "distance_km": 4.89,
+    "moving_time_s": 2000,
+    "moving_time_str": "33m",
+    "pace_str": "6:49 /km",
+    "avg_hr": 154.0,
+    "max_hr": 172,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 9.8,
+    "training_load": 34.0,
+    "z1_z2_pct": 77.0,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 377,
+        "time_str": "6m 17s",
+        "pct": 18.9
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1160,
+        "time_str": "19m 20s",
+        "pct": 58.1
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 318,
+        "time_str": "5m 18s",
+        "pct": 15.9
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 141,
+        "time_str": "2m 21s",
+        "pct": 7.1
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "4x 6m57s 151bpm",
+      "1x 5m38s 164bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "solide",
+      "rating_label": "Solider Grundlagenlauf mit Spitzen",
+      "summary": "Guter Grundlagenanteil (77.0% in Z1/Z2), jedoch 5m 18s in Zone 3 verbracht. Spitzenpuls lag bei 172 bpm (Obergrenze: 158 bpm).",
+      "coach_tip": "An leichten Steigungen früher Druck herausnehmen, um nicht in Zone 3 abzudriften.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 6m 17s | Z2: 19m 20s | Z3: 5m 18s | Z4: 2m 21s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193524986": {
+    "id": "i193524986",
+    "date": "2025-10-03T17:44:17",
+    "name": "Afternoon Run",
+    "distance_km": 6.18,
+    "moving_time_s": 2541,
+    "moving_time_str": "42m",
+    "pace_str": "6:51 /km",
+    "avg_hr": 155.0,
+    "max_hr": 164,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 14.8,
+    "training_load": 45.0,
+    "z1_z2_pct": 68.3,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 240,
+        "time_str": "4m",
+        "pct": 9.4
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1496,
+        "time_str": "24m 56s",
+        "pct": 58.9
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 805,
+        "time_str": "13m 25s",
+        "pct": 31.7
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "6x 6m53s 155bpm",
+      "1x 1m48s 154bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "solide",
+      "rating_label": "Solider Grundlagenlauf mit Spitzen",
+      "summary": "Guter Grundlagenanteil (68.3% in Z1/Z2), jedoch 13m 25s in Zone 3 verbracht. Spitzenpuls lag bei 164 bpm (Obergrenze: 158 bpm).",
+      "coach_tip": "An leichten Steigungen früher Druck herausnehmen, um nicht in Zone 3 abzudriften.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 4m | Z2: 24m 56s | Z3: 13m 25s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193524972": {
+    "id": "i193524972",
+    "date": "2025-08-30T17:14:30",
+    "name": "Lauf am Nachmittag",
+    "distance_km": 6.34,
+    "moving_time_s": 2945,
+    "moving_time_str": "49m",
+    "pace_str": "7:45 /km",
+    "avg_hr": 150.0,
+    "max_hr": 160,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 22.1,
+    "training_load": 46.0,
+    "z1_z2_pct": 99.7,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 1330,
+        "time_str": "22m 10s",
+        "pct": 45.2
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1603,
+        "time_str": "26m 43s",
+        "pct": 54.5
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 8,
+        "time_str": "8s",
+        "pct": 0.3
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "6x 7m52s 150bpm",
+      "1x 2m49s 154bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (99.7% in Z1/Z2). Die Herzfrequenz blieb mit Ø 150 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 22m 10s, Z2: 26m 43s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 22m 10s | Z2: 26m 43s | Z3: 8s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193524951": {
+    "id": "i193524951",
+    "date": "2025-08-28T07:21:35",
+    "name": "Lauf am Morgen",
+    "distance_km": 6.32,
+    "moving_time_s": 2594,
+    "moving_time_str": "43m",
+    "pace_str": "6:50 /km",
+    "avg_hr": 151.0,
+    "max_hr": 166,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 67.7,
+    "training_load": 41.0,
+    "z1_z2_pct": 79.3,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 965,
+        "time_str": "16m 05s",
+        "pct": 37.3
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1088,
+        "time_str": "18m 08s",
+        "pct": 42.0
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 537,
+        "time_str": "8m 57s",
+        "pct": 20.7
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "6x 6m42s 152bpm",
+      "1x 3m19s 147bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "solide",
+      "rating_label": "Solider Grundlagenlauf mit Spitzen",
+      "summary": "Guter Grundlagenanteil (79.3% in Z1/Z2), jedoch 8m 57s in Zone 3 verbracht. Spitzenpuls lag bei 166 bpm (Obergrenze: 158 bpm).",
+      "coach_tip": "An leichten Steigungen früher Druck herausnehmen, um nicht in Zone 3 abzudriften.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 16m 05s | Z2: 18m 08s | Z3: 8m 57s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193524930": {
+    "id": "i193524930",
+    "date": "2025-08-26T17:21:52",
+    "name": "Lauf am Nachmittag",
+    "distance_km": 6.57,
+    "moving_time_s": 2850,
+    "moving_time_str": "47m",
+    "pace_str": "7:14 /km",
+    "avg_hr": 150.0,
+    "max_hr": 174,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 31.2,
+    "training_load": 50.0,
+    "z1_z2_pct": 41.4,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 709,
+        "time_str": "11m 49s",
+        "pct": 24.9
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 472,
+        "time_str": "7m 52s",
+        "pct": 16.6
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1599,
+        "time_str": "26m 39s",
+        "pct": 56.1
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 70,
+        "time_str": "1m 10s",
+        "pct": 2.5
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 7m17s 137bpm",
+      "5x 6m44s 161bpm",
+      "1x 18m49s 135bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 41.4% in Z1/Z2, dafür 26m 39s in Zone 3 und 1m 10s in Zone 4. Ø Puls 150 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 11m 49s | Z2: 7m 52s | Z3: 26m 39s | Z4: 1m 10s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193524910": {
+    "id": "i193524910",
+    "date": "2025-08-23T17:37:23",
+    "name": "Lauf am Nachmittag",
+    "distance_km": 5.72,
+    "moving_time_s": 2256,
+    "moving_time_str": "37m",
+    "pace_str": "6:34 /km",
+    "avg_hr": 150.0,
+    "max_hr": 168,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 14.6,
+    "training_load": 36.0,
+    "z1_z2_pct": 70.8,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 1011,
+        "time_str": "16m 51s",
+        "pct": 44.8
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 586,
+        "time_str": "9m 46s",
+        "pct": 26.0
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 659,
+        "time_str": "10m 59s",
+        "pct": 29.2
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "3x 6m43s 148bpm",
+      "1x 7m45s 142bpm",
+      "1x 5m35s 160bpm",
+      "1x 4m20s 159bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "solide",
+      "rating_label": "Solider Grundlagenlauf mit Spitzen",
+      "summary": "Guter Grundlagenanteil (70.8% in Z1/Z2), jedoch 10m 59s in Zone 3 verbracht. Spitzenpuls lag bei 168 bpm (Obergrenze: 158 bpm).",
+      "coach_tip": "An leichten Steigungen früher Druck herausnehmen, um nicht in Zone 3 abzudriften.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 16m 51s | Z2: 9m 46s | Z3: 10m 59s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193524893": {
+    "id": "i193524893",
+    "date": "2025-08-21T19:09:29",
+    "name": "Abendlauf",
+    "distance_km": 5.44,
+    "moving_time_s": 2271,
+    "moving_time_str": "37m",
+    "pace_str": "6:57 /km",
+    "avg_hr": 155.0,
+    "max_hr": 171,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 14.7,
+    "training_load": 40.0,
+    "z1_z2_pct": 56.6,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 353,
+        "time_str": "5m 53s",
+        "pct": 15.5
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 933,
+        "time_str": "15m 33s",
+        "pct": 41.1
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 949,
+        "time_str": "15m 49s",
+        "pct": 41.8
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 36,
+        "time_str": "36s",
+        "pct": 1.6
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "5x 6m59s 155bpm",
+      "1x 3m17s 158bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 56.6% in Z1/Z2, dafür 15m 49s in Zone 3 und 36s in Zone 4. Ø Puls 155 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 5m 53s | Z2: 15m 33s | Z3: 15m 49s | Z4: 36s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193524882": {
+    "id": "i193524882",
+    "date": "2025-08-19T18:40:16",
+    "name": "Abendlauf",
+    "distance_km": 3.88,
+    "moving_time_s": 1618,
+    "moving_time_str": "26m",
+    "pace_str": "6:57 /km",
+    "avg_hr": 152.0,
+    "max_hr": 173,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 6.0,
+    "training_load": 26.0,
+    "z1_z2_pct": 69.1,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 756,
+        "time_str": "12m 36s",
+        "pct": 46.8
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 359,
+        "time_str": "5m 59s",
+        "pct": 22.2
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 368,
+        "time_str": "6m 08s",
+        "pct": 22.8
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 131,
+        "time_str": "2m 11s",
+        "pct": 8.1
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "2x 7m16s 148bpm",
+      "2x 6m18s 155bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "solide",
+      "rating_label": "Solider Grundlagenlauf mit Spitzen",
+      "summary": "Guter Grundlagenanteil (69.1% in Z1/Z2), jedoch 6m 08s in Zone 3 verbracht. Spitzenpuls lag bei 173 bpm (Obergrenze: 158 bpm).",
+      "coach_tip": "An leichten Steigungen früher Druck herausnehmen, um nicht in Zone 3 abzudriften.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 12m 36s | Z2: 5m 59s | Z3: 6m 08s | Z4: 2m 11s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193524868": {
+    "id": "i193524868",
+    "date": "2025-08-16T18:16:38",
+    "name": "Abendlauf",
+    "distance_km": 6.45,
+    "moving_time_s": 3027,
+    "moving_time_str": "50m",
+    "pace_str": "7:49 /km",
+    "avg_hr": 153.0,
+    "max_hr": 171,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 15.8,
+    "training_load": 50.0,
+    "z1_z2_pct": 76.2,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 864,
+        "time_str": "14m 24s",
+        "pct": 28.6
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1440,
+        "time_str": "24m",
+        "pct": 47.6
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 657,
+        "time_str": "10m 57s",
+        "pct": 21.7
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 62,
+        "time_str": "1m 02s",
+        "pct": 2.1
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "6x 7m52s 152bpm",
+      "1x 3m23s 165bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "review": {
+      "rating": "solide",
+      "rating_label": "Solider Grundlagenlauf mit Spitzen",
+      "summary": "Guter Grundlagenanteil (76.2% in Z1/Z2), jedoch 10m 57s in Zone 3 verbracht. Spitzenpuls lag bei 171 bpm (Obergrenze: 158 bpm).",
+      "coach_tip": "An leichten Steigungen früher Druck herausnehmen, um nicht in Zone 3 abzudriften.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 14m 24s | Z2: 24m | Z3: 10m 57s | Z4: 1m 02s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193524856": {
+    "id": "i193524856",
+    "date": "2025-08-14T19:38:15",
+    "name": "Abendlauf",
+    "distance_km": 5.46,
+    "moving_time_s": 2113,
+    "moving_time_str": "35m",
+    "pace_str": "6:27 /km",
+    "avg_hr": 159.0,
+    "max_hr": 171,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 13.4,
+    "training_load": 39.0,
+    "z1_z2_pct": 30.8,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 345,
+        "time_str": "5m 45s",
+        "pct": 16.4
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 304,
+        "time_str": "5m 04s",
+        "pct": 14.4
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1348,
+        "time_str": "22m 28s",
+        "pct": 63.9
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 112,
+        "time_str": "1m 52s",
+        "pct": 5.3
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m29s 142bpm",
+      "2x 5m30s 164bpm",
+      "2x 7m19s 161bpm",
+      "1x 3m10s 163bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 30.8% in Z1/Z2, dafür 22m 28s in Zone 3 und 1m 52s in Zone 4. Ø Puls 159 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 5m 45s | Z2: 5m 04s | Z3: 22m 28s | Z4: 1m 52s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193524837": {
+    "id": "i193524837",
+    "date": "2025-08-12T19:56:18",
+    "name": "Abendlauf",
+    "distance_km": 3.78,
+    "moving_time_s": 1489,
+    "moving_time_str": "24m",
+    "pace_str": "6:34 /km",
+    "avg_hr": 149.0,
+    "max_hr": 168,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 8.6,
+    "training_load": 22.0,
+    "z1_z2_pct": 93.6,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 717,
+        "time_str": "11m 57s",
+        "pct": 48.3
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 673,
+        "time_str": "11m 13s",
+        "pct": 45.3
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 95,
+        "time_str": "1m 35s",
+        "pct": 6.4
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "4x 6m14s 149bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (93.6% in Z1/Z2). Die Herzfrequenz blieb mit Ø 149 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 11m 57s, Z2: 11m 13s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 11m 57s | Z2: 11m 13s | Z3: 1m 35s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193524818": {
+    "id": "i193524818",
+    "date": "2025-08-09T19:53:16",
+    "name": "Abendlauf",
+    "distance_km": 4.28,
+    "moving_time_s": 2038,
+    "moving_time_str": "33m",
+    "pace_str": "7:56 /km",
+    "avg_hr": 149.0,
+    "max_hr": 172,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 9.9,
+    "training_load": 31.0,
+    "z1_z2_pct": 88.3,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 796,
+        "time_str": "13m 16s",
+        "pct": 39.1
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1003,
+        "time_str": "16m 43s",
+        "pct": 49.2
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 216,
+        "time_str": "3m 36s",
+        "pct": 10.6
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 23,
+        "time_str": "23s",
+        "pct": 1.1
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "4x 7m51s 149bpm",
+      "1x 4m31s 150bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (88.3% in Z1/Z2). Die Herzfrequenz blieb mit Ø 149 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 13m 16s, Z2: 16m 43s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 13m 16s | Z2: 16m 43s | Z3: 3m 36s | Z4: 23s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193524796": {
+    "id": "i193524796",
+    "date": "2025-08-07T18:55:35",
+    "name": "Abendlauf",
+    "distance_km": 4.81,
+    "moving_time_s": 1993,
+    "moving_time_str": "33m",
+    "pace_str": "6:54 /km",
+    "avg_hr": 160.0,
+    "max_hr": 176,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 12.2,
+    "training_load": 37.0,
+    "z1_z2_pct": 42.0,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 325,
+        "time_str": "5m 25s",
+        "pct": 16.3
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 510,
+        "time_str": "8m 30s",
+        "pct": 25.6
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 974,
+        "time_str": "16m 14s",
+        "pct": 48.9
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 181,
+        "time_str": "3m 01s",
+        "pct": 9.1
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "4x 6m59s 157bpm",
+      "1x 5m42s 167bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 42.0% in Z1/Z2, dafür 16m 14s in Zone 3 und 3m 01s in Zone 4. Ø Puls 160 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 5m 25s | Z2: 8m 30s | Z3: 16m 14s | Z4: 3m 01s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  },
+  "i193522764": {
+    "id": "i193522764",
+    "date": "2025-08-05T19:55:12",
+    "name": "Evening Laufen",
+    "distance_km": 5.22,
+    "moving_time_s": 2221,
+    "moving_time_str": "37m",
+    "pace_str": "7:05 /km",
+    "avg_hr": 163.0,
+    "max_hr": 181,
+    "cadence_spm": 0.0,
+    "elevation_gain_m": 14.8,
+    "training_load": 45.0,
+    "z1_z2_pct": 24.9,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 398,
+        "time_str": "6m 38s",
+        "pct": 18.0
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 155,
+        "time_str": "2m 35s",
+        "pct": 7.0
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo/Grauzone)",
+        "seconds": 1234,
+        "time_str": "20m 34s",
+        "pct": 55.7
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 366,
+        "time_str": "6m 06s",
+        "pct": 16.5
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 64,
+        "time_str": "1m 04s",
+        "pct": 2.9
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 6m14s 150bpm",
+      "4x 7m22s 164bpm",
+      "1x 95s 172bpm"
+    ],
+    "intensity_class": "grauzone_tempo",
+    "review": {
+      "rating": "grauzone",
+      "rating_label": "Klassische Intensitätsfalle (Grauzone)",
+      "summary": "Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. Nur 24.9% in Z1/Z2, dafür 20m 34s in Zone 3 und 6m 06s in Zone 4. Ø Puls 163 bpm liegt deutlich über der Z2-Obergrenze (158 bpm).",
+      "coach_tip": "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt.",
+      "cadence_feedback": "Keine Schrittfrequenz-Sensordaten vorhanden.",
+      "zone_distribution_text": "Z1: 6m 38s | Z2: 2m 35s | Z3: 20m 34s | Z4: 6m 06s"
+    },
+    "analyzed_at": "2026-10-08T16:33:13.579453"
+  }
+}
