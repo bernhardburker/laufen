@@ -8,6 +8,7 @@ Feature: Central task runner and command line interface
     Then the process exits with code 0
     And the output contains the task runner overview
     And the output lists available commands like "sync", "report", and "dashboard"
+    And the output contains "dispatch"
 
   Scenario: Display help when no arguments are provided
     When the cli runner is executed without arguments
@@ -25,3 +26,9 @@ Feature: Central task runner and command line interface
     Then the process exits with code 0
     And the output contains "RECENT RUNNING ACTIVITIES"
     And the output contains "WEEKLY RUNNING TRENDS"
+
+  Scenario: Run today task displays daily recommendation
+    Given an activities dataset with multiple running activities
+    When the cli runner is executed with "today"
+    Then the process exits with code 0
+    And the output contains "Tagesempfehlung"

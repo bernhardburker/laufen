@@ -25,6 +25,10 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.analysis.coach_history import load_coach_history
+from src.analysis.daily_recommendation import (
+    generate_daily_recommendation,
+    render_daily_recommendation_html,
+)
 from src.analysis.run_reviewer import load_run_reviews
 from src.analysis.forecast import (
     calculate_fitness_form_trend,
@@ -390,11 +394,17 @@ def build_summary_html(
     summary: Dict[str, Any],
     ai_coach_markdown: Optional[str] = None,
     coach_history: Optional[List[Dict[str, Any]]] = None,
+    daily_recommendation: Optional[Dict[str, Any]] = None,
 ) -> str:
     coach_history_block = build_coach_history_html(coach_history or [])
+    daily_card_html = (
+        render_daily_recommendation_html(daily_recommendation)
+        if daily_recommendation
+        else ""
+    )
     if not summary or not summary.get("insights"):
-        if coach_history_block:
-            return f'<section class="summary-section">{coach_history_block}</section>'
+        if daily_card_html or coach_history_block:
+            return f'<section class="summary-section">{daily_card_html}{coach_history_block}</section>'
         return ""
 
     badge_level = summary.get("status_level", "info")
@@ -465,6 +475,7 @@ def build_summary_html(
 
     return f"""
     <section class="summary-section">
+      {daily_card_html}
       {ai_coach_block}
       <div class="summary-header">
         <div class="summary-header-left">
@@ -807,8 +818,17 @@ def generate_dashboard(
         )
 
         table_rows = build_table_rows(processed_runs, run_reviews=run_reviews)
+        daily_rec = generate_daily_recommendation(
+            runs=processed_runs,
+            athlete_profile=athlete_profile,
+            coach_history=coach_history,
+            form_data=form_data,
+        )
         summary_html = build_summary_html(
-            summary_data, ai_coach_markdown=ai_coach_text, coach_history=coach_history
+            summary_data,
+            ai_coach_markdown=ai_coach_text,
+            coach_history=coach_history,
+            daily_recommendation=daily_rec,
         )
         forecast_html = build_forecast_cards_html(predictions)
 

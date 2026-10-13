@@ -31,6 +31,19 @@
     "recommendation": "Nächsten Grundlagenlauf über 45-50 Minuten ansetzen. Tempo aktiv reduzieren oder kurze Gehpausen nutzen, sobald die Herzfrequenz 155 bpm übersteigt, um den Z3-Drift vollständig zu vermeiden.",
     "target_type": "easy_run",
     "target_hr_max": 158,
+    "status": "erfüllt",
+    "actual": "Die Empfehlung vom 08.10. (45–50 min Grundlagenlauf mit Temporeduktion zur Vermeidung von Z3-Drift) wurde am 12.10. mit 49 Minuten, 6,45 km und 99,6 % Z1/Z2-Disziplin mustergültig umgesetzt.",
+    "effect": "Bei einer Pace von 7:42 min/km blieb der Durchschnittspuls bei stabilen 150 bpm (Maximalpuls 159 bpm). Gegenüber dem Lauf vom 08.10. (Pace 7:05 min/km bei 19 min Z3-Drift) zeigt die bewusste Drosselung eine wirksame Entlastung des Herz-Kreislauf-Systems bei unkritischer Ermüdung (TSB -2,6).",
+    "evaluated_run_ids": [
+      "i196510631"
+    ]
+  },
+  {
+    "id": "cycle-004",
+    "date": "2026-10-13",
+    "recommendation": "Weiteren Grundlagenlauf über 45–50 Minuten durchführen. Herzfrequenz konsequent unter 158 bpm halten, Pace vollständig ignorieren und bei Steigungen Gehpausen einlegen.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
     "status": "offen",
     "actual": "Ausstehend (wird nach den nächsten Läufen analysiert)",
     "effect": "-"

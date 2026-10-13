@@ -65,7 +65,7 @@ echo "==> Generating AI coach prompt from training data..."
   --reviews "$REPO_ROOT/data/run_reviews.json" \
   --output-prompt "$PROMPT_TMP"
 
-MODEL="${AGY_MODEL:-Gemini 3.7 Flash (Medium)}"
+MODEL="${AGY_MODEL:-Gemini 3.8 Flash (Medium)}"
 TIMEOUT="${AGY_TIMEOUT:-3m}"
 
 echo "==> Invoking Antigravity CLI (agy) with model '$MODEL'..."

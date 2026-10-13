@@ -38,10 +38,12 @@ Commands:
   runs              Display recent running activities table
   trends            Display weekly trends, volume & zone discipline
   history           Display Coach memory, past recommendations & feedback loop
+  today             Display daily evaluated training recommendation ("Workout of the Day")
   review [ARGS...]  Incrementally review unanalyzed runs and cache results
   dashboard         Generate HTML dashboard (dist/index.html)
   preview [PORT]    Build dashboard and launch local webserver (default: 8080)
   plan [ARGS...]    Create or schedule structured workouts to Intervals.icu
+  dispatch [ARGS...] Trigger GitHub Actions dashboard build workflow via dispatch
   test [ARGS...]    Run the automated BDD test suite
   init [ARGS...]    Inspect system and update environment paths (.paths.env)
   help              Show this help menu
@@ -94,6 +96,9 @@ case "$COMMAND" in
   history)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/coach_history.py" "$@"
     ;;
+  today|daily)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/daily_recommendation.py" "$@"
+    ;;
   review|reviews)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/run_reviewer.py" "$@"
     ;;
@@ -113,6 +118,9 @@ case "$COMMAND" in
     ;;
   plan)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/planner/schedule_workout.py" "$@"
+    ;;
+  dispatch)
+    exec "$WORKSPACE_ROOT/.github/scripts/dispatch-workflow.sh" "$@"
     ;;
   test)
     exec "$PYTEST_EXEC" "$WORKSPACE_ROOT/tests" "$@"
