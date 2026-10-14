@@ -138,6 +138,28 @@ class RunReviewerDriver:
         self.setup_multiple_runs()
         self.generate_reviews(limit=2)
 
+    def setup_zone3_run(self) -> None:
+        self.sample_run = {
+            "id": "run-z3",
+            "type": "Run",
+            "name": "Brisk Tempo Run",
+            "start_date_local": "2026-10-06T18:00:00",
+            "distance": 7000.0,
+            "moving_time": 2400,
+            "average_heartrate": 164.0,
+            "max_heartrate": 172.0,
+            "average_cadence": 82.0,
+            "icu_training_load": 55.0,
+            "icu_hr_zone_times": [200, 600, 1200, 400, 0, 0, 0],
+        }
+        self.runs = [self.sample_run]
+        self.save_activities()
+
+    def evaluate_deep_run(self) -> None:
+        self.extracted_metrics = extract_deep_run_metrics(self.sample_run)
+        from src.analysis.run_reviewer import evaluate_run_deep
+        self.deep_review = evaluate_run_deep(self.extracted_metrics, self.athlete_profile)
+
     def build_prompt_with_cache(self) -> None:
         self.coach_prompt = build_coach_prompt(
             activities_file=self.activities_file,
@@ -224,3 +246,30 @@ def then_prompt_includes_deep_metrics_and_reviews(driver: RunReviewerDriver) -> 
     assert "Detail-Zonen" in driver.coach_prompt
     assert "Einzel-Review" in driver.coach_prompt
     assert "Kadenz" in driver.coach_prompt
+
+
+@given("an activity with high Zone 3 time and average heart rate above Zone 2")
+def given_activity_high_zone3(driver: RunReviewerDriver) -> None:
+    driver.setup_zone3_run()
+
+
+@when("deep run metrics and review are evaluated")
+def when_deep_run_metrics_and_review(driver: RunReviewerDriver) -> None:
+    driver.evaluate_deep_run()
+
+
+@then('the run rating is "zuegig"')
+def then_run_rating_zuegig(driver: RunReviewerDriver) -> None:
+    assert driver.deep_review.get("rating") == "zuegig"
+
+
+@then('the rating label is "Zügiger Dauerlauf (Zone 3)"')
+def then_rating_label_zuegig(driver: RunReviewerDriver) -> None:
+    assert driver.deep_review.get("rating_label") == "Zügiger Dauerlauf (Zone 3)"
+
+
+@then('the review summary does not contain "Intensitätsfalle" or "Grauzone"')
+def then_summary_no_grauzone(driver: RunReviewerDriver) -> None:
+    summary = driver.deep_review.get("summary", "")
+    assert "Intensitätsfalle" not in summary
+    assert "Grauzone" not in summary

@@ -420,16 +420,15 @@ def generate_training_summary(
         }
     )
 
-    # Insight 3: Polarized Training & Quality Sessions
+    # Insight 3: Training Intensity Distribution
     recommendations.append(
         {
-            "title": "Klare Reiztrennung (Polarisiertes 80/20-Training)",
+            "title": "Klare Reiztrennung (Basis & gezielte Qualität)",
             "tag": "Trainingsstruktur",
             "tag_class": "tag-cyan",
             "text": (
-                f"Trenne deine Läufe konsequent: 80% als echtes Z2-Grundlagentraining und 20% als zielgerichtete "
-                f"Qualitätseinheit (z.B. Schwellenläufe oder 4–5x 1000m Intervalle nahe der Laktatschwelle von {lthr} bpm). "
-                f"Vermeide das ständige Verweilen in der fordernden Grauzone (Zone 3)."
+                f"Halte das aerobe Fundament stabil (65–75% Z1/Z2) und kombiniere es mit zielgerichteten "
+                f"Qualitätseinheiten (z.B. Schwellenläufe oder Intervalle nahe der Laktatschwelle von {lthr} bpm)."
             ),
         }
     )

@@ -32,6 +32,7 @@ Usage: ./run <command> [arguments...]
 
 Commands:
   sync              Download activities from Intervals.icu
+  wellness [ARGS..] Download wellness & sleep data from Intervals.icu
   upload [ARGS...]  Upload activity files from export directory to Intervals.icu
   sync-profile      Sync athlete profile & HR zones from Intervals.icu
   report            Display combined recent runs & weekly trends
@@ -71,7 +72,11 @@ shift || true
 
 case "$COMMAND" in
   sync)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_intervals.py" "$@"
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_intervals.py" "$@"
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/planner/schedule_workout.py" --sync-plan "$@" || true
+    ;;
+  wellness|sync-wellness)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_wellness.py" "$@"
     ;;
   upload)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/upload_activities.py" "$@"

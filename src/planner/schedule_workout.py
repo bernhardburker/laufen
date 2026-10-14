@@ -296,6 +296,229 @@ def send_workout_event(
         sys.exit(f"Network error connecting to Intervals.icu: {e.reason}")
 
 
+def fetch_existing_events(
+    api_key: str,
+    athlete_id: str = "0",
+    oldest: str = "2020-01-01",
+    newest: str = "2030-01-01",
+    api_base_url: str = "https://intervals.icu/api/v1",
+) -> list[dict]:
+    """Fetches planned events from Intervals.icu."""
+    url = f"{api_base_url.rstrip('/')}/athlete/{athlete_id}/events?oldest={oldest}&newest={newest}"
+    auth_string = f"API_KEY:{api_key}"
+    auth_header = "Basic " + base64.b64encode(auth_string.encode("utf-8")).decode("ascii")
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": auth_header,
+            "User-Agent": "Mozilla/5.0 (compatible; LaufenSync/1.0)",
+            "Accept": "application/json",
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = resp.read().decode("utf-8")
+            return json.loads(data) if data else []
+    except Exception:
+        return []
+
+
+def find_next_date_for_days(allowed_days: list[str], start_date: datetime.date) -> datetime.date:
+    """Finds the earliest date on or after start_date that matches one of the allowed day names."""
+    allowed = [d.lower() for d in allowed_days]
+    for i in range(7):
+        candidate = start_date + datetime.timedelta(days=i)
+        if candidate.strftime("%A").lower() in allowed:
+            return candidate
+    return start_date
+
+
+def generate_weekly_plan_payloads(
+    project_root: Path,
+    athlete_profile: dict | None = None,
+    ref_date: datetime.date | None = None,
+) -> list[dict]:
+    """Generates structured workout payloads for upcoming weekly slots based on athlete profile."""
+    profile = athlete_profile or {}
+    if not profile:
+        profile_path = project_root / "config" / "athlete.json"
+        if profile_path.is_file():
+            try:
+                profile = json.loads(profile_path.read_text(encoding="utf-8"))
+            except Exception:
+                profile = {}
+
+    slots = profile.get("athlete", {}).get("weekly_slots", [])
+    today = ref_date or datetime.date.today()
+    templates_dir = project_root / "workouts" / "templates"
+    payloads = []
+
+    for slot in slots:
+        slot_id = slot.get("slot") or slot.get("id") or 1
+        role = slot.get("role", "base_anchor")
+        allowed_days = slot.get("allowed_days", ["sunday"])
+        target_date = find_next_date_for_days(allowed_days, today)
+        target_date_iso = target_date.isoformat()
+
+        if role == "quality":
+            name = f"Slot {slot_id}: Tempo- & Intervalltraining (8x 1m)"
+            desc = render_template(
+                templates_dir / "intervals.txt",
+                {
+                    "warmup": "10m",
+                    "reps": 8,
+                    "work": "1m",
+                    "work_target": "05:15/km Pace",
+                    "recovery": "1m",
+                    "recovery_target": "Z1 HR",
+                    "cooldown": "10m",
+                },
+            )
+            payloads.append({
+                "category": "WORKOUT",
+                "start_date_local": f"{target_date_iso}T07:00:00",
+                "type": "Run",
+                "name": name,
+                "description": desc,
+            })
+
+        elif role in ("flexible", "adaptive_quality"):
+            # Slot 2: Both options (Threshold and Easy Base) scheduled on the same date!
+            name_a = f"Slot {slot_id}A: Kontrollierter Schwellenlauf (3x 8m Z4)"
+            desc_a = render_template(
+                templates_dir / "threshold_intervals.txt",
+                {
+                    "warmup": "10m",
+                    "reps": 3,
+                    "work": "8m",
+                    "work_target": "Z4 HR",
+                    "recovery": "2m",
+                    "recovery_target": "Z1 HR",
+                    "cooldown": "10m",
+                },
+            )
+            payloads.append({
+                "category": "WORKOUT",
+                "start_date_local": f"{target_date_iso}T07:00:00",
+                "type": "Run",
+                "name": name_a,
+                "description": desc_a,
+            })
+
+            name_b = f"Slot {slot_id}B: Aerobe Basis & Z2 Dauerlauf (45m)"
+            desc_b = render_template(
+                templates_dir / "easy_run.txt",
+                {
+                    "warmup": "10m",
+                    "main": "30m",
+                    "cooldown": "5m",
+                    "target": "Z2 HR",
+                },
+            )
+            payloads.append({
+                "category": "WORKOUT",
+                "start_date_local": f"{target_date_iso}T07:05:00",
+                "type": "Run",
+                "name": name_b,
+                "description": desc_b,
+            })
+
+        elif role == "base_anchor":
+            name = f"Slot {slot_id}: Aerober Anker & Long Run (50m Z2)"
+            desc = render_template(
+                templates_dir / "easy_run.txt",
+                {
+                    "warmup": "10m",
+                    "main": "35m",
+                    "cooldown": "5m",
+                    "target": "Z2 HR",
+                },
+            )
+            payloads.append({
+                "category": "WORKOUT",
+                "start_date_local": f"{target_date_iso}T07:00:00",
+                "type": "Run",
+                "name": name,
+                "description": desc,
+            })
+
+    return payloads
+
+
+def sync_weekly_plan(
+    api_key: str,
+    athlete_id: str = "0",
+    athlete_profile: dict | None = None,
+    ref_date: datetime.date | None = None,
+    dry_run: bool = False,
+    api_base_url: str = "https://intervals.icu/api/v1",
+    project_root: Path | None = None,
+) -> dict:
+    """Synchronizes upcoming weekly workout slots to Intervals.icu calendar."""
+    root = project_root or Path(__file__).resolve().parent.parent.parent
+    payloads = generate_weekly_plan_payloads(root, athlete_profile, ref_date)
+
+    if not payloads:
+        return {"scheduled": [], "skipped": [], "errors": []}
+
+    today = ref_date or datetime.date.today()
+    oldest_str = today.isoformat()
+    newest_str = (today + datetime.timedelta(days=8)).isoformat()
+
+    existing_events = []
+    if api_key and not dry_run:
+        existing_events = fetch_existing_events(
+            api_key=api_key,
+            athlete_id=athlete_id,
+            oldest=oldest_str,
+            newest=newest_str,
+            api_base_url=api_base_url,
+        )
+
+    existing_signatures = set()
+    for ev in existing_events:
+        d_str = str(ev.get("start_date_local") or "")[:10]
+        ev_name = str(ev.get("name") or "").strip()
+        if d_str and ev_name:
+            existing_signatures.add((d_str, ev_name))
+
+    results: dict = {"scheduled": [], "skipped": [], "errors": []}
+
+    print("\n" + "=" * 60)
+    print("  Wochen-Trainingsplan Synchronisation (Intervals.icu / Garmin)")
+    print("=" * 60)
+
+    for p in payloads:
+        d_str = p["start_date_local"][:10]
+        p_name = p["name"]
+        if (d_str, p_name) in existing_signatures:
+            print(f"[ÜBERSPRUNGEN] Bereits im Kalender: {d_str} | {p_name}")
+            results["skipped"].append(p)
+            continue
+
+        if dry_run:
+            print(f"[DRY-RUN] Plane Workout: {d_str} | {p_name}")
+            results["scheduled"].append(p)
+        else:
+            try:
+                res = send_workout_event(
+                    payload=p,
+                    api_key=api_key,
+                    athlete_id=athlete_id,
+                    api_base_url=api_base_url,
+                )
+                ev_id = res.get("id", "neu")
+                print(f"[ANGELEGT] {d_str} | {p_name} (ID: {ev_id})")
+                results["scheduled"].append(p)
+            except Exception as e:
+                print(f"[FEHLER] Konnte {p_name} nicht anlegen: {e}")
+                results["errors"].append({"payload": p, "error": str(e)})
+
+    print("=" * 60)
+    return results
+
+
 def main() -> None:
     project_root = Path(__file__).resolve().parent.parent.parent
     dotenv_path = os.getenv("DOTENV_PATH")
@@ -391,8 +614,29 @@ def main() -> None:
         default=os.getenv("INTERVALS_API_BASE", "https://intervals.icu/api/v1"),
         help="Base URL of Intervals.icu API (default: https://intervals.icu/api/v1)",
     )
+    parser.add_argument(
+        "--sync-plan",
+        action="store_true",
+        help="Automatically generate and sync the weekly workout schedule to Intervals.icu calendar",
+    )
 
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
+
+    if args.sync_plan:
+        api_key = os.getenv("INTERVALS_API_KEY", "")
+        if not api_key and not args.dry_run:
+            sys.exit(
+                "Fehler: INTERVALS_API_KEY ist weder in der Umgebung noch in .env gesetzt.\n"
+                "Bitte via Shell exportieren oder in .env eintragen."
+            )
+        sync_weekly_plan(
+            api_key=api_key,
+            athlete_id=args.athlete_id,
+            dry_run=args.dry_run,
+            api_base_url=args.api_base,
+            project_root=project_root,
+        )
+        return
 
     payload = build_workout_payload(args, project_root)
 

@@ -81,7 +81,7 @@ def extract_deep_run_metrics(
     zone_names = [
         "Zone 1 (Recovery)",
         "Zone 2 (Aerobic)",
-        "Zone 3 (Tempo/Grauzone)",
+        "Zone 3 (Tempo)",
         "Zone 4 (Threshold/Schwelle)",
         "Zone 5 (VO2max)",
         "Zone 6 (Anaerobic)",
@@ -178,7 +178,7 @@ def classify_run_intensity(
     if z5_pct >= 10.0 or (z4_pct + z5_pct >= 35.0 and avg_hr >= lthr - 5):
         return "schwellen_intervall"
     if z3_pct >= 35.0 and z1_z2_pct < 60.0:
-        return "grauzone_tempo"
+        return "tempo_z3"
     if z4_pct >= 30.0:
         return "schwellenlauf"
     if z1_z2_pct >= 60.0:
@@ -237,18 +237,17 @@ def evaluate_run_deep(
         )
         tip = "Wichtiger Reiz für Tempohärte – erfordert nun mindestens 48 Stunden lockere Regeneration."
     else:
-        rating = "grauzone"
-        rating_label = "Klassische Intensitätsfalle (Grauzone)"
+        rating = "zuegig"
+        rating_label = "Zügiger Dauerlauf (Zone 3)"
         if avg_hr > z2_max:
-            hr_part = f"Ø Puls {int(avg_hr)} bpm liegt über der Z2-Obergrenze ({z2_max} bpm)."
+            hr_part = f"Ø Puls lag mit {int(avg_hr)} bpm über der Z2-Obergrenze ({z2_max} bpm)."
         else:
-            hr_part = f"Spitzenpuls von {max_hr} bpm und {z3_str} in Zone 3 lagen über der Z2-Obergrenze ({z2_max} bpm)."
+            hr_part = f"Spitzenpuls lag bei {max_hr} bpm mit {z3_str} in Zone 3."
         summary = (
-            f"Zu intensiv für Grundlagenausdauer, aber zu locker für gezielten Schwellenreiz. "
-            f"Nur {z1_z2_pct}% in Z1/Z2, dafür {z3_str} in Zone 3 und {z4_str} in Zone 4. "
-            f"{hr_part}"
+            f"Zügiger Ausdauerlauf mit Schwerpunkt im Übergangsbereich ({z1_z2_pct}% in Z1/Z2, {z3_str} in Zone 3, {z4_str} in Zone 4). "
+            f"{hr_part} Ein solider Reiz für das Herzschlagvolumen."
         )
-        tip = "Pace konsequent um 60–90 s/km drosseln, bis der Puls strikt unter 158 bpm bleibt."
+        tip = "Dieser Reiz beansprucht die Glykogenspeicher spürbar – plane vor der nächsten tempo- oder schwellenbetonten Einheit 48 Stunden lockere Erholung ein."
 
     # Cadence assessment
     if cadence > 0:

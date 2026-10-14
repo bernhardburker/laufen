@@ -106,12 +106,141 @@ def determine_next_quality_type(
     return preferred_type or choices[0]
 
 
+def is_quality_workout(run: Dict[str, Any]) -> bool:
+    """Returns True if the run is classified as a quality session (intervals, tempo, threshold, race)."""
+    r_type = str(run.get("workout_type") or "").lower()
+    name = str(run.get("name") or "").lower()
+    if any(k in r_type or k in name for k in ("interval", "tempo", "schwelle", "threshold", "speed", "race", "wettkampf")):
+        return True
+    z_times = run.get("icu_hr_zone_times") or []
+    if len(z_times) >= 5:
+        z4_time = z_times[3] if len(z_times) > 3 else 0
+        z5_plus = sum(z_times[4:]) if len(z_times) > 4 else 0
+        if z5_plus > 240 or z4_time > 480:
+            return True
+    return False
+
+
+def is_base_workout(run: Dict[str, Any], z2_max: int = 158) -> bool:
+    """Returns True if the run is classified as an aerobic base / easy run."""
+    if is_quality_workout(run):
+        return False
+    r_type = str(run.get("workout_type") or "").lower()
+    name = str(run.get("name") or "").lower()
+    if any(k in r_type or k in name for k in ("easy", "long_run", "base", "grundlage", "rekom", "recovery")):
+        return True
+    avg_hr = float(run.get("average_heartrate") or run.get("avg_hr") or 0.0)
+    if 0 < avg_hr <= z2_max + 3:
+        return True
+    z_times = run.get("icu_hr_zone_times") or []
+    if z_times and sum(z_times) > 0:
+        easy_time = sum(z_times[:2])
+        if easy_time / sum(z_times) >= 0.65:
+            return True
+    return False
+
+
+def calculate_consecutive_build_weeks(
+    runs: List[Dict[str, Any]],
+    ref_date: date,
+    min_load: float = 65.0,
+    min_distance_m: float = 12000.0,
+) -> int:
+    """Calculates how many consecutive completed calendar weeks prior to ref_date were build weeks."""
+    current_monday = ref_date - timedelta(days=ref_date.weekday())
+    consecutive_build = 0
+
+    for w in range(1, 5):
+        week_start = current_monday - timedelta(weeks=w)
+        week_end = week_start + timedelta(days=6)
+
+        week_runs = []
+        for r in runs:
+            d_str = str(r.get("start_date_local") or r.get("date") or "")[:10]
+            if d_str:
+                try:
+                    run_d = date.fromisoformat(d_str)
+                    if week_start <= run_d <= week_end:
+                        week_runs.append(r)
+                except Exception:
+                    continue
+
+        if not week_runs:
+            break
+
+        total_load = sum(float(r.get("training_load") or r.get("icu_training_load") or 0.0) for r in week_runs)
+        total_dist = sum(float(r.get("distance") or 0.0) for r in week_runs)
+        has_quality = any(is_quality_workout(r) for r in week_runs)
+
+        if has_quality and (total_load >= min_load or total_dist >= min_distance_m):
+            consecutive_build += 1
+        else:
+            break
+
+    return consecutive_build
+
+
+def calculate_stimulus_context(
+    runs: List[Dict[str, Any]],
+    ref_date: date,
+    z2_max: int = 158,
+) -> Dict[str, Any]:
+    """Calculates stimulus history: consecutive quality runs, days since last base run, etc."""
+    sorted_past_runs = []
+    for r in runs:
+        d_str = str(r.get("start_date_local") or r.get("date") or "")[:10]
+        if d_str:
+            try:
+                d = date.fromisoformat(d_str)
+                if d < ref_date:
+                    sorted_past_runs.append((d, r))
+            except Exception:
+                continue
+    sorted_past_runs.sort(key=lambda item: item[0], reverse=True)
+
+    consecutive_quality = 0
+    for _, r in sorted_past_runs:
+        if is_quality_workout(r):
+            consecutive_quality += 1
+        elif is_base_workout(r, z2_max=z2_max):
+            break
+
+    days_since_base = 999
+    for d, r in sorted_past_runs:
+        if is_base_workout(r, z2_max=z2_max):
+            days_since_base = (ref_date - d).days
+            break
+
+    quality_last_7d = sum(
+        1 for d, r in sorted_past_runs
+        if (ref_date - d).days <= 7 and is_quality_workout(r)
+    )
+
+    consecutive_build = calculate_consecutive_build_weeks(runs, ref_date)
+
+    return {
+        "consecutive_quality_runs": consecutive_quality,
+        "days_since_last_base_run": days_since_base,
+        "quality_runs_last_7d": quality_last_7d,
+        "consecutive_build_weeks": consecutive_build,
+        "is_deload_week": (consecutive_build >= 3),
+    }
+
+
 def check_base_anchor_completed(
     runs: List[Dict[str, Any]],
     ref_date: date,
     slots: List[Dict[str, Any]],
+    z2_max: int = 158,
 ) -> bool:
-    """Checks whether a base anchor run was completed in the preceding cycle."""
+    """Checks whether a base anchor run was completed in the preceding cycle or recently."""
+    if not runs:
+        return False
+
+    stimulus = calculate_stimulus_context(runs, ref_date, z2_max=z2_max)
+    if stimulus["days_since_last_base_run"] <= 7:
+        return True
+
     anchor_days = set()
     for s in slots:
         if s.get("role") == "base_anchor" or s.get("is_base_anchor") or s.get("is_mandatory_base"):
@@ -128,6 +257,7 @@ def check_base_anchor_completed(
         if past_d.strftime("%A").lower() in anchor_days:
             target_dates.add(past_d)
 
+    # 1. Did the runner complete a run on the anchor days?
     for r in runs:
         d_str = str(r.get("start_date_local") or r.get("date") or "")[:10]
         if d_str:
@@ -137,6 +267,20 @@ def check_base_anchor_completed(
                     return True
             except Exception:
                 continue
+
+    # 2. Hybrid Catch-Up: Did the runner complete a base run on or after the anchor period started?
+    min_anchor_date = min(target_dates) if target_dates else (ref_date - timedelta(days=7))
+    for r in runs:
+        d_str = str(r.get("start_date_local") or r.get("date") or "")[:10]
+        if d_str:
+            try:
+                run_d = date.fromisoformat(d_str)
+                if min_anchor_date <= run_d < ref_date:
+                    if is_base_workout(r, z2_max=z2_max):
+                        return True
+            except Exception:
+                continue
+
     return False
 
 
@@ -147,6 +291,7 @@ def resolve_slot_recommendation(
     tsb: float,
     z2_max: int,
     days_since: int,
+    coach_history_rec: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
     """Resolves today's structured workout from weekly_slots dynamically (supports N slots)."""
     if not slots:
@@ -173,6 +318,34 @@ def resolve_slot_recommendation(
             role = "quality"
         else:
             role = "base_anchor"
+
+    # Check for Deload Week (automatically triggered after 3 consecutive build weeks)
+    consecutive_build_weeks = calculate_consecutive_build_weeks(runs, ref_date)
+    is_deload = (consecutive_build_weeks >= 3)
+    if is_deload:
+        deload_duration = 40 if role == "base_anchor" else 35
+        return {
+            "date": ref_date.isoformat(),
+            "date_display": ref_date_str,
+            "days_since_last_run": days_since,
+            "action_type": "workout_day",
+            "workout_type": "easy_run",
+            "slot": slot_id,
+            "role": "deload",
+            "is_catch_up": False,
+            "headline": f"Heute: Aktive Regeneration (Deload Slot {slot_id})",
+            "badge": f"Slot {slot_id}: Deload-Woche",
+            "badge_class": "tag-cyan",
+            "icon": "🌱",
+            "details": (
+                f"Nach {consecutive_build_weeks} aufeinanderfolgenden Belastungswochen steht diese Woche Superkompensation an. "
+                f"Wir nehmen das Tempo komplett heraus: {deload_duration} Minuten ganz entspanntes Traben strictly unter {z2_max} bpm, "
+                "damit sich Sehnen und Nervensystem regenerieren können."
+            ),
+            "suggested_duration_min": deload_duration,
+            "suggested_target_hr": z2_max,
+            "tsb": tsb,
+        }
 
     # 1. Base Anchor Slot (e.g. Long Run / Zone 2 Base)
     if role == "base_anchor":
@@ -203,10 +376,10 @@ def resolve_slot_recommendation(
             "tsb": tsb,
         }
 
-    # 2. Quality Slot (Dynamically alternates intervals vs. tempo_run; checks base anchor)
+    # 2. Quality Slot (Dynamically alternates intervals vs. tempo_run; checks base anchor & stimulus balance)
     if role == "quality":
         requires_base = matching_slot.get("requires_base_anchor", True) or matching_slot.get("fallback_if_slot3_missed")
-        base_done = check_base_anchor_completed(runs, ref_date, slots)
+        base_done = check_base_anchor_completed(runs, ref_date, slots, z2_max=z2_max)
         if requires_base and not base_done:
             # Catch-Up Base Run: Base anchor was missing in preceding cycle!
             return {
@@ -226,6 +399,83 @@ def resolve_slot_recommendation(
                     f"Da in der Vorwoche / am Wochenende kein Grundlagenlauf stattfand, greift die Schutzregel: "
                     f"Wir sichern heute zuerst das aerobe Fundament (45–50 min strictly < {z2_max} bpm), "
                     "bevor schnelle Tempo- oder Intervalleinheiten freigegeben werden. Gehpausen an Anstiegen sind erwünscht."
+                ),
+                "suggested_duration_min": 45,
+                "suggested_target_hr": z2_max,
+                "tsb": tsb,
+            }
+
+        # Check stimulus context for recovery guardrails & coaching guidance
+        stimulus = calculate_stimulus_context(runs, ref_date, z2_max=z2_max)
+        consec_quality = stimulus["consecutive_quality_runs"]
+        days_since_base = stimulus["days_since_last_base_run"]
+
+        # Hard guardrail 1: Back-to-back quality is not allowed (days_since < 2 after quality)
+        if consec_quality >= 1 and days_since < 2:
+            return {
+                "date": ref_date.isoformat(),
+                "date_display": ref_date_str,
+                "days_since_last_run": days_since,
+                "action_type": "workout_day",
+                "workout_type": "easy_run",
+                "slot": slot_id,
+                "role": "base_anchor",
+                "is_catch_up": False,
+                "headline": "Heute: Aktive Erholung / Z2 statt Doppelbelastung",
+                "badge": f"Slot {slot_id}: Schutz vor Überreizung",
+                "badge_class": "tag-cyan",
+                "icon": "🚶",
+                "details": (
+                    f"Du hast gestern bereits einen intensiven Reiz gesetzt. "
+                    f"Um das vegetative Nervensystem zu schonen, steht heute aktive Erholung oder lockeres Traben in Z1/Z2 (< {z2_max} bpm) an."
+                ),
+                "suggested_duration_min": 35,
+                "suggested_target_hr": z2_max,
+                "tsb": tsb,
+            }
+
+        # Hard guardrail 2: 2 or more consecutive quality runs without intervening base run
+        if consec_quality >= 2:
+            return {
+                "date": ref_date.isoformat(),
+                "date_display": ref_date_str,
+                "days_since_last_run": days_since,
+                "action_type": "workout_day",
+                "workout_type": "easy_run",
+                "slot": slot_id,
+                "role": "base_anchor",
+                "is_catch_up": True,
+                "headline": "Heute: Aerobe Fundamentsicherung (Z2)",
+                "badge": f"Slot {slot_id}: Reizausgleich",
+                "badge_class": "tag-amber",
+                "icon": "🏃",
+                "details": (
+                    f"Die letzten beiden Einheiten waren intensiv. Zur Vermeidung von Überlastung "
+                    f"und zur Unterstützung der Mitochondriendichte schieben wir heute einen Z2-Lauf (< {z2_max} bpm) ein."
+                ),
+                "suggested_duration_min": 45,
+                "suggested_target_hr": z2_max,
+                "tsb": tsb,
+            }
+
+        # Flexible guidance: If base run is overdue (>= 9 days)
+        if days_since_base >= 9 and days_since_base != 999:
+            return {
+                "date": ref_date.isoformat(),
+                "date_display": ref_date_str,
+                "days_since_last_run": days_since,
+                "action_type": "workout_day",
+                "workout_type": "easy_run",
+                "slot": slot_id,
+                "role": "base_anchor",
+                "is_catch_up": True,
+                "headline": "Heute: Auffrischung der Grundlagenausdauer",
+                "badge": f"Slot {slot_id}: Basis auffrischen",
+                "badge_class": "tag-amber",
+                "icon": "🏃",
+                "details": (
+                    f"Dein letzter reiner Grundlagenlauf liegt bereits {days_since_base} Tage zurück. "
+                    f"Bevor wir wieder harte Spitzen setzen, frischen wir dein aerobes Fundament mit 45 Minuten strictly < {z2_max} bpm auf."
                 ),
                 "suggested_duration_min": 45,
                 "suggested_target_hr": z2_max,
@@ -296,7 +546,91 @@ def resolve_slot_recommendation(
                 "tsb": tsb,
             }
 
-    # 3. Recovery Slot
+    # 3. Flexible Slot (Defaults to Zone 2 base run; upgrades to Threshold / Tempo when fresh)
+    if role in ("flexible", "adaptive_quality"):
+        requires_base = matching_slot.get("requires_base_anchor", True)
+        base_done = check_base_anchor_completed(runs, ref_date, slots, z2_max=z2_max)
+        stimulus = calculate_stimulus_context(runs, ref_date, z2_max=z2_max)
+        consec_quality = stimulus["consecutive_quality_runs"]
+        days_since_base = stimulus["days_since_last_base_run"]
+
+        hr_range = matching_slot.get("target_hr_range", [168, 174])
+        target_quality_hr = hr_range[1] if isinstance(hr_range, list) and len(hr_range) > 1 else 174
+        quality_duration = matching_slot.get("duration_min", 40)
+        base_duration = 45
+
+        # Freshness condition: positive form, at least 2 days rest after a quality run (consec_quality <= 1), and base anchor intact
+        is_fresh = (tsb >= 0.0 and consec_quality <= 1 and days_since >= 2 and base_done and days_since_base <= 8)
+
+        # Hybrid AI Coach fine-tuning
+        coach_pref = (coach_history_rec or {}).get("next_workout_type")
+        coach_note = (coach_history_rec or {}).get("recommendation", "")
+
+        # If AI Coach explicitly recommended easy_run or recovery, respect it even if technically fresh
+        if coach_pref in ("easy_run", "recovery_run"):
+            is_fresh = False
+
+        if is_fresh:
+            details_text = (
+                f"Deine Form ist frisch (TSB: {tsb:+.1f}) und der aerobe Anker ist gelegt. "
+                f"Heute ist der kontrollierte Schwellenlauf freigegeben ({hr_range[0]}–{hr_range[1]} bpm). "
+                "Alternativ kannst du 40–45 Minuten ganz locker in Zone 2 laufen, falls du ein reines Grundlagentraining bevorzugst."
+            )
+            headline_text = f"Heute: Kontrollierter Schwellenlauf (Slot {slot_id}) [Optional: Z2]"
+            if coach_pref == "tempo_run":
+                headline_text = f"Heute: Kontrollierter Schwellenlauf (Slot {slot_id}) [Coach-Empfehlung]"
+                if coach_note:
+                    details_text = f"Coach-Hinweis: {coach_note} | " + details_text
+
+            return {
+                "date": ref_date.isoformat(),
+                "date_display": ref_date_str,
+                "days_since_last_run": days_since,
+                "action_type": "workout_day",
+                "workout_type": "tempo_run",
+                "slot": slot_id,
+                "role": "flexible",
+                "is_catch_up": False,
+                "headline": headline_text,
+                "badge": f"Slot {slot_id}: Schwellenreiz",
+                "badge_class": "tag-green",
+                "icon": "🔥",
+                "details": details_text,
+                "suggested_duration_min": quality_duration,
+                "suggested_target_hr": target_quality_hr,
+                "tsb": tsb,
+            }
+        else:
+            details_text = (
+                f"Heute steht das aerobe Fundament im Vordergrund (40–45 min strictly < {z2_max} bpm). "
+                f"Da dein Körper noch Reize verarbeitet oder Erholung benötigt (TSB: {tsb:+.1f}), ist ein ruhiger Dauerlauf optimal."
+            )
+            headline_text = f"Heute: Aerobe Basis & Regeneration (Slot {slot_id})"
+            if coach_pref in ("easy_run", "recovery_run"):
+                headline_text = f"Heute: Aerobe Basis & Regeneration (Slot {slot_id}) [Coach-Empfehlung]"
+                if coach_note:
+                    details_text = f"Coach-Empfehlung: {coach_note} | " + details_text
+
+            return {
+                "date": ref_date.isoformat(),
+                "date_display": ref_date_str,
+                "days_since_last_run": days_since,
+                "action_type": "workout_day",
+                "workout_type": "easy_run",
+                "slot": slot_id,
+                "role": "flexible",
+                "is_catch_up": False,
+                "headline": headline_text,
+                "badge": f"Slot {slot_id}: Z2 Grundlagenlauf",
+                "badge_class": "tag-green",
+                "icon": "🏃",
+                "details": details_text,
+                "suggested_duration_min": base_duration,
+                "suggested_target_hr": z2_max,
+                "tsb": tsb,
+            }
+
+    # 4. Recovery Slot
     if role == "recovery":
         duration = matching_slot.get("duration_min", 30)
         return {
@@ -348,8 +682,14 @@ def generate_daily_recommendation(
     target_hr = int(open_rec.get("target_hr_max") or z2_max) if open_rec else z2_max
     planned_duration = int(open_rec.get("next_duration_min") or 45) if open_rec else 45
 
+    stimulus = calculate_stimulus_context(runs, ref_date, z2_max=z2_max)
+
+    def _finalize(rec: Dict[str, Any]) -> Dict[str, Any]:
+        rec.setdefault("stimulus_context", stimulus)
+        return rec
+
     if not runs:
-        return {
+        return _finalize({
             "date": ref_date.isoformat(),
             "date_display": ref_date_str,
             "days_since_last_run": 999,
@@ -362,7 +702,7 @@ def generate_daily_recommendation(
             "suggested_duration_min": 20,
             "suggested_target_hr": target_hr,
             "tsb": tsb,
-        }
+        })
 
     days_since = calculate_days_since_last_run(runs, ref_date)
     sorted_runs = sorted(
@@ -376,7 +716,7 @@ def generate_daily_recommendation(
 
     # Case 0: Run was completed today
     if days_since == 0:
-        return {
+        return _finalize({
             "date": ref_date.isoformat(),
             "date_display": ref_date_str,
             "days_since_last_run": 0,
@@ -393,12 +733,12 @@ def generate_daily_recommendation(
             "suggested_duration_min": 0,
             "suggested_target_hr": 0,
             "tsb": tsb,
-        }
+        })
 
     # Case 1: Exactly 1 day since last run
     if days_since == 1:
         if tsb < -5.0 or last_load >= 50.0:
-            return {
+            return _finalize({
                 "date": ref_date.isoformat(),
                 "date_display": ref_date_str,
                 "days_since_last_run": 1,
@@ -414,7 +754,7 @@ def generate_daily_recommendation(
                 "suggested_duration_min": 0,
                 "suggested_target_hr": 0,
                 "tsb": tsb,
-            }
+            })
         else:
             slots = profile.get("athlete", {}).get("weekly_slots", [])
             slot_rec = resolve_slot_recommendation(
@@ -424,11 +764,12 @@ def generate_daily_recommendation(
                 tsb=tsb,
                 z2_max=z2_max,
                 days_since=days_since,
+                coach_history_rec=open_rec,
             )
             if slot_rec:
-                return slot_rec
+                return _finalize(slot_rec)
 
-            return {
+            return _finalize({
                 "date": ref_date.isoformat(),
                 "date_display": ref_date_str,
                 "days_since_last_run": 1,
@@ -444,7 +785,7 @@ def generate_daily_recommendation(
                 "suggested_duration_min": planned_duration,
                 "suggested_target_hr": target_hr,
                 "tsb": tsb,
-            }
+            })
 
     slots = profile.get("athlete", {}).get("weekly_slots", [])
 
@@ -457,11 +798,12 @@ def generate_daily_recommendation(
             tsb=tsb,
             z2_max=z2_max,
             days_since=days_since,
+            coach_history_rec=open_rec,
         )
         if slot_rec:
-            return slot_rec
+            return _finalize(slot_rec)
 
-        return {
+        return _finalize({
             "date": ref_date.isoformat(),
             "date_display": ref_date_str,
             "days_since_last_run": days_since,
@@ -477,7 +819,7 @@ def generate_daily_recommendation(
             "suggested_duration_min": planned_duration,
             "suggested_target_hr": target_hr,
             "tsb": tsb,
-        }
+        })
 
     # Case 3: 4 to 6 days since last run (pause extending)
     if 4 <= days_since <= 6:
@@ -488,11 +830,12 @@ def generate_daily_recommendation(
             tsb=tsb,
             z2_max=z2_max,
             days_since=days_since,
+            coach_history_rec=open_rec,
         )
         if slot_rec:
-            return slot_rec
+            return _finalize(slot_rec)
 
-        return {
+        return _finalize({
             "date": ref_date.isoformat(),
             "date_display": ref_date_str,
             "days_since_last_run": days_since,
@@ -508,11 +851,11 @@ def generate_daily_recommendation(
             "suggested_duration_min": planned_duration,
             "suggested_target_hr": target_hr,
             "tsb": tsb,
-        }
+        })
 
     # Case 4: 7+ days (extended hiatus / illness / re-entry)
     reentry_duration = 25
-    return {
+    return _finalize({
         "date": ref_date.isoformat(),
         "date_display": ref_date_str,
         "days_since_last_run": days_since,
@@ -529,7 +872,7 @@ def generate_daily_recommendation(
         "suggested_duration_min": reentry_duration,
         "suggested_target_hr": target_hr,
         "tsb": tsb,
-    }
+    })
 
 
 def render_daily_recommendation_html(recommendation: Dict[str, Any]) -> str:

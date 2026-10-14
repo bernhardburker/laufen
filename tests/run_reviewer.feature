@@ -20,3 +20,10 @@ Feature: Incremental per-run deep analysis and persistent review cache
     Given an existing review cache containing detailed reviews for recent runs
     When an AI coach prompt is constructed
     Then the prompt includes deep metrics and cached review summaries for those runs
+
+  Scenario: Neutral and factual review of a Zone 3 brisk endurance run
+    Given an activity with high Zone 3 time and average heart rate above Zone 2
+    When deep run metrics and review are evaluated
+    Then the run rating is "zuegig"
+    And the rating label is "Zügiger Dauerlauf (Zone 3)"
+    And the review summary does not contain "Intensitätsfalle" or "Grauzone"

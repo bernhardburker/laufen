@@ -40,3 +40,12 @@ Feature: Schedule structured workouts to Intervals.icu
     When the workout schedule script is executed with raw text "Warmup\n- 10m Z1 HR\nMain Set\n- 20m Z3 HR"
     Then the process exits with code 0
     And the received event description contains "20m Z3 HR"
+
+  Scenario: Automatically sync weekly plan including both options for flexible slot
+    Given a mock Intervals.icu event server is running
+    And INTERVALS_API_KEY is configured
+    When the workout schedule script is executed with extra argument "--sync-plan"
+    Then the process exits with code 0
+    And the mock server received at least 3 POST requests to "/api/v1/athlete/0/events"
+    And one scheduled event name contains "Slot 2A"
+    And one scheduled event name contains "Slot 2B"

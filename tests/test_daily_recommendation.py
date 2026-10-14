@@ -56,6 +56,7 @@ class DailyRecommendationDriver:
         self.reference_date: date = date(2026, 10, 8)
         self.recommendation: Dict[str, Any] = {}
         self.dashboard_html: str = ""
+        self.form_tsb: float = 2.5
 
         # Paths for dashboard test
         self.activities_file = tmp_path / "activities.json"
@@ -118,8 +119,46 @@ class DailyRecommendationDriver:
             athlete_profile=self.athlete_profile,
             coach_history=self.coach_history,
             reference_date=self.reference_date,
-            form_data={"current_tsb": 2.5, "latest_ctl": 15.0, "latest_atl": 12.5},
+            form_data={"current_tsb": self.form_tsb, "latest_ctl": 15.0, "latest_atl": 12.5},
         )
+
+    def set_form_tsb(self, tsb: float) -> None:
+        self.form_tsb = tsb
+
+    def setup_flexible_slots(self) -> None:
+        self.athlete_profile["athlete"]["training_mode"] = "pyramidal_hybrid"
+        self.athlete_profile["athlete"]["weekly_slots"] = [
+            {
+                "slot": 1,
+                "name": "Slot 1 (Wochenanfang)",
+                "role": "quality",
+                "allowed_days": ["monday", "tuesday"],
+                "allowed_types": ["intervals", "tempo_run"],
+                "preferred_type": "intervals",
+                "requires_base_anchor": True,
+            },
+            {
+                "slot": 2,
+                "name": "Slot 2 (Wochenmitte)",
+                "role": "flexible",
+                "allowed_days": ["wednesday", "thursday", "friday"],
+                "allowed_types": ["tempo_run", "easy_run"],
+                "default_type": "easy_run",
+                "preferred_type": "tempo_run",
+                "target_hr_range": [168, 174],
+                "requires_base_anchor": True,
+            },
+            {
+                "slot": 3,
+                "name": "Slot 3 (Wochenende)",
+                "role": "base_anchor",
+                "allowed_days": ["saturday", "sunday"],
+                "workout_type": "easy_run",
+                "name_display": "Aerober Anker & Long Run (Slot 3)",
+                "target_hr_max": 158,
+                "is_mandatory_base": True,
+            },
+        ]
 
     def setup_pyramidal_slots(self) -> None:
         self.athlete_profile["athlete"]["training_mode"] = "pyramidal_hybrid"
@@ -253,19 +292,32 @@ class DailyRecommendationDriver:
         ]
 
     def setup_run_friday_no_weekend(self) -> None:
-        # Friday 2026-10-09 (no runs on Sat 10 or Sun 11)
+        # Friday 2026-10-09 tempo run without weekend run, previous base run on 2026-10-01 (11 days prior)
         self.runs = [
             {
-                "id": "run-fri",
+                "id": "run-past-base",
                 "type": "Run",
-                "name": "Friday Run",
-                "start_date_local": "2026-10-09T17:00:00",
+                "workout_type": "easy_run",
+                "name": "Past Base Run",
+                "start_date_local": "2026-10-01T17:00:00",
                 "distance": 6000.0,
                 "moving_time": 2600,
-                "average_heartrate": 152.0,
-                "max_heartrate": 160.0,
+                "average_heartrate": 149.0,
+                "max_heartrate": 156.0,
                 "icu_training_load": 40.0,
-            }
+            },
+            {
+                "id": "run-fri-tempo",
+                "type": "Run",
+                "workout_type": "tempo_run",
+                "name": "Friday Tempo Run",
+                "start_date_local": "2026-10-09T17:00:00",
+                "distance": 6000.0,
+                "moving_time": 2400,
+                "average_heartrate": 169.0,
+                "max_heartrate": 176.0,
+                "icu_training_load": 48.0,
+            },
         ]
 
     def setup_run_tuesday(self) -> None:
@@ -292,6 +344,135 @@ class DailyRecommendationDriver:
                 "average_heartrate": 165.0,
                 "max_heartrate": 180.0,
                 "icu_training_load": 44.0,
+            },
+        ]
+
+    def setup_run_missed_weekend_caught_up_monday(self) -> None:
+        # Friday 2026-10-09 run, Sat 10/Sun 11 missed, Monday 2026-10-12 Z2 base catch-up run
+        self.runs = [
+            {
+                "id": "run-fri",
+                "type": "Run",
+                "name": "Friday Run",
+                "start_date_local": "2026-10-09T17:00:00",
+                "distance": 6000.0,
+                "moving_time": 2600,
+                "average_heartrate": 152.0,
+                "max_heartrate": 160.0,
+                "icu_training_load": 40.0,
+            },
+            {
+                "id": "run-mon-catchup",
+                "type": "Run",
+                "workout_type": "easy_run",
+                "name": "Monday Catch-Up Base Run",
+                "start_date_local": "2026-10-12T17:00:00",
+                "distance": 7000.0,
+                "moving_time": 3000,
+                "average_heartrate": 149.0,
+                "max_heartrate": 156.0,
+                "icu_training_load": 45.0,
+                "icu_hr_zone_times": [1200, 1800, 0, 0, 0, 0, 0],
+            },
+        ]
+
+    def setup_three_build_weeks(self) -> None:
+        self.reference_date = date(2026, 10, 13)
+        self.runs = [
+            # Week 1 (Oct 5 - Oct 11)
+            {
+                "id": "w1-intervals",
+                "workout_type": "intervals",
+                "start_date_local": "2026-10-06T17:00:00",
+                "distance": 6000.0,
+                "icu_training_load": 45.0,
+            },
+            {
+                "id": "w1-base",
+                "workout_type": "easy_run",
+                "start_date_local": "2026-10-11T09:00:00",
+                "distance": 8000.0,
+                "icu_training_load": 45.0,
+            },
+            # Week 2 (Sep 28 - Oct 4)
+            {
+                "id": "w2-tempo",
+                "workout_type": "tempo_run",
+                "start_date_local": "2026-09-29T17:00:00",
+                "distance": 6000.0,
+                "icu_training_load": 45.0,
+            },
+            {
+                "id": "w2-base",
+                "workout_type": "easy_run",
+                "start_date_local": "2026-10-04T09:00:00",
+                "distance": 8000.0,
+                "icu_training_load": 45.0,
+            },
+            # Week 3 (Sep 21 - Sep 27)
+            {
+                "id": "w3-intervals",
+                "workout_type": "intervals",
+                "start_date_local": "2026-09-22T17:00:00",
+                "distance": 6000.0,
+                "icu_training_load": 45.0,
+            },
+            {
+                "id": "w3-base",
+                "workout_type": "easy_run",
+                "start_date_local": "2026-09-27T09:00:00",
+                "distance": 8000.0,
+                "icu_training_load": 45.0,
+            },
+        ]
+
+    def setup_two_build_weeks_one_light_week(self) -> None:
+        self.reference_date = date(2026, 10, 13)
+        self.runs = [
+            # Week 1 (Oct 5 - Oct 11) - Light recovery week with only easy jogs and low load (45 < 65)
+            {
+                "id": "w1-light-thu",
+                "workout_type": "easy_run",
+                "start_date_local": "2026-10-08T17:00:00",
+                "distance": 4000.0,
+                "icu_training_load": 20.0,
+            },
+            {
+                "id": "w1-light-sun",
+                "workout_type": "easy_run",
+                "start_date_local": "2026-10-11T09:00:00",
+                "distance": 5000.0,
+                "icu_training_load": 25.0,
+            },
+            # Week 2 (Sep 28 - Oct 4) - Build
+            {
+                "id": "w2-tempo",
+                "workout_type": "tempo_run",
+                "start_date_local": "2026-09-29T17:00:00",
+                "distance": 6000.0,
+                "icu_training_load": 45.0,
+            },
+            {
+                "id": "w2-base",
+                "workout_type": "easy_run",
+                "start_date_local": "2026-10-04T09:00:00",
+                "distance": 8000.0,
+                "icu_training_load": 45.0,
+            },
+            # Week 3 (Sep 21 - Sep 27) - Build
+            {
+                "id": "w3-intervals",
+                "workout_type": "intervals",
+                "start_date_local": "2026-09-22T17:00:00",
+                "distance": 6000.0,
+                "icu_training_load": 45.0,
+            },
+            {
+                "id": "w3-base",
+                "workout_type": "easy_run",
+                "start_date_local": "2026-09-27T09:00:00",
+                "distance": 8000.0,
+                "icu_training_load": 45.0,
             },
         ]
 
@@ -471,3 +652,71 @@ def when_html_dashboard_generated(driver: DailyRecommendationDriver) -> None:
 def then_dashboard_contains_daily_card(driver: DailyRecommendationDriver) -> None:
     assert '<div class="card daily-card">' in driver.dashboard_html
     assert "Empfehlung für heute" in driver.dashboard_html
+
+
+@given("the runner missed the weekend run but completed a Zone 2 catch-up run on Monday")
+def given_missed_weekend_caught_up_monday(driver: DailyRecommendationDriver) -> None:
+    driver.setup_run_missed_weekend_caught_up_monday()
+
+
+@when("the daily training recommendation is calculated for Wednesday")
+def when_calculated_for_wednesday(driver: DailyRecommendationDriver) -> None:
+    driver.set_reference_date(date(2026, 10, 14))
+    driver.compute_daily_recommendation()
+
+
+@then("the recommendation is not marked as catch-up")
+def then_not_catch_up(driver: DailyRecommendationDriver) -> None:
+    assert driver.recommendation.get("is_catch_up") is not True
+
+
+@given("a runner with a flexible middle-week slot configured")
+def given_runner_flexible_slot(driver: DailyRecommendationDriver) -> None:
+    driver.setup_flexible_slots()
+
+
+@given("the runner completed a Zone 2 run on Sunday and intervals on Tuesday")
+def given_completed_sunday_and_tuesday(driver: DailyRecommendationDriver) -> None:
+    driver.setup_run_tuesday()
+
+
+@given("the runner has positive form with full recovery on Thursday")
+def given_positive_form_thursday(driver: DailyRecommendationDriver) -> None:
+    driver.set_form_tsb(3.0)
+
+
+@given("the runner has negative form with accumulated fatigue on Thursday")
+def given_negative_form_thursday(driver: DailyRecommendationDriver) -> None:
+    driver.set_form_tsb(-4.5)
+
+
+@given("the runner completed three consecutive build weeks with quality sessions")
+def given_three_build_weeks(driver: DailyRecommendationDriver) -> None:
+    driver.setup_three_build_weeks()
+
+
+@given("the runner had two build weeks but the preceding week was light with no quality")
+def given_two_build_one_light(driver: DailyRecommendationDriver) -> None:
+    driver.setup_two_build_weeks_one_light_week()
+
+
+@given("the coach history recommends an easy run for recovery")
+def given_coach_history_easy_run(driver: DailyRecommendationDriver) -> None:
+    driver.coach_history = [
+        {
+            "cycle_id": "cycle-001",
+            "date": "2026-10-13",
+            "recommendation": "Gezielte Z2-Regeneration nach dem Tempotraining",
+            "next_workout_type": "easy_run",
+            "target_type": "easy_run",
+            "target_hr_max": 158,
+            "next_duration_min": 45,
+            "status": "offen",
+        }
+    ]
+
+
+@then(parsers.parse('the recommendation headline contains "{snippet}"'))
+def then_headline_contains(driver: DailyRecommendationDriver, snippet: str) -> None:
+    headline = driver.recommendation.get("headline", "")
+    assert snippet in headline, f"Expected '{snippet}' in headline '{headline}'"

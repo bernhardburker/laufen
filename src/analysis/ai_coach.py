@@ -10,6 +10,7 @@ and structured training summaries.
 from __future__ import annotations
 
 import argparse
+from datetime import date, datetime, timezone
 import json
 import re
 import sys
@@ -21,6 +22,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.analysis.daily_recommendation import calculate_stimulus_context
 from src.analysis.coach_history import (
     find_runs_since,
     get_evaluated_run_ids,
@@ -310,32 +312,41 @@ Analysiere ehrlich und nüchtern den Abgleich zwischen der letzten Vorgabe und d
 3. Physiologischer Effekt: Was lässt sich aus den Daten über die aerobe Entwicklung, Pace/Puls-Verhältnis und Ermüdung (TSB) ablesen?
 """
 
-    if training_mode == "pyramidal_hybrid":
+    ref_d = datetime.now(timezone.utc).date()
+    stimulus = calculate_stimulus_context(runs, ref_d, z2_max=z2_max)
+    days_since_base = stimulus["days_since_last_base_run"]
+    consec_quality = stimulus["consecutive_quality_runs"]
+
+    if training_mode in ("flexi_hybrid", "pyramidal_hybrid"):
         mode_desc = (
-            f"- Trainingsmodus: Pyramidal-Hybrid-Modell (~65% Z1/Z2, ~20% Z3/Z4, ~15% Z5+)\n"
-            f"- Wochen-Slots (3 Einheiten): Slot 1 (Mo/Di: Tempo/Intervalle), Slot 2 (Mi-Fr: Schwelle 168–174 bpm), Slot 3 (Sa/So: Z2 Long Run < {z2_max} bpm)\n"
-            f"- Schutzregel: Fällt Slot 3 am Wochenende aus, wird Slot 1 automatisch zum Z2-Nachhol-Lauf!\n"
-            f"- WICHTIG: Bewerte geplante Schwellen- (Z3/Z4) und Intervallläufe (Z5) positiv, wenn sie dem jeweiligen Slot entsprechen. Nur ungeplante Grauzonen-Monotonie oder Verfehlen von Z2 am Grundlagen-Tag soll gerügt werden."
+            f"- Trainingsmodus: Flexi-Modell (3 flexible Säulen: Basis Z2 ~65–75%, Tempo/Schwelle Z3/Z4 ~15–20%, Spitzen Z5+ ~5–10%)\n"
+            f"- Wochen-Slots (3 Einheiten): Slot 1 (Mo/Di: Tempo/Intervalle), Slot 2 (Mi-Fr: flexibel: Z2 Basis oder Schwelle 168–174 bpm bei Frische), Slot 3 (Sa/So: Z2 Long Run < {z2_max} bpm)\n"
+            f"- Reiz-Steuerung: Schau nüchtern auf die Daten. Weder rügen noch loben. Ein Schwellen- oder Tempolauf ist gewollt (15–20% Z3/Z4). Wenn an einem Qualitätstag locker gelaufen wurde, beschreibe sachlich: Der Temporeiz entfiel, die Beine blieben frisch. Wenn ein Lauf flotter war als gedacht, beschreibe einfach die Auswirkung auf die Ermüdung und was als Nächstes sinnvoll ist."
         )
     else:
         mode_desc = f"- Trainingsmodus: Klassischer polarisierter Basisaufbau (80/20-Methode, Soll Z1/Z2: ~80%)"
 
-    prompt = f"""Du bist ein erfahrener Lauf- und Ausdauertrainer mit Spezialisierung auf sportwissenschaftliche Trainingssteuerung, Herzfrequenz-Zonen und evidenzbasierte Trainingsmodelle (pyramidale und polarisierte Periodisierung).
+    prompt = f"""Du bist ein erfahrener Lauf- und Ausdauertrainer mit Spezialisierung auf sportwissenschaftliche Trainingssteuerung, Herzfrequenz-Zonen und evidenzbasierte Trainingsmodelle (Flexi-Modell und polarisierte Periodisierung).
 
 Analysiere die aktuellen Trainingsdaten des Athleten ({athlete_name}) und erstelle eine vollständige, dynamische Trainings-Zusammenfassung und Handlungsempfehlungen für das Dashboard.
 
 ### Tonalität & Coaching-Haltung (STRIKTE VORGABE):
-- **Basiere deine Analyse und Tonalität ausschließlich auf den realen Daten**:
-  Der Athlet ({athlete_name}) ist anhand der Daten eingestuft als: **{classification['category']}** ({classification['description']}).
-  Passe deine Sprache, Erwartungshaltung und Ratschläge exakt diesem aktuellen Leistungsstand an.
-- **Keine Übertreibungen, kein Hype, keine Schmeicheleien**: Verzichte komplett auf Schmeicheleien, künstlichen Cheerleader-Ton und unrealistische Floskeln ("Zeiten werden explodieren", "herausragendes Fundament", "Spitzenleistung").
-- **Sachlich, ehrlich und ungeschminkt auf Augenhöhe**: Benenne Schwachstellen (z.B. zu geringer Z1/Z2-Anteil, zu hohes Grundlagentempo, sprunghafte Belastungsspitzen) direkt und physiologisch fundiert. Behandle Hobbyläufer wie Hobbyläufer und Leistungssportler wie Leistungssportler – respektvoll, partnerschaftlich und unaufgeregt.
+- **Pragmatischer, unaufgeregter Laufpartner auf Augenhöhe**:
+  Schreibe wie ein erfahrener Laufkollege, der mit dem Athleten nüchtern auf die Uhr und den Puls schaut.
+  Keine Belehrungen, keine Rügen, kein künstliches Schulterklopfen und kein Fachchinesisch.
+- **Fakten und praktische Auswirkung statt Urteil (Weder Rüge noch Lob)**:
+  Beschreibe einfach, was war (Dauer, Puls, Tempo) und was das praktisch für die Beine und die nächsten Tage bedeutet.
+  - Wenn an einem Qualitätstag locker in Zone 2 gelaufen wurde: Nicht belehren oder rügen. Sachlich feststellen: Der Temporeiz entfiel, die Beine blieben frisch, das aerobe Fundament wurde gepflegt.
+  - Wenn ein Lauf flotter war als gedacht (z. B. Zone 3/4 statt Zone 2): Nicht belehren oder rügen. Sachlich feststellen: Das war ein zügiger Dauerlauf / Schwellenreiz, der aber Körner gekostet hat, weshalb als Nächstes Erholung sinnvoll ist.
+  - Schwellen- und Tempoläufe in Z3/Z4 sind im Flexi-Modell vollkommen gewollt (15–20%). Niemals als "Grauzone" oder Fehler abstempeln.
+- **Keine Übertreibungen, kein Hype, keine Schmeicheleien**: Verzichte komplett auf Schmeicheleien, künstlichen Cheerleader-Ton und Floskeln. Bleibe bodenständig, realistisch und unaufgeregt.
 - **Herzfrequenz-Steuerung bei Grundlageneinheiten**: Für Zone-2-Läufe NIEMALS eine feste Ziel-Pace vorgeben! Grundlagenläufe werden ausschließlich über die Herzfrequenz (< {z2_max} bpm) gesteuert. Die Pace ist ein reines Resultat und zweitrangig (Gehpausen an Anstiegen sind normal und erwünscht).
 
-### Athleten-Profil:
+### Athleten-Profil & Reiz-Benchmark:
 - Name: {full_name} ({athlete_name})
 - Einstufung / Level: {classification['category']} ({classification['description']})
 {mode_desc}
+- Basis-Benchmark: Letzter reiner Z2-Grundlagenlauf liegt {days_since_base} Tag(e) zurück (Qualitätsläufe in Folge ohne Z2: {consec_quality})
 - Ruhepuls: {resting_hr} bpm | Maximalpuls: {max_hr} bpm
 - Laktatschwelle (LTHR): {lthr} bpm
 - Grundlagen-Obergrenze (Zone 2 max): {z2_max} bpm
@@ -359,8 +370,8 @@ Erstelle eine vollständige, dynamische und ehrliche Trainingsbewertung für {at
 Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (kein Markdown-Backticks ```json davor oder danach, kein sonstiger Text außenherum) in folgender Struktur:
 
 {{
-  "status_title": "Prägnanter Status-Titel basierend auf den Daten (z.B. Aerobe Basis fehlt / Hoher Grauzonen-Anteil / Solide Aufbauphase)",
-  "status_badge": "Kurzer Badge-Text (z.B. Intensität drosseln / Z2-Defizit / Pensum stabilisieren)",
+  "status_title": "Prägnanter Status-Titel basierend auf den Daten (z.B. Solider Grundlagenaufbau / Gute Schwellendisziplin / Reiz-Ausgleich)",
+  "status_badge": "Kurzer Badge-Text (z.B. Basis stabil / Tempo dosieren / Pensum stabilisieren)",
   "status_level": "warning" oder "info" oder "success",
   "coach_commentary": "Dein ehrlicher, bodenständiger Coaching-Brief an {athlete_name} als Markdown formatiert (ca. 160-220 Wörter) mit Absätzen, Überschriften (###) und einer konkreten Wochenaufgabe für nächste Woche. Bleibe nüchtern, sachlich und realistisch – absolut keine Übertreibungen oder Schmeicheleien.",
   "history_evaluation": {{
@@ -374,7 +385,7 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (kein Markdown-Backticks 
   }},
   "insights": [
     {{
-      "title": "Titel der Erkenntnis (z.B. Intensitätsfalle / Fehlende aerobe Basis)",
+      "title": "Titel der Erkenntnis (z.B. Aerobe Basis & Disziplin / Schwellenreiz & Tempohärte)",
       "type": "warning" oder "info" oder "success",
       "badge": "Kurzer Tag (z.B. {overall_z1_z2_pct}% Z1/Z2)",
       "text": "Nüchterne, faktenbasierte Erklärung mit den echten gemessenen Werten..."

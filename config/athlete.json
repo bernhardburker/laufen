@@ -3,7 +3,8 @@
     "id": "i697752",
     "name": "BerniBurker",
     "classification": "Hobbyläufer (Basisaufbau)",
-    "training_mode": "pyramidal_hybrid",
+    "training_mode": "flexi_hybrid",
+    "training_model_name": "Flexi-Modell (3 flexible Säulen)",
     "target_runs_per_week": 3,
     "weekly_slots": [
       {
@@ -26,7 +27,7 @@
       {
         "slot": 2,
         "name": "Slot 2 (Wochenmitte)",
-        "role": "quality",
+        "role": "flexible",
         "allowed_days": [
           "wednesday",
           "thursday",
@@ -34,11 +35,12 @@
         ],
         "allowed_types": [
           "tempo_run",
-          "intervals"
+          "easy_run"
         ],
+        "default_type": "easy_run",
         "preferred_type": "tempo_run",
-        "description": "Kontrollierter Schwellenlauf (Sub-Threshold Cruise)",
-        "target": "3x 8m @ Z4 HR (168-174 bpm, Pause 2m)",
+        "description": "Aerobe Basis (Z2) oder Schwellenlauf (Z4) bei hoher Frische",
+        "target": "40–45m @ Z2 HR (< 158 bpm) oder 3x 8m @ Z4 HR (168-174 bpm)",
         "target_hr_range": [
           168,
           174

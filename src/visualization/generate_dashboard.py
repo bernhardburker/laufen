@@ -168,11 +168,11 @@ def build_table_rows(
         cadence_str = ""
         if rev_info:
             r_eval = rev_info.get("review", {})
-            rating = r_eval.get("rating", "grauzone")
+            rating = r_eval.get("rating", "zuegig")
             badge_class = (
                 "tag-green"
                 if rating == "optimal"
-                else ("tag-cyan" if rating in ("solide", "intensiv") else "tag-amber")
+                else ("tag-cyan" if rating in ("solide", "intensiv", "zuegig") else "tag-amber")
             )
             r_label = html.escape(r_eval.get("rating_label", ""))
             r_summary = html.escape(r_eval.get("summary", ""))
@@ -566,7 +566,7 @@ def build_zones_reference_html(athlete_profile: Dict[str, Any]) -> str:
     german_names = {
         "recovery": "Regeneration",
         "aerobic": "Grundlagenausdauer",
-        "tempo": "Tempo / Grauzone",
+        "tempo": "Tempo / Zügig",
         "subthreshold": "Schwellenbereich",
         "superthreshold": "Über Schwelle",
         "aerobic capacity": "VO2 Max",

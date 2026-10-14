@@ -363,7 +363,8 @@ review_language: "de"
 
 ### 5.6 Prompt Hygiene & Coaching Stance
 * All athlete-provided free text (activity names, descriptions, notes) goes inside a clearly delimited data block. The prompt states that this text is data, not instructions.
-* **Realistic 80/20 & Pyramidal Awareness:** The prompt explicitly instructs the LLM that 80/20 is a monthly volume compass, not an all-or-nothing pass/fail metric on isolated runs. For recreational runners (~2 runs/week), 15–25 % Zone 3 or pyramidal distribution is normal, safe, and effective when recovery between runs is 48–72 hours.
+* **Realistic 80/20 & Pyramidal Awareness:** The prompt explicitly instructs the LLM that 80/20 is a monthly volume compass, not an all-or-nothing pass/fail metric on isolated runs. For recreational runners (~2 runs/week), 15–25 % Zone 3 or pyramidal distribution is normal, safe, and effective when recovery between runs is 48–72 hours. Slot 2 is flexible between Zone 2 base and Zone 4 threshold depending on freshness.
+* **Grounded, Pragmatic Partner Stance:** The coach speaks as an unhurried, grounded running companion reviewing data alongside the athlete. No moralizing, lecturing, scolding ("rügen"), or superficial cheerleading. Plain facts, practical consequence for fatigue, and next actionable steps in clear, normal runner language without academic jargon.
 * **Biomechanical Protection (Run-Walk instead of Shuffle-Trap):** If Zone 2 heart rate cannot be maintained at a natural running pace (≥ 150 spm), the coach must recommend structured Run-Walk intervals (e.g. 4 min running / 1 min brisk walking) rather than unnatural slow shuffling (< 145 spm), which harms gait economy and increases tendon impact.
 * **Terrain & Weather Context:** Account for elevation gain (climbing pulses HR into Z3) and ambient heat/summer temperatures when analyzing heart rate drift before diagnosing poor aerobic base.
 * The prompt explicitly forbids:

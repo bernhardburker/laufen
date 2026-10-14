@@ -79,3 +79,72 @@ Feature: Daily adaptive training recommendation
     Then the recommendation type is "workout_day"
     And the recommended workout type is "intervals"
 
+  Scenario: Recommend Slot 2 threshold workout on Wednesday when base run was caught up on Monday
+    Given a runner with pyramidal hybrid weekly slots configured
+    And the runner missed the weekend run but completed a Zone 2 catch-up run on Monday
+    When the daily training recommendation is calculated for Wednesday
+    Then the recommendation type is "workout_day"
+    And the recommended workout slot is 2
+    And the recommended workout type is "tempo_run"
+    And the recommendation is not marked as catch-up
+
+  Scenario: Prevent back-to-back quality workouts on consecutive days
+    Given a runner with pyramidal hybrid weekly slots configured
+    And the runner completed an interval workout on Tuesday
+    When the daily training recommendation is calculated for Wednesday
+    Then the recommendation type is "workout_day"
+    And the recommended workout type is "easy_run"
+    And the recommendation badge indicates "Schutz vor Überreizung"
+
+  Scenario: Recommend threshold workout in flexible Slot 2 when runner is fresh
+    Given a runner with a flexible middle-week slot configured
+    And the runner completed a Zone 2 run on Sunday and intervals on Tuesday
+    And the runner has positive form with full recovery on Thursday
+    When the daily training recommendation is calculated for Thursday
+    Then the recommendation type is "workout_day"
+    And the recommended workout slot is 2
+    And the recommended workout type is "tempo_run"
+    And the recommendation badge indicates "Schwellenreiz"
+
+  Scenario: Downgrade flexible Slot 2 to Zone 2 base run when runner is fatigued
+    Given a runner with a flexible middle-week slot configured
+    And the runner completed a Zone 2 run on Sunday and intervals on Tuesday
+    And the runner has negative form with accumulated fatigue on Thursday
+    When the daily training recommendation is calculated for Thursday
+    Then the recommendation type is "workout_day"
+    And the recommended workout slot is 2
+    And the recommended workout type is "easy_run"
+    And the recommendation targets Zone 2 heart rate ceiling
+    And the recommendation badge indicates "Z2 Grundlagenlauf"
+
+  Scenario: Automatically trigger deload week after three consecutive build weeks
+    Given a runner with pyramidal hybrid weekly slots configured
+    And the runner completed three consecutive build weeks with quality sessions
+    When the daily training recommendation is calculated for Tuesday
+    Then the recommendation type is "workout_day"
+    And the recommended workout slot is 1
+    And the recommended workout type is "easy_run"
+    And the recommendation badge indicates "Deload-Woche"
+
+  Scenario: Do not trigger deload week when a preceding week was light
+    Given a runner with pyramidal hybrid weekly slots configured
+    And the runner had two build weeks but the preceding week was light with no quality
+    When the daily training recommendation is calculated for Tuesday
+    Then the recommendation type is "workout_day"
+    And the recommended workout slot is 1
+    And the recommended workout type is "intervals"
+
+  Scenario: Honor AI coach preference for Zone 2 in flexible slot even when technically fresh
+    Given a runner with a flexible middle-week slot configured
+    And the runner completed a Zone 2 run on Sunday and intervals on Tuesday
+    And the runner has positive form with full recovery on Thursday
+    And the coach history recommends an easy run for recovery
+    When the daily training recommendation is calculated for Thursday
+    Then the recommendation type is "workout_day"
+    And the recommended workout slot is 2
+    And the recommended workout type is "easy_run"
+    And the recommendation headline contains "Coach-Empfehlung"
+
+
+
+

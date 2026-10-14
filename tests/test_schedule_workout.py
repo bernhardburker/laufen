@@ -39,6 +39,19 @@ class MockIntervalsEventHandler(http.server.BaseHTTPRequestHandler):
         response_data = {"id": "mock_event_12345", "status": "SUCCESS"}
         self.wfile.write(json.dumps(response_data).encode("utf-8"))
 
+    def do_GET(self):
+        auth_header = self.headers.get("Authorization", "")
+        if not auth_header.startswith("Basic "):
+            self.send_response(401)
+            self.end_headers()
+            self.wfile.write(b'{"error": "Unauthorized"}')
+            return
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b"[]")
+
     def log_message(self, format, *args):
         pass
 
@@ -201,3 +214,26 @@ def step_check_event_snippet(driver: WorkoutScheduleDriver, snippet: str):
     payload = driver.get_last_received_payload()
     description = payload.get("description", "")
     assert snippet in description, f"Expected '{snippet}' in description:\n{description}"
+
+
+@when(parsers.parse('the workout schedule script is executed with extra argument "{arg}"'))
+def step_run_with_arg(driver: WorkoutScheduleDriver, arg: str):
+    driver.run_schedule([arg], use_mock_api=True)
+
+
+@then(parsers.parse('the mock server received at least {min_count:d} POST requests to "{expected_path}"'))
+def step_check_min_post_requests(min_count: int, expected_path: str):
+    matching = [
+        r for r in MockIntervalsEventHandler.received_requests
+        if r["path"] == expected_path
+    ]
+    assert len(matching) >= min_count, f"Expected >= {min_count} POST requests to {expected_path}, got {len(matching)}"
+
+
+@then(parsers.parse('one scheduled event name contains "{snippet}"'))
+def step_check_event_name_contains(snippet: str):
+    names = [
+        r["payload"].get("name", "")
+        for r in MockIntervalsEventHandler.received_requests
+    ]
+    assert any(snippet in n for n in names), f"Expected '{snippet}' in one of names: {names}"
