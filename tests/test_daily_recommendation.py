@@ -121,6 +121,183 @@ class DailyRecommendationDriver:
             form_data={"current_tsb": 2.5, "latest_ctl": 15.0, "latest_atl": 12.5},
         )
 
+    def setup_pyramidal_slots(self) -> None:
+        self.athlete_profile["athlete"]["training_mode"] = "pyramidal_hybrid"
+        self.athlete_profile["athlete"]["weekly_slots"] = [
+            {
+                "slot": 1,
+                "name": "Slot 1 (Wochenanfang)",
+                "role": "quality",
+                "allowed_days": ["monday", "tuesday"],
+                "allowed_types": ["intervals", "tempo_run"],
+                "preferred_type": "intervals",
+                "requires_base_anchor": True,
+            },
+            {
+                "slot": 2,
+                "name": "Slot 2 (Wochenmitte)",
+                "role": "quality",
+                "allowed_days": ["wednesday", "thursday", "friday"],
+                "allowed_types": ["tempo_run", "intervals"],
+                "preferred_type": "tempo_run",
+                "requires_base_anchor": True,
+            },
+            {
+                "slot": 3,
+                "name": "Slot 3 (Wochenende)",
+                "role": "base_anchor",
+                "allowed_days": ["saturday", "sunday"],
+                "workout_type": "easy_run",
+                "name_display": "Aerober Anker & Long Run (Slot 3)",
+                "target_hr_max": 158,
+                "is_mandatory_base": True,
+            },
+        ]
+
+    def setup_four_slots(self) -> None:
+        self.athlete_profile["athlete"]["training_mode"] = "pyramidal_hybrid"
+        self.athlete_profile["athlete"]["weekly_slots"] = [
+            {
+                "slot": 1,
+                "name": "Slot 1 (Dienstag)",
+                "role": "quality",
+                "allowed_days": ["tuesday"],
+                "allowed_types": ["intervals", "tempo_run"],
+            },
+            {
+                "slot": 2,
+                "name": "Slot 2 (Donnerstag)",
+                "role": "quality",
+                "allowed_days": ["thursday"],
+                "allowed_types": ["tempo_run", "intervals"],
+            },
+            {
+                "slot": 3,
+                "name": "Slot 3 (Sonntag)",
+                "role": "base_anchor",
+                "allowed_days": ["sunday"],
+                "workout_type": "easy_run",
+                "is_mandatory_base": True,
+            },
+            {
+                "slot": 4,
+                "name": "Slot 4 (Samstag)",
+                "role": "recovery",
+                "allowed_days": ["saturday"],
+                "workout_type": "recovery_run",
+                "duration_min": 30,
+            },
+        ]
+
+    def setup_run_friday_threshold(self) -> None:
+        self.runs = [
+            {
+                "id": "run-fri-thresh",
+                "type": "Run",
+                "name": "Threshold Run",
+                "start_date_local": "2026-10-09T17:00:00",
+                "distance": 6000.0,
+                "moving_time": 2500,
+                "average_heartrate": 170.0,
+                "max_heartrate": 178.0,
+                "icu_training_load": 35.0,
+            }
+        ]
+
+    def setup_tempo_earlier(self) -> None:
+        self.runs.append(
+            {
+                "id": "run-tempo-earlier",
+                "type": "Run",
+                "name": "Tempo Run",
+                "workout_type": "tempo_run",
+                "start_date_local": "2026-10-09T17:00:00",
+                "distance": 6000.0,
+                "moving_time": 2400,
+                "average_heartrate": 169.0,
+                "max_heartrate": 175.0,
+                "icu_training_load": 48.0,
+            }
+        )
+
+    def setup_run_thursday(self) -> None:
+        # Thursday 2026-10-08
+        self.runs = [
+            {
+                "id": "run-thu",
+                "type": "Run",
+                "name": "Threshold Run",
+                "start_date_local": "2026-10-08T17:00:00",
+                "distance": 6500.0,
+                "moving_time": 2400,
+                "average_heartrate": 168.0,
+                "max_heartrate": 175.0,
+                "icu_training_load": 48.0,
+            }
+        ]
+
+    def setup_run_sunday(self) -> None:
+        # Sunday 2026-10-11
+        self.runs = [
+            {
+                "id": "run-sun",
+                "type": "Run",
+                "name": "Weekend Base Run",
+                "start_date_local": "2026-10-11T09:00:00",
+                "distance": 7000.0,
+                "moving_time": 3000,
+                "average_heartrate": 150.0,
+                "max_heartrate": 158.0,
+                "icu_training_load": 45.0,
+            }
+        ]
+
+    def setup_run_friday_no_weekend(self) -> None:
+        # Friday 2026-10-09 (no runs on Sat 10 or Sun 11)
+        self.runs = [
+            {
+                "id": "run-fri",
+                "type": "Run",
+                "name": "Friday Run",
+                "start_date_local": "2026-10-09T17:00:00",
+                "distance": 6000.0,
+                "moving_time": 2600,
+                "average_heartrate": 152.0,
+                "max_heartrate": 160.0,
+                "icu_training_load": 40.0,
+            }
+        ]
+
+    def setup_run_tuesday(self) -> None:
+        # Sunday 2026-10-11 base run + Tuesday 2026-10-13 interval workout
+        self.runs = [
+            {
+                "id": "run-sun-base",
+                "type": "Run",
+                "name": "Weekend Base Run",
+                "start_date_local": "2026-10-11T09:00:00",
+                "distance": 7000.0,
+                "moving_time": 3000,
+                "average_heartrate": 150.0,
+                "max_heartrate": 158.0,
+                "icu_training_load": 45.0,
+            },
+            {
+                "id": "run-tue",
+                "type": "Run",
+                "name": "Interval Workout",
+                "start_date_local": "2026-10-13T17:00:00",
+                "distance": 5500.0,
+                "moving_time": 2100,
+                "average_heartrate": 165.0,
+                "max_heartrate": 180.0,
+                "icu_training_load": 44.0,
+            },
+        ]
+
+    def set_reference_date(self, ref_date: date) -> None:
+        self.reference_date = ref_date
+
     def render_dashboard(self) -> None:
         self.activities_file.write_text(
             json.dumps(self.runs, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -156,8 +333,72 @@ def given_runner_last_run_eight_days_ago(driver: DailyRecommendationDriver) -> N
     driver.setup_run_eight_days_ago()
 
 
+@given("a runner with pyramidal hybrid weekly slots configured")
+def given_runner_with_pyramidal_slots(driver: DailyRecommendationDriver) -> None:
+    driver.setup_pyramidal_slots()
+
+
+@given("the runner completed a threshold workout on Thursday")
+def given_completed_threshold_thursday(driver: DailyRecommendationDriver) -> None:
+    driver.setup_run_thursday()
+
+
+@given("the runner completed a Zone 2 long run on Sunday")
+def given_completed_long_run_sunday(driver: DailyRecommendationDriver) -> None:
+    driver.setup_run_sunday()
+
+
+@given("the runner's last run was on Friday without a weekend run")
+def given_friday_no_weekend(driver: DailyRecommendationDriver) -> None:
+    driver.setup_run_friday_no_weekend()
+
+
+@given("the runner completed an interval workout on Tuesday")
+def given_completed_intervals_tuesday(driver: DailyRecommendationDriver) -> None:
+    driver.setup_run_tuesday()
+
+
+@given("a runner with a four-slot weekly schedule configured")
+def given_four_slot_runner(driver: DailyRecommendationDriver) -> None:
+    driver.setup_four_slots()
+
+
+@given("the runner completed a threshold workout on Friday")
+def given_completed_threshold_friday(driver: DailyRecommendationDriver) -> None:
+    driver.setup_run_friday_threshold()
+
+
+@given("the runner completed a tempo run earlier")
+def given_tempo_earlier(driver: DailyRecommendationDriver) -> None:
+    driver.setup_tempo_earlier()
+
+
 @when("the daily training recommendation is calculated for today")
 def when_daily_recommendation_calculated(driver: DailyRecommendationDriver) -> None:
+    driver.compute_daily_recommendation()
+
+
+@when("the daily training recommendation is calculated for Saturday")
+def when_calculated_for_saturday(driver: DailyRecommendationDriver) -> None:
+    driver.set_reference_date(date(2026, 10, 10))
+    driver.compute_daily_recommendation()
+
+
+@when("the daily training recommendation is calculated for Tuesday")
+def when_calculated_for_tuesday(driver: DailyRecommendationDriver) -> None:
+    driver.set_reference_date(date(2026, 10, 13))
+    driver.compute_daily_recommendation()
+
+
+@when("the daily training recommendation is calculated for Monday")
+def when_calculated_for_monday(driver: DailyRecommendationDriver) -> None:
+    driver.set_reference_date(date(2026, 10, 12))
+    driver.compute_daily_recommendation()
+
+
+@when("the daily training recommendation is calculated for Thursday")
+def when_calculated_for_thursday(driver: DailyRecommendationDriver) -> None:
+    driver.set_reference_date(date(2026, 10, 15))
     driver.compute_daily_recommendation()
 
 
@@ -183,6 +424,36 @@ def then_advises_workout(driver: DailyRecommendationDriver) -> None:
 def then_duration_reduced(driver: DailyRecommendationDriver) -> None:
     assert 20 <= driver.recommendation["suggested_duration_min"] <= 30
     assert "wiedereinstieg" in driver.recommendation["headline"].lower() or "pause" in driver.recommendation["headline"].lower()
+
+
+@then(parsers.parse("the recommended workout slot is {expected_slot:d}"))
+def then_recommended_slot_is(driver: DailyRecommendationDriver, expected_slot: int) -> None:
+    assert driver.recommendation.get("slot") == expected_slot
+
+
+@then(parsers.parse('the recommended workout type is "{expected_type}"'))
+def then_recommended_workout_type(driver: DailyRecommendationDriver, expected_type: str) -> None:
+    assert driver.recommendation.get("workout_type") == expected_type
+
+
+@then("the recommendation targets Zone 2 heart rate ceiling")
+def then_targets_zone_2_ceiling(driver: DailyRecommendationDriver) -> None:
+    assert driver.recommendation.get("suggested_target_hr") == 158
+
+
+@then(parsers.parse('the recommendation badge indicates "{expected_badge}"'))
+def then_badge_indicates(driver: DailyRecommendationDriver, expected_badge: str) -> None:
+    assert expected_badge.lower() in driver.recommendation.get("badge", "").lower()
+
+
+@then("the recommendation indicates a Zone 2 catch-up base run")
+def then_indicates_catch_up(driver: DailyRecommendationDriver) -> None:
+    assert driver.recommendation.get("is_catch_up") is True
+
+
+@then(parsers.parse("the recommended target heart rate is {expected_hr:d}"))
+def then_recommended_target_hr(driver: DailyRecommendationDriver, expected_hr: int) -> None:
+    assert driver.recommendation.get("suggested_target_hr") == expected_hr
 
 
 @given('a daily recommendation with type "rest_day"')

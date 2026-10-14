@@ -1,6 +1,47 @@
 {
   "athlete": {
     "name": "Runner",
+    "classification": "Hobbyläufer (Basisaufbau)",
+    "training_mode": "pyramidal_hybrid",
+    "target_runs_per_week": 3,
+    "weekly_slots": [
+      {
+        "slot": 1,
+        "name": "Slot 1 (Wochenanfang)",
+        "role": "quality",
+        "allowed_days": ["monday", "tuesday"],
+        "allowed_types": ["intervals", "tempo_run"],
+        "preferred_type": "intervals",
+        "description": "Tempo- oder Intervalltraining (Speed / Hügel / Fahrtspiel)",
+        "target": "5x 1m @ 05:15/km Pace oder 6x Berganläufe",
+        "requires_base_anchor": true
+      },
+      {
+        "slot": 2,
+        "name": "Slot 2 (Wochenmitte)",
+        "role": "quality",
+        "allowed_days": ["wednesday", "thursday", "friday"],
+        "allowed_types": ["tempo_run", "intervals"],
+        "preferred_type": "tempo_run",
+        "description": "Kontrollierter Schwellenlauf (Sub-Threshold Cruise)",
+        "target": "3x 8m @ Z4 HR (168-174 bpm, Pause 2m)",
+        "target_hr_range": [168, 174],
+        "requires_base_anchor": true
+      },
+      {
+        "slot": 3,
+        "name": "Slot 3 (Wochenende)",
+        "role": "base_anchor",
+        "allowed_days": ["saturday", "sunday"],
+        "workout_type": "easy_run",
+        "name_display": "Aerober Anker & Long Run (Slot 3)",
+        "description": "Lockerer Grundlagenlauf strictly in Zone 2",
+        "target": "50m @ Z2 HR (< 158 bpm)",
+        "target_hr_max": 158,
+        "duration_min": 50,
+        "is_mandatory_base": true
+      }
+    ],
     "heart_rate": {
       "resting_hr": 55,
       "max_hr": 185,

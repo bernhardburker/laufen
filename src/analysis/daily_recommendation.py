@@ -9,7 +9,7 @@ training recommendation (rest day, scheduled workout, or gentle re-entry).
 from __future__ import annotations
 
 import argparse
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
@@ -62,6 +62,263 @@ def calculate_days_since_last_run(
         return max(delta, 0)
     except Exception:
         return 999
+
+
+def determine_next_quality_type(
+    runs: List[Dict[str, Any]],
+    allowed_types: Optional[List[str]] = None,
+    preferred_type: Optional[str] = None,
+) -> str:
+    """Selects next quality workout type (alternating intervals vs tempo) from recent activity history."""
+    choices = allowed_types or ["intervals", "tempo_run"]
+    if len(choices) == 1:
+        return choices[0]
+
+    # Inspect runs reverse chronologically to find the most recent quality run
+    last_quality = None
+    for r in runs:
+        r_type = str(r.get("workout_type") or "").lower()
+        name = str(r.get("name") or "").lower()
+        if "interval" in r_type or "interval" in name or "speed" in name or "wiederholung" in name:
+            last_quality = "intervals"
+            break
+        if "tempo" in r_type or "tempo" in name or "schwelle" in name or "threshold" in name:
+            last_quality = "tempo_run"
+            break
+        # Heuristic zone inspection: high Z5 time -> intervals, high Z4 time -> tempo
+        z_times = r.get("icu_hr_zone_times") or []
+        if len(z_times) >= 5:
+            z4_time = z_times[3] if len(z_times) > 3 else 0
+            z5_plus = sum(z_times[4:]) if len(z_times) > 4 else 0
+            if z5_plus > 240:
+                last_quality = "intervals"
+                break
+            elif z4_time > 480:
+                last_quality = "tempo_run"
+                break
+
+    # Alternate based on last quality workout
+    if last_quality == "intervals" and "tempo_run" in choices:
+        return "tempo_run"
+    elif last_quality == "tempo_run" and "intervals" in choices:
+        return "intervals"
+
+    return preferred_type or choices[0]
+
+
+def check_base_anchor_completed(
+    runs: List[Dict[str, Any]],
+    ref_date: date,
+    slots: List[Dict[str, Any]],
+) -> bool:
+    """Checks whether a base anchor run was completed in the preceding cycle."""
+    anchor_days = set()
+    for s in slots:
+        if s.get("role") == "base_anchor" or s.get("is_base_anchor") or s.get("is_mandatory_base"):
+            for d in s.get("allowed_days", []):
+                anchor_days.add(d.lower())
+
+    if not anchor_days:
+        anchor_days = {"saturday", "sunday"}
+
+    # Target dates: the most recent occurrences of anchor_days prior to ref_date (up to 7 days lookback)
+    target_dates = set()
+    for i in range(1, 8):
+        past_d = ref_date - timedelta(days=i)
+        if past_d.strftime("%A").lower() in anchor_days:
+            target_dates.add(past_d)
+
+    for r in runs:
+        d_str = str(r.get("start_date_local") or r.get("date") or "")[:10]
+        if d_str:
+            try:
+                run_d = date.fromisoformat(d_str)
+                if run_d in target_dates:
+                    return True
+            except Exception:
+                continue
+    return False
+
+
+def resolve_slot_recommendation(
+    slots: List[Dict[str, Any]],
+    runs: List[Dict[str, Any]],
+    ref_date: date,
+    tsb: float,
+    z2_max: int,
+    days_since: int,
+) -> Optional[Dict[str, Any]]:
+    """Resolves today's structured workout from weekly_slots dynamically (supports N slots)."""
+    if not slots:
+        return None
+
+    day_name = ref_date.strftime("%A").lower()
+    matching_slot = None
+    for s in slots:
+        allowed = [d.lower() for d in s.get("allowed_days", [])]
+        if day_name in allowed:
+            matching_slot = s
+            break
+
+    if not matching_slot:
+        return None
+
+    ref_date_str = ref_date.strftime("%d.%m.%Y")
+    slot_id = matching_slot.get("slot") or matching_slot.get("id") or 1
+    role = matching_slot.get("role")
+    if not role:
+        if matching_slot.get("is_mandatory_base") or matching_slot.get("is_base_anchor"):
+            role = "base_anchor"
+        elif matching_slot.get("workout_type") in ("intervals", "tempo_run") or matching_slot.get("allowed_types"):
+            role = "quality"
+        else:
+            role = "base_anchor"
+
+    # 1. Base Anchor Slot (e.g. Long Run / Zone 2 Base)
+    if role == "base_anchor":
+        w_type = matching_slot.get("workout_type") or "easy_run"
+        target_max = matching_slot.get("target_hr_max", z2_max)
+        duration = matching_slot.get("duration_min", 50)
+        slot_name = matching_slot.get("name_display") or matching_slot.get("name") or f"Aerober Anker & Long Run (Slot {slot_id})"
+        return {
+            "date": ref_date.isoformat(),
+            "date_display": ref_date_str,
+            "days_since_last_run": days_since,
+            "action_type": "workout_day",
+            "workout_type": w_type,
+            "slot": slot_id,
+            "role": "base_anchor",
+            "is_catch_up": False,
+            "headline": f"Heute: {slot_name}",
+            "badge": f"Slot {slot_id}: Z2 Long Run",
+            "badge_class": "tag-green",
+            "icon": "🏃",
+            "details": (
+                f"Wochenend-Grundlagenlauf: {duration} Minuten entspanntes Traben strikt unter {target_max} bpm. "
+                "Dieser Lauf baut deine Kapillarendichte (+13 %) und Fettstoffwechselkapazität auf. "
+                "Pace ist zweitrangig – an Steigungen konsequent gehen."
+            ),
+            "suggested_duration_min": duration,
+            "suggested_target_hr": target_max,
+            "tsb": tsb,
+        }
+
+    # 2. Quality Slot (Dynamically alternates intervals vs. tempo_run; checks base anchor)
+    if role == "quality":
+        requires_base = matching_slot.get("requires_base_anchor", True) or matching_slot.get("fallback_if_slot3_missed")
+        base_done = check_base_anchor_completed(runs, ref_date, slots)
+        if requires_base and not base_done:
+            # Catch-Up Base Run: Base anchor was missing in preceding cycle!
+            return {
+                "date": ref_date.isoformat(),
+                "date_display": ref_date_str,
+                "days_since_last_run": days_since,
+                "action_type": "workout_day",
+                "workout_type": "easy_run",
+                "slot": slot_id,
+                "role": "base_anchor",
+                "is_catch_up": True,
+                "headline": "Heute: Nachhol-Grundlagenlauf (Aerober Anker)",
+                "badge": f"Slot {slot_id}: Z2-Nachholbedarf",
+                "badge_class": "tag-amber",
+                "icon": "🏃",
+                "details": (
+                    f"Da in der Vorwoche / am Wochenende kein Grundlagenlauf stattfand, greift die Schutzregel: "
+                    f"Wir sichern heute zuerst das aerobe Fundament (45–50 min strictly < {z2_max} bpm), "
+                    "bevor schnelle Tempo- oder Intervalleinheiten freigegeben werden. Gehpausen an Anstiegen sind erwünscht."
+                ),
+                "suggested_duration_min": 45,
+                "suggested_target_hr": z2_max,
+                "tsb": tsb,
+            }
+
+        # Resolve quality workout dynamically (not hardcoded!)
+        allowed_types = matching_slot.get("allowed_types") or []
+        if not allowed_types:
+            single = matching_slot.get("workout_type")
+            allowed_types = [single] if single else ["intervals", "tempo_run"]
+        if "intervals" in allowed_types and "tempo_run" not in allowed_types:
+            allowed_types.append("tempo_run")
+        elif "tempo_run" in allowed_types and "intervals" not in allowed_types:
+            allowed_types.append("intervals")
+
+        preferred = matching_slot.get("preferred_type") or matching_slot.get("workout_type")
+        chosen_type = determine_next_quality_type(runs, allowed_types=allowed_types, preferred_type=preferred)
+
+        if chosen_type == "tempo_run":
+            hr_range = matching_slot.get("target_hr_range", [168, 174])
+            target_hr = hr_range[1] if isinstance(hr_range, list) and len(hr_range) > 1 else 174
+            duration = matching_slot.get("duration_min", 40)
+            return {
+                "date": ref_date.isoformat(),
+                "date_display": ref_date_str,
+                "days_since_last_run": days_since,
+                "action_type": "workout_day",
+                "workout_type": "tempo_run",
+                "slot": slot_id,
+                "role": "quality",
+                "is_catch_up": False,
+                "headline": f"Heute: Kontrollierter Schwellenlauf (Slot {slot_id})",
+                "badge": f"Slot {slot_id}: Schwellenreiz",
+                "badge_class": "tag-green",
+                "icon": "🔥",
+                "details": (
+                    f"Zweiter Wochenreiz: Kontrollierte Cruise-Intervalle an der Laktatschwelle ({hr_range[0]}–{hr_range[1]} bpm). "
+                    "Ziel ist die Ökonomisierung der Laktatverarbeitung und Stärkung des Herzschlagvolumens ohne Übersäuerung."
+                ),
+                "suggested_duration_min": duration,
+                "suggested_target_hr": target_hr,
+                "tsb": tsb,
+            }
+        else:
+            duration = matching_slot.get("duration_min", 35)
+            target_desc = matching_slot.get("target", "Intervalle / Speed")
+            return {
+                "date": ref_date.isoformat(),
+                "date_display": ref_date_str,
+                "days_since_last_run": days_since,
+                "action_type": "workout_day",
+                "workout_type": "intervals",
+                "slot": slot_id,
+                "role": "quality",
+                "is_catch_up": False,
+                "headline": f"Heute: Tempo- & Intervalltraining (Slot {slot_id})",
+                "badge": f"Slot {slot_id}: Tempo / Speed",
+                "badge_class": "tag-green",
+                "icon": "⚡",
+                "details": (
+                    f"Das Wochenende ist verarbeitet und deine Form ist frisch (TSB: {tsb:+.1f}). "
+                    f"Heute steht die erste Qualitätseinheit der Woche an: {matching_slot.get('description', target_desc)}. "
+                    "Achte auf eine saubere, hohe Schrittfrequenz (> 165 spm)."
+                ),
+                "suggested_duration_min": duration,
+                "suggested_target_hr": 0,
+                "tsb": tsb,
+            }
+
+    # 3. Recovery Slot
+    if role == "recovery":
+        duration = matching_slot.get("duration_min", 30)
+        return {
+            "date": ref_date.isoformat(),
+            "date_display": ref_date_str,
+            "days_since_last_run": days_since,
+            "action_type": "workout_day",
+            "workout_type": "recovery_run",
+            "slot": slot_id,
+            "role": "recovery",
+            "is_catch_up": False,
+            "headline": f"Heute: Aktive Regeneration (Slot {slot_id})",
+            "badge": f"Slot {slot_id}: Regeneration",
+            "badge_class": "tag-cyan",
+            "icon": "🚶",
+            "details": f"Sehr lockerer Erholungslauf über {duration} Minuten strictly in Zone 1/2 zum Durchbluten der Muskulatur.",
+            "suggested_duration_min": duration,
+            "suggested_target_hr": z2_max,
+            "tsb": tsb,
+        }
+
+    return None
 
 
 def generate_daily_recommendation(
@@ -159,6 +416,18 @@ def generate_daily_recommendation(
                 "tsb": tsb,
             }
         else:
+            slots = profile.get("athlete", {}).get("weekly_slots", [])
+            slot_rec = resolve_slot_recommendation(
+                slots=slots,
+                runs=runs,
+                ref_date=ref_date,
+                tsb=tsb,
+                z2_max=z2_max,
+                days_since=days_since,
+            )
+            if slot_rec:
+                return slot_rec
+
             return {
                 "date": ref_date.isoformat(),
                 "date_display": ref_date_str,
@@ -177,8 +446,21 @@ def generate_daily_recommendation(
                 "tsb": tsb,
             }
 
+    slots = profile.get("athlete", {}).get("weekly_slots", [])
+
     # Case 2: 2 to 3 days since last run (optimal workout window)
     if 2 <= days_since <= 3:
+        slot_rec = resolve_slot_recommendation(
+            slots=slots,
+            runs=runs,
+            ref_date=ref_date,
+            tsb=tsb,
+            z2_max=z2_max,
+            days_since=days_since,
+        )
+        if slot_rec:
+            return slot_rec
+
         return {
             "date": ref_date.isoformat(),
             "date_display": ref_date_str,
@@ -199,6 +481,17 @@ def generate_daily_recommendation(
 
     # Case 3: 4 to 6 days since last run (pause extending)
     if 4 <= days_since <= 6:
+        slot_rec = resolve_slot_recommendation(
+            slots=slots,
+            runs=runs,
+            ref_date=ref_date,
+            tsb=tsb,
+            z2_max=z2_max,
+            days_since=days_since,
+        )
+        if slot_rec:
+            return slot_rec
+
         return {
             "date": ref_date.isoformat(),
             "date_display": ref_date_str,

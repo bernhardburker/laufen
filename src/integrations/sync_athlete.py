@@ -135,12 +135,18 @@ def build_athlete_config(
     }
     classification = None
     display_name = None
+    training_mode = None
+    target_runs_per_week = None
+    weekly_slots = None
     if existing_config and "athlete" in existing_config:
         existing_pace = existing_config["athlete"].get("pace_targets_min_per_km")
         if existing_pace:
             pace_targets = existing_pace
         classification = existing_config["athlete"].get("classification")
         display_name = existing_config["athlete"].get("display_name")
+        training_mode = existing_config["athlete"].get("training_mode")
+        target_runs_per_week = existing_config["athlete"].get("target_runs_per_week")
+        weekly_slots = existing_config["athlete"].get("weekly_slots")
 
     athlete_dict: Dict[str, Any] = {
         "id": str(athlete_id),
@@ -159,6 +165,12 @@ def build_athlete_config(
         athlete_dict["classification"] = classification
     if display_name:
         athlete_dict["display_name"] = display_name
+    if training_mode:
+        athlete_dict["training_mode"] = training_mode
+    if target_runs_per_week:
+        athlete_dict["target_runs_per_week"] = target_runs_per_week
+    if weekly_slots:
+        athlete_dict["weekly_slots"] = weekly_slots
 
     return {"athlete": athlete_dict}
 

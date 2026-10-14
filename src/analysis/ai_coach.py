@@ -200,6 +200,10 @@ def build_coach_prompt(
         hr_info.get("zones", {}).get("z2_aerobic", {}).get("max", 148)
     )
 
+    # Training mode & slot preferences
+    training_mode = athlete_info.get("training_mode", "polarized_base")
+    weekly_slots = athlete_info.get("weekly_slots", [])
+
     # Overall base discipline
     total_z1_z2_s = sum(r["z1_z2_seconds"] for r in processed_runs)
     total_zone_s = sum(r["total_zone_seconds"] for r in processed_runs)
@@ -306,7 +310,17 @@ Analysiere ehrlich und nüchtern den Abgleich zwischen der letzten Vorgabe und d
 3. Physiologischer Effekt: Was lässt sich aus den Daten über die aerobe Entwicklung, Pace/Puls-Verhältnis und Ermüdung (TSB) ablesen?
 """
 
-    prompt = f"""Du bist ein erfahrener Lauf- und Ausdauertrainer mit Spezialisierung auf sportwissenschaftliche Trainingssteuerung, Herzfrequenz-Zonen und polarisiertes Training (80/20-Methode nach Stephen Seiler / Matt Fitzgerald).
+    if training_mode == "pyramidal_hybrid":
+        mode_desc = (
+            f"- Trainingsmodus: Pyramidal-Hybrid-Modell (~65% Z1/Z2, ~20% Z3/Z4, ~15% Z5+)\n"
+            f"- Wochen-Slots (3 Einheiten): Slot 1 (Mo/Di: Tempo/Intervalle), Slot 2 (Mi-Fr: Schwelle 168–174 bpm), Slot 3 (Sa/So: Z2 Long Run < {z2_max} bpm)\n"
+            f"- Schutzregel: Fällt Slot 3 am Wochenende aus, wird Slot 1 automatisch zum Z2-Nachhol-Lauf!\n"
+            f"- WICHTIG: Bewerte geplante Schwellen- (Z3/Z4) und Intervallläufe (Z5) positiv, wenn sie dem jeweiligen Slot entsprechen. Nur ungeplante Grauzonen-Monotonie oder Verfehlen von Z2 am Grundlagen-Tag soll gerügt werden."
+        )
+    else:
+        mode_desc = f"- Trainingsmodus: Klassischer polarisierter Basisaufbau (80/20-Methode, Soll Z1/Z2: ~80%)"
+
+    prompt = f"""Du bist ein erfahrener Lauf- und Ausdauertrainer mit Spezialisierung auf sportwissenschaftliche Trainingssteuerung, Herzfrequenz-Zonen und evidenzbasierte Trainingsmodelle (pyramidale und polarisierte Periodisierung).
 
 Analysiere die aktuellen Trainingsdaten des Athleten ({athlete_name}) und erstelle eine vollständige, dynamische Trainings-Zusammenfassung und Handlungsempfehlungen für das Dashboard.
 
@@ -321,10 +335,11 @@ Analysiere die aktuellen Trainingsdaten des Athleten ({athlete_name}) und erstel
 ### Athleten-Profil:
 - Name: {full_name} ({athlete_name})
 - Einstufung / Level: {classification['category']} ({classification['description']})
+{mode_desc}
 - Ruhepuls: {resting_hr} bpm | Maximalpuls: {max_hr} bpm
 - Laktatschwelle (LTHR): {lthr} bpm
 - Grundlagen-Obergrenze (Zone 2 max): {z2_max} bpm
-- Bisherige Zone 1 & 2 Disziplin im gesamten Zeitraum: {overall_z1_z2_pct}% (Soll: ~80%)
+- Bisherige Zone 1 & 2 Disziplin im gesamten Zeitraum: {overall_z1_z2_pct}%
 - Aktuelle Form (TSB): {form_data['current_tsb']:+.1f} (Fitness CTL: {form_data['latest_ctl']}, Ermüdung ATL: {form_data['latest_atl']})
 - Aktuelles Pensum: Ø {avg_weekly_km:.1f} km / Woche bei Ø {avg_runs_per_week:.1f} Läufen
 {history_section}
