@@ -44,6 +44,19 @@
     "recommendation": "Weiteren Grundlagenlauf über 45–50 Minuten durchführen. Herzfrequenz konsequent unter 158 bpm halten, Pace vollständig ignorieren und bei Steigungen Gehpausen einlegen.",
     "target_type": "easy_run",
     "target_hr_max": 158,
+    "status": "erfüllt",
+    "actual": "Am 15. Oktober wurden 5,01 km in 37 Minuten absolviert. Der Durchschnittspuls lag bei 152 bpm mit 89,6 % Anteil in Zone 1/2 (8m 28s Z1, 25m 10s Z2, 3m 54s Z3).",
+    "effect": "Die aerobe Vorgabe wurde sauber umgesetzt. Trotz minimal kürzerer Dauer als die veranschlagten 45–50 Minuten blieb die Belastung rein regenerativ bis grundlagenorientiert (Load 37). Der TSB bleibt mit -2,2 neutral.",
+    "evaluated_run_ids": [
+      "i197459228"
+    ]
+  },
+  {
+    "id": "cycle-005",
+    "date": "2026-10-16",
+    "recommendation": "Wochenend-Grundlagenlauf (Slot 3) über 50–55 Minuten. Herzfrequenz strikt unter 158 bpm halten, Pace ignorieren und bei Steigungen Gehschritte einbauen.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
     "status": "offen",
     "actual": "Ausstehend (wird nach den nächsten Läufen analysiert)",
     "effect": "-"

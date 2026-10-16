@@ -4865,5 +4865,79 @@
       "zone_distribution_text": "Z1: 20m 03s | Z2: 29m 23s | Z3: 11s | Z4: 0s"
     },
     "analyzed_at": "2026-10-13T14:29:19.537431"
+  },
+  "i197459228": {
+    "id": "i197459228",
+    "date": "2026-10-15T07:27:02",
+    "name": "Wien Laufen",
+    "distance_km": 5.01,
+    "moving_time_s": 2248,
+    "moving_time_str": "37m",
+    "pace_str": "7:29 /km",
+    "avg_hr": 152.0,
+    "max_hr": 168,
+    "cadence_spm": 154.4,
+    "elevation_gain_m": 42.7,
+    "training_load": 37.0,
+    "z1_z2_pct": 89.6,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 508,
+        "time_str": "8m 28s",
+        "pct": 22.6
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1510,
+        "time_str": "25m 10s",
+        "pct": 67.1
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo)",
+        "seconds": 234,
+        "time_str": "3m 54s",
+        "pct": 10.4
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "4x 7m40s 151bpm",
+      "1x 12m30s 156bpm",
+      "1x 2s 167bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (89.6% in Z1/Z2). Die Herzfrequenz blieb mit Ø 152 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 8m 28s, Z2: 25m 10s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Ø 154 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 8m 28s | Z2: 25m 10s | Z3: 3m 54s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-16T07:00:29.083887"
   }
 }
