@@ -57,6 +57,19 @@
     "recommendation": "Wochenend-Grundlagenlauf (Slot 3) über 50–55 Minuten. Herzfrequenz strikt unter 158 bpm halten, Pace ignorieren und bei Steigungen Gehschritte einbauen.",
     "target_type": "easy_run",
     "target_hr_max": 158,
+    "status": "teilweise",
+    "actual": "Am 20.10. absolvierte Berni 4,68 km in 36 Minuten (Pace: 7:47 /km) mit Ø 152 bpm und Maximalpuls 158 bpm. 100,0 % der Zeit verblieben in Zone 1 und 2.",
+    "effect": "Die Pulsvorgabe wurde punktgenau eingehalten (Maximalpuls traf exakt die Z2-Grenze von 158 bpm). Durch die moderate Belastung (Load 36) blieb die Ermüdung minimal, der TSB liegt ausgeglichen bei +0,1.",
+    "evaluated_run_ids": [
+      "i199548212"
+    ]
+  },
+  {
+    "id": "cycle-006",
+    "date": "2026-10-21",
+    "recommendation": "Slot 2 (Mi–Fr) über 40–45 Minuten: Vorrangig als Z2-Dauerlauf (< 158 bpm) steuern, Tempo ignorieren. Optional bei voller Frische 15 Minuten kontrollierter Schwellenreiz (168–174 bpm).",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
     "status": "offen",
     "actual": "Ausstehend (wird nach den nächsten Läufen analysiert)",
     "effect": "-"

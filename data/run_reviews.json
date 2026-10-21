@@ -4939,5 +4939,78 @@
       "zone_distribution_text": "Z1: 8m 28s | Z2: 25m 10s | Z3: 3m 54s | Z4: 0s"
     },
     "analyzed_at": "2026-10-16T07:00:29.083887"
+  },
+  "i199548212": {
+    "id": "i199548212",
+    "date": "2026-10-20T15:54:05",
+    "name": "Gerasdorf bei Wien Laufen",
+    "distance_km": 4.68,
+    "moving_time_s": 2188,
+    "moving_time_str": "36m",
+    "pace_str": "7:48 /km",
+    "avg_hr": 152.0,
+    "max_hr": 158,
+    "cadence_spm": 152.2,
+    "elevation_gain_m": 11.1,
+    "training_load": 36.0,
+    "z1_z2_pct": 100.0,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 342,
+        "time_str": "5m 42s",
+        "pct": 15.6
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1848,
+        "time_str": "30m 48s",
+        "pct": 84.4
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "4x 7m46s 151bpm",
+      "1x 5m28s 154bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (100.0% in Z1/Z2). Die Herzfrequenz blieb mit Ø 152 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 5m 42s, Z2: 30m 48s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Ø 152 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 5m 42s | Z2: 30m 48s | Z3: 0s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-21T07:00:27.436876"
   }
 }
