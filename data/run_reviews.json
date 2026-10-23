@@ -5012,5 +5012,83 @@
       "zone_distribution_text": "Z1: 5m 42s | Z2: 30m 48s | Z3: 0s | Z4: 0s"
     },
     "analyzed_at": "2026-10-21T07:00:27.436876"
+  },
+  "i200612231": {
+    "id": "i200612231",
+    "date": "2026-10-23T07:16:24",
+    "name": "Wien - Schwellenlauf (7 km)",
+    "distance_km": 7.15,
+    "moving_time_s": 2996,
+    "moving_time_str": "49m",
+    "pace_str": "6:59 /km",
+    "avg_hr": 159.0,
+    "max_hr": 176,
+    "cadence_spm": 152.8,
+    "elevation_gain_m": 42.3,
+    "training_load": 58.0,
+    "z1_z2_pct": 49.7,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 378,
+        "time_str": "6m 18s",
+        "pct": 12.6
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1112,
+        "time_str": "18m 32s",
+        "pct": 37.1
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo)",
+        "seconds": 682,
+        "time_str": "11m 22s",
+        "pct": 22.7
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 827,
+        "time_str": "13m 47s",
+        "pct": 27.6
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "1x 7m4s 140bpm",
+      "1x 5m10s 154bpm",
+      "3x 5m59s 168bpm",
+      "1x 22s 172bpm",
+      "2x 8m13s 157bpm",
+      "1x 94s 154bpm",
+      "1x 2m3s 158bpm"
+    ],
+    "intensity_class": "gemischte_intensitaet",
+    "review": {
+      "rating": "zuegig",
+      "rating_label": "Zügiger Dauerlauf (Zone 3)",
+      "summary": "Zügiger Ausdauerlauf mit Schwerpunkt im Übergangsbereich (49.7% in Z1/Z2, 11m 22s in Zone 3, 13m 47s in Zone 4). Ø Puls lag mit 159 bpm über der Z2-Obergrenze (158 bpm). Ein solider Reiz für das Herzschlagvolumen.",
+      "coach_tip": "Dieser Reiz beansprucht die Glykogenspeicher spürbar – plane vor der nächsten tempo- oder schwellenbetonten Einheit 48 Stunden lockere Erholung ein.",
+      "cadence_feedback": "Ø 152 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 6m 18s | Z2: 18m 32s | Z3: 11m 22s | Z4: 13m 47s"
+    },
+    "analyzed_at": "2026-10-23T09:25:23.956337"
   }
 }

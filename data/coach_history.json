@@ -70,6 +70,19 @@
     "recommendation": "Slot 2 (Mi–Fr) über 40–45 Minuten: Vorrangig als Z2-Dauerlauf (< 158 bpm) steuern, Tempo ignorieren. Optional bei voller Frische 15 Minuten kontrollierter Schwellenreiz (168–174 bpm).",
     "target_type": "easy_run",
     "target_hr_max": 158,
+    "status": "erfüllt",
+    "actual": "Am 23.10. wurden 7,15 km in 49 Minuten absolviert (Pace: 6:59 min/km, Ø Puls: 159 bpm). Mit rund 25 Minuten in Zone 3 und 4 wurde die offene Schwellenoption des flexiblen Slots genutzt.",
+    "effect": "Wirksamer Reiz für Tempohärte und Herzschlagvolumen (Load 58). Der TSB sank auf -2.9 (CTL 12.7, ATL 15.6). Die Beine haben spürbar gearbeitet, weshalb als Nächstes gezielte aerobe Entlastung ansteht.",
+    "evaluated_run_ids": [
+      "i200612231"
+    ]
+  },
+  {
+    "id": "cycle-007",
+    "date": "2026-10-23",
+    "recommendation": "Slot 3 am Wochenende über 45–50 Minuten als reinen Z2-Dauerlauf (< 158 bpm) steuern. Pace ignorieren, aktive Regeneration und Fettstoffwechsel sichern.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
     "status": "offen",
     "actual": "Ausstehend (wird nach den nächsten Läufen analysiert)",
     "effect": "-"
