@@ -41,6 +41,7 @@ from src.analysis.trends import (
     format_pace,
     load_activities,
 )
+from src.llm import LLMClient, get_llm_client
 
 
 def load_athlete_profile(file_path: Optional[Path] = None) -> Dict[str, Any]:
@@ -453,9 +454,202 @@ def parse_coach_response(raw_text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def run_ai_coach(
+    activities_file: Path,
+    athlete_file: Optional[Path] = None,
+    history_file: Optional[Path] = None,
+    reviews_file: Optional[Path] = None,
+    output_json: Optional[Path] = None,
+    output_md: Optional[Path] = None,
+    llm_client: Optional[LLMClient] = None,
+    fallback_on_error: bool = True,
+    update_reviews_first: bool = True,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """Execute end-to-end AI coach pipeline using an abstracted LLM client.
+
+    1. Optionally updates deep per-run review cache heuristically first.
+    2. Constructs context-rich coaching prompt.
+    3. Invokes LLM via abstracted LLMClient.
+    4. Parses structured JSON response and saves summary / commentary.
+    5. Updates adaptive coaching memory history.
+    6. Falls back gracefully to heuristic analysis on failure.
+    """
+    athlete_path = athlete_file or (PROJECT_ROOT / "config" / "athlete.json")
+    hist_path = history_file or (PROJECT_ROOT / "data" / "coach_history.json")
+    rev_path = reviews_file or (PROJECT_ROOT / "data" / "run_reviews.json")
+    out_json_path = output_json or (PROJECT_ROOT / "data" / "ai_coach_summary.json")
+    out_md_path = output_md or (PROJECT_ROOT / "data" / "ai_coach_commentary.md")
+
+    # Step 1: Pre-populate or refresh heuristic run reviews
+    if update_reviews_first and activities_file.is_file() and not dry_run:
+        try:
+            from src.analysis.run_reviewer import review_runs
+
+            review_runs(
+                activities_file=activities_file,
+                reviews_file=rev_path,
+                athlete_file=athlete_path,
+            )
+        except Exception as e:
+            print(f"Warning: Pre-review of activities failed: {e}", file=sys.stderr)
+
+    # Step 2: Build coach prompt
+    prompt = build_coach_prompt(
+        activities_file=activities_file,
+        athlete_file=athlete_path,
+        history_file=hist_path,
+        reviews_file=rev_path,
+        save_classification=not dry_run,
+    )
+
+    # Step 3: Invoke LLM client
+    client = llm_client or get_llm_client()
+    llm_res = client.generate(prompt)
+
+    # Step 4: Handle response or fallback
+    if not llm_res.success:
+        err_msg = llm_res.error or "LLM generation failed"
+        print(f"Warning: LLM invocation unsuccessful: {err_msg}", file=sys.stderr)
+        if fallback_on_error:
+            # Fallback: ensure heuristic reviews exist
+            if activities_file.is_file() and not dry_run:
+                try:
+                    from src.analysis.run_reviewer import review_runs
+
+                    review_runs(
+                        activities_file=activities_file,
+                        reviews_file=rev_path,
+                        athlete_file=athlete_path,
+                    )
+                except Exception:
+                    pass
+            return {
+                "status": "fallback",
+                "error": err_msg,
+                "model": llm_res.model,
+                "prompt": prompt,
+            }
+        return {"status": "error", "error": err_msg, "model": llm_res.model}
+
+    parsed = parse_coach_response(llm_res.text)
+    if not parsed:
+        err_msg = "Could not parse valid structured JSON from LLM response"
+        print(f"Warning: {err_msg}", file=sys.stderr)
+        if fallback_on_error:
+            return {
+                "status": "fallback",
+                "error": err_msg,
+                "raw_output": llm_res.text,
+                "model": llm_res.model,
+            }
+        return {"status": "error", "error": err_msg, "raw_output": llm_res.text}
+
+    # Enrich profile metadata
+    profile = {}
+    if athlete_path.is_file():
+        profile = load_athlete_profile(athlete_path)
+        athlete_info = profile.get("athlete", {})
+        if "athlete" not in parsed or not isinstance(parsed.get("athlete"), dict):
+            parsed["athlete"] = {}
+        parsed["athlete"]["name"] = extract_athlete_display_name(athlete_info)
+        if athlete_info.get("classification"):
+            parsed["athlete"]["classification"] = athlete_info["classification"]
+
+    if dry_run:
+        print("[DRY-RUN] Execution completed successfully. Files were NOT modified.")
+        print(f"[DRY-RUN] Status: {parsed.get('status_title')} [{parsed.get('status_badge')}]")
+        print(f"[DRY-RUN] Target output JSON: {out_json_path}")
+        print(f"[DRY-RUN] Target output MD: {out_md_path}")
+        if "history_evaluation" in parsed:
+            print(f"[DRY-RUN] Next Recommendation: {parsed['history_evaluation'].get('next_recommendation')}")
+        return {
+            "status": "dry_run",
+            "data": parsed,
+            "model": llm_res.model,
+            "history_updated": False,
+            "output_json": str(out_json_path),
+            "output_md": str(out_md_path),
+        }
+
+    # Write output JSON and Markdown
+    out_json_path.parent.mkdir(parents=True, exist_ok=True)
+    out_json_path.write_text(
+        json.dumps(parsed, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    if "coach_commentary" in parsed and parsed["coach_commentary"]:
+        out_md_path.parent.mkdir(parents=True, exist_ok=True)
+        out_md_path.write_text(parsed["coach_commentary"], encoding="utf-8")
+
+    # Step 5: Update coach history
+    history_updated = False
+    if "history_evaluation" in parsed and isinstance(parsed["history_evaluation"], dict):
+        activities = load_activities(activities_file) if activities_file.is_file() else []
+        runs = filter_runs(activities)
+        history = load_coach_history(hist_path)
+        if not history and runs:
+            history = initialize_cold_start_history(runs, profile, hist_path)
+        open_rec = get_open_recommendation(history)
+        rec_date = open_rec.get("date", "2000-01-01") if open_rec else "2000-01-01"
+        evaluated_ids = get_evaluated_run_ids(history)
+        runs_since = find_runs_since(runs, rec_date, exclude_run_ids=evaluated_ids)
+        if runs_since:
+            update_history_with_coach_review(
+                history=history,
+                review_data=parsed["history_evaluation"],
+                runs_since=runs_since,
+                athlete_profile=profile,
+                history_file=hist_path,
+            )
+            history_updated = True
+
+    return {
+        "status": "success",
+        "data": parsed,
+        "model": llm_res.model,
+        "history_updated": history_updated,
+        "output_json": str(out_json_path),
+        "output_md": str(out_md_path),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Prepare AI coach prompt or parse AI coach response."
+        description="Prepare AI coach prompt, parse response, or execute full AI coach pipeline."
+    )
+    parser.add_argument(
+        "--execute",
+        action="store_true",
+        help="Execute the full AI coach generation and analysis pipeline using LLM abstraction",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Simulate execution without modifying files or coach history",
+    )
+    parser.add_argument(
+        "--provider",
+        type=str,
+        default=None,
+        help="LLM provider (agy, mock, gemini). Defaults to LLM_PROVIDER env var or agy.",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help="Override LLM model name",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=str,
+        default=None,
+        help="Override LLM timeout (e.g. 3m or 180s)",
+    )
+    parser.add_argument(
+        "--no-fallback",
+        action="store_true",
+        help="Disable automatic heuristic fallback on LLM failure",
     )
     parser.add_argument(
         "--prepare-prompt",
@@ -513,6 +707,24 @@ def main() -> int:
 
     args = parser.parse_args()
 
+    if args.prepare_prompt:
+        try:
+            prompt = build_coach_prompt(
+                args.input,
+                args.athlete,
+                history_file=args.history,
+                reviews_file=args.reviews,
+            )
+            if args.output_prompt:
+                args.output_prompt.parent.mkdir(parents=True, exist_ok=True)
+                args.output_prompt.write_text(prompt, encoding="utf-8")
+            else:
+                print(prompt)
+            return 0
+        except Exception as e:
+            print(f"Error generating AI coach prompt: {e}", file=sys.stderr)
+            return 1
+
     if args.parse_response:
         if not args.parse_response.exists():
             print(f"Error: Response file not found: {args.parse_response}", file=sys.stderr)
@@ -565,6 +777,45 @@ def main() -> int:
                 print("No new runs since current open recommendation. History remains unchanged.")
 
         return 0
+
+    if args.execute or args.dry_run:
+        client_kwargs: Dict[str, Any] = {}
+        if args.model:
+            client_kwargs["model"] = args.model
+        if args.timeout:
+            client_kwargs["timeout"] = args.timeout
+
+        try:
+            client = get_llm_client(provider=args.provider, **client_kwargs)
+        except Exception as e:
+            print(f"Error initializing LLM client: {e}", file=sys.stderr)
+            return 1
+
+        result = run_ai_coach(
+            activities_file=args.input,
+            athlete_file=args.athlete,
+            history_file=args.history,
+            reviews_file=args.reviews,
+            output_json=args.output_json,
+            output_md=args.output_md,
+            llm_client=client,
+            fallback_on_error=not args.no_fallback,
+            dry_run=args.dry_run,
+        )
+
+        if result.get("status") == "dry_run":
+            return 0
+        elif result.get("status") == "success":
+            print(f"AI Coach execution successful. Summary: {args.output_json}")
+            if result.get("history_updated"):
+                print(f"Coach history updated: {args.history}")
+            return 0
+        elif result.get("status") == "fallback":
+            print(f"AI Coach completed with fallback: {result.get('error')}", file=sys.stderr)
+            return 0
+        else:
+            print(f"Error in AI Coach execution: {result.get('error')}", file=sys.stderr)
+            return 1
 
     try:
         prompt = build_coach_prompt(

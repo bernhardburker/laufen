@@ -32,3 +32,9 @@ Feature: Central task runner and command line interface
     When the cli runner is executed with "today"
     Then the process exits with code 0
     And the output contains "Tagesempfehlung"
+
+  Scenario: Run coach task with help flag displays usage
+    When the cli runner is executed with "coach --help"
+    Then the process exits with code 0
+    And the output contains "Execute the full AI coach generation"
+

@@ -42,82 +42,33 @@ fi
 
 mkdir -p "$(dirname "$OUTPUT_FILE")"
 
-PROMPT_TMP="$(mktemp)"
-AI_OUTPUT_TMP="$(mktemp)"
-AGY_STDERR_TMP="$(mktemp)"
+MODEL="${AGY_MODEL:-Gemini 3.8 Flash (Medium)}"
+TIMEOUT="${AGY_TIMEOUT:-3m}"
+JSON_OUTPUT="$REPO_ROOT/data/ai_coach_summary.json"
 
-cleanup() {
-  rm -f "$PROMPT_TMP" "$AI_OUTPUT_TMP" "$AGY_STDERR_TMP"
-}
-trap cleanup EXIT
+export AGY_BIN="$agy_bin"
+export AGY_MODEL="$MODEL"
+export AGY_TIMEOUT="$TIMEOUT"
 
-echo "==> Reviewing unanalyzed runs and updating deep metrics cache..."
-"$PYTHON_EXEC" "$REPO_ROOT/src/analysis/run_reviewer.py" \
-  --input "$ACTIVITIES_FILE" \
-  --reviews "$REPO_ROOT/data/run_reviews.json" \
-  --athlete "$ATHLETE_FILE" || true
-
-echo "==> Generating AI coach prompt from training data..."
-"$PYTHON_EXEC" "$REPO_ROOT/src/analysis/ai_coach.py" \
+echo "==> Running AI Coach engine (using abstracted LLM client with model '$MODEL')..."
+if "$PYTHON_EXEC" "$REPO_ROOT/src/analysis/ai_coach.py" \
+  --execute \
   --input "$ACTIVITIES_FILE" \
   --athlete "$ATHLETE_FILE" \
   --history "$REPO_ROOT/data/coach_history.json" \
   --reviews "$REPO_ROOT/data/run_reviews.json" \
-  --output-prompt "$PROMPT_TMP"
-
-MODEL="${AGY_MODEL:-Gemini 3.8 Flash (Medium)}"
-TIMEOUT="${AGY_TIMEOUT:-3m}"
-
-echo "==> Invoking Antigravity CLI (agy) with model '$MODEL'..."
-if "$agy_bin" \
+  --output-json "$JSON_OUTPUT" \
+  --output-md "$OUTPUT_FILE" \
   --model "$MODEL" \
-  --sandbox \
-  --dangerously-skip-permissions \
-  --disable-slash-commands \
-  --print-timeout "$TIMEOUT" \
-  --input-format text \
-  --output-format text < "$PROMPT_TMP" > "$AI_OUTPUT_TMP" 2> "$AGY_STDERR_TMP"; then
+  --timeout "$TIMEOUT"; then
 
-  # Check if output is non-empty
-  non_ws_lines="$(grep -c '[^[:space:]]' "$AI_OUTPUT_TMP" || true)"
-  if [ "$non_ws_lines" -ge 3 ]; then
-    # Inlining fallback: if agy produced a file:// link artifact, read file directly
-    if grep -Eq 'file://.*/[^)]+\.md' "$AI_OUTPUT_TMP"; then
-      linked_artifact="$(grep -Eo 'file://[^)]+\.md' "$AI_OUTPUT_TMP" | head -n 1 | sed 's|^file://||')"
-      if [ -f "$linked_artifact" ]; then
-        echo "Inlining artifact from '$linked_artifact'..."
-        cat "$linked_artifact" > "$AI_OUTPUT_TMP"
-      fi
-    fi
-
-    # Parse structured JSON summary and extracted commentary
-    JSON_OUTPUT="$REPO_ROOT/data/ai_coach_summary.json"
-    if "$PYTHON_EXEC" "$REPO_ROOT/src/analysis/ai_coach.py" \
-        --parse-response "$AI_OUTPUT_TMP" \
-        --input "$ACTIVITIES_FILE" \
-        --athlete "$ATHLETE_FILE" \
-        --history "$REPO_ROOT/data/coach_history.json" \
-        --output-json "$JSON_OUTPUT" \
-        --output-md "$OUTPUT_FILE"; then
-      echo "==> Dynamic AI summary & recommendations saved to: $JSON_OUTPUT"
-    else
-      echo "Warning: Response was not valid JSON, saving raw output as commentary." >&2
-      cp "$AI_OUTPUT_TMP" "$OUTPUT_FILE"
-    fi
-
-    echo "==> AI Coach output successfully generated at: $OUTPUT_FILE"
+  if [ -f "$OUTPUT_FILE" ]; then
+    echo "==> AI Coach output generated at: $OUTPUT_FILE"
     echo "----------------------------------------------------------------------"
     cat "$OUTPUT_FILE"
     echo "----------------------------------------------------------------------"
-  else
-    echo "Warning: agy returned insufficient output ($non_ws_lines lines)." >&2
-    if [ -s "$AGY_STDERR_TMP" ]; then
-      cat "$AGY_STDERR_TMP" >&2
-    fi
   fi
 else
-  echo "Warning: agy execution failed with code $?." >&2
-  if [ -s "$AGY_STDERR_TMP" ]; then
-    cat "$AGY_STDERR_TMP" >&2
-  fi
+  echo "Warning: AI Coach execution encountered an error." >&2
 fi
+

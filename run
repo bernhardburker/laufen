@@ -40,6 +40,7 @@ Commands:
   trends            Display weekly trends, volume & zone discipline
   history           Display Coach memory, past recommendations & feedback loop
   today             Display daily evaluated training recommendation ("Workout of the Day")
+  coach [ARGS...]   Execute AI Running Coach pipeline with LLM integration
   review [ARGS...]  Incrementally review unanalyzed runs and cache results
   dashboard         Generate HTML dashboard (dist/index.html)
   preview [PORT]    Build dashboard and launch local webserver (default: 8080)
@@ -73,7 +74,7 @@ shift || true
 case "$COMMAND" in
   sync)
     "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_intervals.py" "$@"
-    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/planner/schedule_workout.py" --sync-plan "$@" || true
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/planner/schedule_workout.py" --adaptive-plan "$@" || true
     ;;
   wellness|sync-wellness)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_wellness.py" "$@"
@@ -103,6 +104,9 @@ case "$COMMAND" in
     ;;
   today|daily)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/daily_recommendation.py" "$@"
+    ;;
+  coach|ai-coach)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/ai_coach.py" --execute "$@"
     ;;
   review|reviews)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/run_reviewer.py" "$@"
