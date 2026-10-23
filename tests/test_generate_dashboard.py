@@ -338,6 +338,14 @@ class DashboardGeneratorDriver:
         assert ".kpi-grid" in content
         assert "repeat(2, 1fr)" in content
 
+    def assert_html_contains_ef_mode_toggle(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert "paceHrModeToggle" in content
+        assert 'data-ef-mode="base"' in content
+        assert 'data-ef-mode="all"' in content
+        assert "chartPaceHrSubtitle" in content
+        assert "currentEfMode" in content
+
 
 
 # 3. Fixture injecting the Driver
@@ -517,6 +525,11 @@ def then_html_contains_expandable_reviews(driver: DashboardGeneratorDriver):
 @then("the output HTML contains compact two-column KPI grid for mobile")
 def then_html_contains_compact_kpi(driver: DashboardGeneratorDriver):
     driver.assert_html_contains_compact_kpi_grid()
+
+
+@then("the output HTML contains aerobic efficiency chart mode toggle buttons")
+def then_html_contains_ef_mode_toggle(driver: DashboardGeneratorDriver):
+    driver.assert_html_contains_ef_mode_toggle()
 
 
 

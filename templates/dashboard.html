@@ -618,6 +618,8 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 16px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .chart-header h2 {
@@ -629,6 +631,41 @@
     .chart-header span {
       font-size: 0.8rem;
       color: var(--text-muted);
+    }
+
+    .chart-toggle-group {
+      display: inline-flex;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .chart-toggle-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .chart-toggle-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .chart-toggle-btn.active {
+      background: var(--cyan);
+      color: #0b0f19;
+      font-weight: 600;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
     }
 
     .chart-container {
@@ -1515,7 +1552,7 @@
         <div class="kpi-card">
           <span class="kpi-title">Aerobe Effizienz (EF)</span>
           <div class="kpi-value" id="kpiEf" style="color: var(--cyan);">{{ AEROBIC_EF }}</div>
-          <span class="kpi-sub">Speed / Puls (m/min / bpm)</span>
+          <span class="kpi-sub" id="kpiEfSub">Z2-Basis (m/min / bpm)</span>
         </div>
         <div class="kpi-card">
           <span class="kpi-title">Aktuelle Form (TSB)</span>
@@ -1579,8 +1616,14 @@
         <!-- Chart 4: Aerobic Efficiency & Pace Trend -->
         <div class="chart-card">
           <div class="chart-header">
-            <h2>Aerobe Effizienz (EF) &amp; Pace-Trend</h2>
-            <span>Effizienzfaktor (m/min / bpm) vs. Durchschnittstempo (min/km)</span>
+            <div>
+              <h2>Aerobe Effizienz (EF) &amp; Pace-Trend</h2>
+              <span id="chartPaceHrSubtitle">Effizienzfaktor vs. Pace &middot; <strong>Z2-Grundlage (Z1/Z2 &ge; 70%)</strong></span>
+            </div>
+            <div class="chart-toggle-group" id="paceHrModeToggle">
+              <button type="button" class="chart-toggle-btn active" data-ef-mode="base" title="Nur Einheiten mit &ge; 70% in Zone 1/2 berücksichtigen">Nur Z2-Basis</button>
+              <button type="button" class="chart-toggle-btn" data-ef-mode="all" title="Alle Einheiten berücksichtigen">Alle Läufe</button>
+            </div>
           </div>
           <div class="chart-container">
             <canvas id="chartPaceHr"></canvas>
@@ -1752,6 +1795,7 @@
       let customEndDate = null;
       let selectedWeek = null;
       let currentZoneFilter = 'all';
+      let currentEfMode = 'base';
       let searchQuery = '';
       let currentSortCol = 'date';
       let currentSortDir = 'desc';
@@ -1833,7 +1877,9 @@
         const zoneTotal = runs.reduce((acc, r) => acc + (r.total_zone_seconds || 0), 0);
         const z1z2Pct = zoneTotal > 0 ? (Math.round((z1z2Total / zoneTotal) * 1000) / 10) : 0;
 
-        const efs = runs.map(r => r.aerobic_ef).filter(v => v !== null && v !== undefined && v > 0);
+        const baseRunsForEf = runs.filter(r => r.total_zone_seconds > 0 && ((r.z1_z2_seconds / r.total_zone_seconds) >= 0.70));
+        const efSource = baseRunsForEf.length > 0 ? baseRunsForEf : runs;
+        const efs = efSource.map(r => r.aerobic_ef).filter(v => v !== null && v !== undefined && v > 0);
         const avgEf = efs.length > 0 ? (efs.reduce((a, b) => a + b, 0) / efs.length).toFixed(3) : '-';
 
         const elDist = document.getElementById('kpiTotalDist');
@@ -1859,6 +1905,13 @@
 
         const elEf = document.getElementById('kpiEf');
         if (elEf) elEf.textContent = avgEf;
+
+        const elEfSub = document.getElementById('kpiEfSub');
+        if (elEfSub) {
+          elEfSub.textContent = (baseRunsForEf.length > 0)
+            ? 'Z2-Basis (m/min / bpm)'
+            : 'Speed / Puls (m/min / bpm)';
+        }
       }
 
       // Group activities into weekly trends for charts
@@ -1886,6 +1939,13 @@
           const efs = wRuns.map(r => r.aerobic_ef).filter(v => v !== null && v !== undefined && v > 0);
           const avgEf = efs.length > 0 ? parseFloat((efs.reduce((a, b) => a + b, 0) / efs.length).toFixed(3)) : null;
 
+          const baseRuns = wRuns.filter(r => r.total_zone_seconds > 0 && ((r.z1_z2_seconds / r.total_zone_seconds) >= 0.70));
+          const baseEfs = baseRuns.map(r => r.aerobic_ef).filter(v => v !== null && v !== undefined && v > 0);
+          const baseAvgEf = baseEfs.length > 0 ? parseFloat((baseEfs.reduce((a, b) => a + b, 0) / baseEfs.length).toFixed(3)) : null;
+          const baseDist = baseRuns.reduce((acc, r) => acc + (r.distance_km || 0), 0);
+          const baseTime = baseRuns.reduce((acc, r) => acc + (r.moving_time_s || 0), 0);
+          const baseAvgPaceS = baseDist > 0 ? (baseTime / baseDist) : null;
+
           const z1 = wRuns.reduce((s, r) => s + ((r.zone_times && r.zone_times[0]) || 0), 0);
           const z2 = wRuns.reduce((s, r) => s + ((r.zone_times && r.zone_times[1]) || 0), 0);
           const z3 = wRuns.reduce((s, r) => s + ((r.zone_times && r.zone_times[2]) || 0), 0);
@@ -1904,6 +1964,9 @@
             avg_pace_s: paceS,
             avg_hr: avgHr,
             aerobic_ef: avgEf,
+            base_ef: baseAvgEf,
+            base_avg_pace_s: baseAvgPaceS,
+            base_runs_count: baseRuns.length,
             zone_breakdown_pct: [
               zTotal > 0 ? Math.round((z1 / zTotal) * 1000) / 10 : 0,
               zTotal > 0 ? Math.round((z2 / zTotal) * 1000) / 10 : 0,
@@ -1964,9 +2027,22 @@
 
         // Chart 4: Aerobic Efficiency & Pace
         if (chartPaceHr) {
+          const isBase = (currentEfMode === 'base');
           chartPaceHr.data.labels = trendList.map(t => t.iso_week);
-          chartPaceHr.data.datasets[0].data = trendList.map(t => t.aerobic_ef);
-          chartPaceHr.data.datasets[1].data = trendList.map(t => t.avg_pace_s > 0 ? (t.avg_pace_s / 60.0).toFixed(2) : null);
+          chartPaceHr.data.datasets[0].label = isBase
+            ? 'Aerobe Effizienz EF (m/min / bpm) [Z2-Basis]'
+            : 'Aerobe Effizienz EF (m/min / bpm) [Alle]';
+          chartPaceHr.data.datasets[0].data = trendList.map(t => {
+            if (isBase) return (t.base_ef !== null && t.base_ef !== undefined) ? t.base_ef : null;
+            return (t.aerobic_ef !== null && t.aerobic_ef !== undefined) ? t.aerobic_ef : null;
+          });
+          chartPaceHr.data.datasets[1].label = isBase
+            ? 'Ø Z2-Pace (min/km)'
+            : 'Ø Pace (min/km) [Alle]';
+          chartPaceHr.data.datasets[1].data = trendList.map(t => {
+            const paceVal = isBase ? t.base_avg_pace_s : t.avg_pace_s;
+            return (paceVal && paceVal > 0) ? (paceVal / 60.0).toFixed(2) : null;
+          });
           chartPaceHr.update();
         }
 
@@ -2303,6 +2379,29 @@
         });
       }
 
+      // 8. EF Chart Mode Toggle (Z2-Basis vs Alle Läufe)
+      const efModeButtons = document.querySelectorAll('#paceHrModeToggle .chart-toggle-btn');
+      efModeButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const mode = this.getAttribute('data-ef-mode');
+          if (mode === currentEfMode) return;
+          currentEfMode = mode;
+          efModeButtons.forEach(b => b.classList.toggle('active', b === this));
+
+          const subtitle = document.getElementById('chartPaceHrSubtitle');
+          if (subtitle) {
+            if (currentEfMode === 'base') {
+              subtitle.innerHTML = 'Effizienzfaktor vs. Pace &middot; <strong>Z2-Grundlage (Z1/Z2 &ge; 70%)</strong>';
+            } else {
+              subtitle.innerHTML = 'Effizienzfaktor vs. Pace &middot; <strong>Alle Läufe</strong>';
+            }
+          }
+
+          const activeTrends = computeWeeklyTrends(currentDateFilteredRuns);
+          updateChartsWithTrends(activeTrends, currentDateFilteredRuns);
+        });
+      });
+
       const btnPrev = document.getElementById('btnPrevPage');
       if (btnPrev) {
         btnPrev.addEventListener('click', function() {
@@ -2612,8 +2711,15 @@
       const ctxPaceHr = document.getElementById('chartPaceHr');
       if (ctxPaceHr) {
         const labels = trends.map(t => t.iso_week);
-        const efs = trends.map(t => t.aerobic_ef !== null ? t.aerobic_ef : null);
-        const paces = trends.map(t => t.avg_pace_s > 0 ? (t.avg_pace_s / 60.0).toFixed(2) : null);
+        const isBase = (currentEfMode === 'base');
+        const efs = trends.map(t => {
+          if (isBase) return (t.base_ef !== null && t.base_ef !== undefined) ? t.base_ef : null;
+          return (t.aerobic_ef !== null && t.aerobic_ef !== undefined) ? t.aerobic_ef : null;
+        });
+        const paces = trends.map(t => {
+          const paceVal = isBase ? t.base_avg_pace_s : t.avg_pace_s;
+          return (paceVal && paceVal > 0) ? (paceVal / 60.0).toFixed(2) : null;
+        });
 
         chartPaceHr = new Chart(ctxPaceHr, {
           type: 'line',
@@ -2621,7 +2727,7 @@
             labels: labels,
             datasets: [
               {
-                label: 'Aerobe Effizienz EF (m/min / bpm)',
+                label: isBase ? 'Aerobe Effizienz EF (m/min / bpm) [Z2-Basis]' : 'Aerobe Effizienz EF (m/min / bpm)',
                 data: efs,
                 borderColor: '#38bdf8',
                 backgroundColor: 'rgba(56, 189, 248, 0.1)',
@@ -2629,15 +2735,17 @@
                 borderWidth: 2.5,
                 pointRadius: 4,
                 tension: 0.3,
+                spanGaps: true,
                 yAxisID: 'y',
               },
               {
-                label: 'Ø Pace (min/km)',
+                label: isBase ? 'Ø Z2-Pace (min/km)' : 'Ø Pace (min/km)',
                 data: paces,
                 borderColor: '#f59e0b',
                 borderDash: [5, 5],
                 borderWidth: 2,
                 pointRadius: 3,
+                spanGaps: true,
                 yAxisID: 'y1',
               }
             ]
@@ -2659,6 +2767,21 @@
                 reverse: true,
                 title: { display: true, text: 'Pace (min/km)' },
                 grid: { drawOnChartArea: false }
+              }
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    if (ctx.datasetIndex === 1 && ctx.raw !== null) {
+                      const decimalMin = parseFloat(ctx.raw);
+                      const m = Math.floor(decimalMin);
+                      const s = Math.round((decimalMin - m) * 60);
+                      return `${ctx.dataset.label}: ${m}:${s < 10 ? '0' : ''}${s} /km (${decimalMin} min/km)`;
+                    }
+                    return `${ctx.dataset.label}: ${ctx.raw}`;
+                  }
+                }
               }
             }
           }

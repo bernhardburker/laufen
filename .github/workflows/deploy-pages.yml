@@ -1,6 +1,10 @@
 name: Deploy Dashboard to GitHub Pages
 
 on:
+  # Daily scheduled execution at 05:00 UTC (07:00 CEST)
+  schedule:
+    - cron: '0 5 * * *'
+
   # Allows manual refresh trigger from GitHub Actions tab
   workflow_dispatch:
     inputs:
@@ -70,6 +74,16 @@ jobs:
           else
             echo "::warning ::No INTERVALS_API_KEY secret configured and no existing data file. Generating empty dashboard."
             echo "[]" > data/intervals_activities.json
+          fi
+
+      - name: Synchronize adaptive workout plan
+        env:
+          INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
+          INTERVALS_ATHLETE_ID: ${{ secrets.INTERVALS_ATHLETE_ID || '0' }}
+        run: |
+          if [ -n "$INTERVALS_API_KEY" ]; then
+            echo "Synchronizing rolling adaptive workout plan..."
+            python3 src/planner/schedule_workout.py --adaptive-plan || echo "::warning ::Adaptive plan sync failed"
           fi
 
       - name: Review unanalyzed runs and update cache

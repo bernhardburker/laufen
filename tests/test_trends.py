@@ -110,6 +110,16 @@ class TrendsAnalysisDriver:
         assert "z1_z2_pct" in first_week
         assert "aerobic_ef" in first_week
 
+    def assert_trends_contain_base_ef(self) -> None:
+        assert self.process_result is not None
+        data = json.loads(self.process_result.stdout)
+        first_week = data["trends"][0]
+        assert "base_ef" in first_week
+        assert "base_avg_pace_s" in first_week
+        assert "base_runs_count" in first_week
+        assert first_week["base_runs_count"] == 2
+        assert first_week["base_ef"] is not None
+
 
 # 3. Pytest Fixture
 @pytest.fixture
@@ -170,3 +180,8 @@ def then_output_mentions_keyword(driver: TrendsAnalysisDriver, keyword: str):
 @then("the stdout contains valid JSON with weekly metrics")
 def then_stdout_contains_valid_json(driver: TrendsAnalysisDriver):
     driver.assert_valid_json_with_metrics()
+
+
+@then("the JSON trends contain base aerobic efficiency metrics for Zone 1 and 2 runs")
+def then_trends_contain_base_ef(driver: TrendsAnalysisDriver):
+    driver.assert_trends_contain_base_ef()

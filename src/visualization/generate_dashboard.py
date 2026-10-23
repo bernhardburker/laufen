@@ -750,9 +750,16 @@ def generate_dashboard(
             else 0.0
         )
 
+        base_runs_list = [
+            r
+            for r in processed_runs
+            if r.get("total_zone_seconds", 0) > 0
+            and (r.get("z1_z2_seconds", 0) / r["total_zone_seconds"]) >= 0.70
+        ]
+        ef_source = base_runs_list if base_runs_list else processed_runs
         ef_list = [
             r["aerobic_ef"]
-            for r in processed_runs
+            for r in ef_source
             if r["aerobic_ef"] is not None
         ]
         avg_ef_val = (

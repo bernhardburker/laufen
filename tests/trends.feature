@@ -22,3 +22,4 @@ Feature: Running trend and weekly training analysis
     When the trend analysis script is executed with "--json"
     Then the process exits with code 0
     And the stdout contains valid JSON with weekly metrics
+    And the JSON trends contain base aerobic efficiency metrics for Zone 1 and 2 runs

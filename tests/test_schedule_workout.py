@@ -1,3 +1,4 @@
+import datetime
 import http.server
 import json
 import os
@@ -14,6 +15,7 @@ scenarios("schedule_workout.feature")
 
 class MockIntervalsEventHandler(http.server.BaseHTTPRequestHandler):
     received_requests: list[dict] = []
+    events_db: list[dict] = []
 
     def do_POST(self):
         auth_header = self.headers.get("Authorization", "")
@@ -27,7 +29,12 @@ class MockIntervalsEventHandler(http.server.BaseHTTPRequestHandler):
         body = self.rfile.read(content_len).decode("utf-8") if content_len > 0 else "{}"
         parsed_body = json.loads(body)
 
+        event_id = f"mock_event_{len(MockIntervalsEventHandler.received_requests) + 1}"
+        new_event = {**parsed_body, "id": event_id}
+        MockIntervalsEventHandler.events_db.append(new_event)
+
         MockIntervalsEventHandler.received_requests.append({
+            "method": "POST",
             "path": self.path,
             "headers": dict(self.headers),
             "payload": parsed_body,
@@ -36,7 +43,7 @@ class MockIntervalsEventHandler(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
-        response_data = {"id": "mock_event_12345", "status": "SUCCESS"}
+        response_data = {"id": event_id, "status": "SUCCESS"}
         self.wfile.write(json.dumps(response_data).encode("utf-8"))
 
     def do_GET(self):
@@ -50,7 +57,32 @@ class MockIntervalsEventHandler(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
-        self.wfile.write(b"[]")
+        self.wfile.write(json.dumps(MockIntervalsEventHandler.events_db).encode("utf-8"))
+
+    def do_DELETE(self):
+        auth_header = self.headers.get("Authorization", "")
+        if not auth_header.startswith("Basic "):
+            self.send_response(401)
+            self.end_headers()
+            self.wfile.write(b'{"error": "Unauthorized"}')
+            return
+
+        MockIntervalsEventHandler.received_requests.append({
+            "method": "DELETE",
+            "path": self.path,
+            "headers": dict(self.headers),
+        })
+
+        ev_id_str = self.path.split("/")[-1]
+        MockIntervalsEventHandler.events_db = [
+            e for e in MockIntervalsEventHandler.events_db
+            if str(e.get("id")) != ev_id_str
+        ]
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"status": "DELETED"}')
 
     def log_message(self, format, *args):
         pass
@@ -66,7 +98,9 @@ class WorkoutScheduleDriver:
         self.mock_server_thread: threading.Thread | None = None
         self.mock_server_port: int | None = None
         self.env["DOTENV_PATH"] = str(tmp_path / ".env")
+        self.test_ref_date = datetime.date(2026, 10, 22)
         MockIntervalsEventHandler.received_requests.clear()
+        MockIntervalsEventHandler.events_db.clear()
 
     def unset_api_key(self) -> None:
         self.env.pop("INTERVALS_API_KEY", None)
@@ -76,6 +110,7 @@ class WorkoutScheduleDriver:
 
     def start_mock_api(self) -> None:
         MockIntervalsEventHandler.received_requests.clear()
+        MockIntervalsEventHandler.events_db.clear()
         self.mock_server = http.server.HTTPServer(("127.0.0.1", 0), MockIntervalsEventHandler)
         self.mock_server_port = self.mock_server.server_address[1]
         self.mock_server_thread = threading.Thread(target=self.mock_server.serve_forever, daemon=True)
@@ -103,6 +138,58 @@ class WorkoutScheduleDriver:
             capture_output=True,
             text=True,
         )
+
+    def get_last_received_payload(self) -> dict:
+        posts = [r for r in MockIntervalsEventHandler.received_requests if "payload" in r]
+        assert len(posts) > 0, "No payload requests received by mock server"
+        return posts[-1]["payload"]
+
+    def setup_mock_uncompleted_yesterday(self) -> None:
+        yesterday = (self.test_ref_date - datetime.timedelta(days=1)).isoformat()
+        MockIntervalsEventHandler.events_db.append({
+            "id": 998877,
+            "category": "WORKOUT",
+            "type": "Run",
+            "name": "Slot 1: Tempo Run",
+            "start_date_local": f"{yesterday}T07:00:00",
+            "paired_activity_id": None,
+        })
+
+    def setup_activities_no_run_yesterday(self) -> None:
+        old_date = (self.test_ref_date - datetime.timedelta(days=4)).isoformat()
+        activities = [
+            {
+                "id": "run_old",
+                "type": "Run",
+                "start_date_local": f"{old_date}T07:00:00",
+                "name": "Easy Run",
+            }
+        ]
+        act_path = self.tmp_path / "activities.json"
+        act_path.write_text(json.dumps(activities), encoding="utf-8")
+
+    def setup_activities_run_yesterday(self) -> None:
+        yesterday = (self.test_ref_date - datetime.timedelta(days=1)).isoformat()
+        activities = [
+            {
+                "id": "run_yesterday",
+                "type": "Run",
+                "start_date_local": f"{yesterday}T07:00:00",
+                "name": "Tempo Run",
+            }
+        ]
+        act_path = self.tmp_path / "activities.json"
+        act_path.write_text(json.dumps(activities), encoding="utf-8")
+
+    def run_adaptive_plan(self) -> None:
+        act_path = self.tmp_path / "activities.json"
+        args = [
+            "--adaptive-plan",
+            "--ref-date", self.test_ref_date.isoformat(),
+        ]
+        if act_path.is_file():
+            args.extend(["--activities-file", str(act_path)])
+        self.run_schedule(args, use_mock_api=True)
 
     def get_last_received_payload(self) -> dict:
         assert len(MockIntervalsEventHandler.received_requests) > 0, "No requests received by mock server"
@@ -235,5 +322,53 @@ def step_check_event_name_contains(snippet: str):
     names = [
         r["payload"].get("name", "")
         for r in MockIntervalsEventHandler.received_requests
+        if "payload" in r
     ]
     assert any(snippet in n for n in names), f"Expected '{snippet}' in one of names: {names}"
+
+
+@when("the workout schedule script is executed with adaptive planning arguments")
+def step_run_adaptive(driver: WorkoutScheduleDriver):
+    driver.run_adaptive_plan()
+
+
+@given("a mock uncompleted workout exists for yesterday")
+def step_mock_uncompleted_yesterday(driver: WorkoutScheduleDriver):
+    driver.setup_mock_uncompleted_yesterday()
+
+
+@given("no run occurred yesterday")
+def step_no_run_yesterday(driver: WorkoutScheduleDriver):
+    driver.setup_activities_no_run_yesterday()
+
+
+@given("an activity was recorded for yesterday")
+def step_activity_yesterday(driver: WorkoutScheduleDriver):
+    driver.setup_activities_run_yesterday()
+
+
+@then("the mock server received a DELETE request for the uncompleted workout")
+def step_check_delete_request(driver: WorkoutScheduleDriver):
+    delete_reqs = [r for r in MockIntervalsEventHandler.received_requests if r.get("method") == "DELETE"]
+    assert len(delete_reqs) > 0, f"No DELETE requests received. All reqs: {MockIntervalsEventHandler.received_requests}"
+    assert any("998877" in r["path"] for r in delete_reqs)
+
+
+@then("one scheduled event has date for today")
+def step_check_scheduled_today(driver: WorkoutScheduleDriver):
+    today_iso = driver.test_ref_date.isoformat()
+    scheduled = [
+        r["payload"] for r in MockIntervalsEventHandler.received_requests
+        if r.get("method") == "POST" and str(r.get("payload", {}).get("start_date_local", "")).startswith(today_iso)
+    ]
+    assert len(scheduled) > 0, f"Expected scheduled event for today ({today_iso}). Received: {MockIntervalsEventHandler.received_requests}"
+
+
+@then("one scheduled event has date for tomorrow")
+def step_check_scheduled_tomorrow(driver: WorkoutScheduleDriver):
+    tomorrow_iso = (driver.test_ref_date + datetime.timedelta(days=1)).isoformat()
+    scheduled = [
+        r["payload"] for r in MockIntervalsEventHandler.received_requests
+        if r.get("method") == "POST" and str(r.get("payload", {}).get("start_date_local", "")).startswith(tomorrow_iso)
+    ]
+    assert len(scheduled) > 0, f"Expected scheduled event for tomorrow ({tomorrow_iso}). Received: {MockIntervalsEventHandler.received_requests}"

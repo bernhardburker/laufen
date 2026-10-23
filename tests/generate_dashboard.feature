@@ -90,4 +90,11 @@ Feature: Generate visual HTML dashboard from running activities
     And the output HTML contains expandable run review details
     And the output HTML contains compact two-column KPI grid for mobile
 
+  Scenario: Dashboard contains aerobic efficiency chart toggle between Zone 2 base and all runs
+    Given an activities dataset with multiple running activities
+    And the standard dashboard template is available
+    When the dashboard generator is executed
+    Then the process exits with code 0
+    And the output HTML contains aerobic efficiency chart mode toggle buttons
+
 

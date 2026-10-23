@@ -49,3 +49,21 @@ Feature: Schedule structured workouts to Intervals.icu
     And the mock server received at least 3 POST requests to "/api/v1/athlete/0/events"
     And one scheduled event name contains "Slot 2A"
     And one scheduled event name contains "Slot 2B"
+
+  Scenario: Adaptive planner cleans up past uncompleted workouts and schedules for today
+    Given a mock Intervals.icu event server is running
+    And INTERVALS_API_KEY is configured
+    And a mock uncompleted workout exists for yesterday
+    And no run occurred yesterday
+    When the workout schedule script is executed with adaptive planning arguments
+    Then the process exits with code 0
+    And the mock server received a DELETE request for the uncompleted workout
+    And one scheduled event has date for today
+
+  Scenario: Adaptive planner recognizes yesterday run and schedules for tomorrow
+    Given a mock Intervals.icu event server is running
+    And INTERVALS_API_KEY is configured
+    And an activity was recorded for yesterday
+    When the workout schedule script is executed with adaptive planning arguments
+    Then the process exits with code 0
+    And one scheduled event has date for tomorrow

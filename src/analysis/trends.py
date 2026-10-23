@@ -178,9 +178,28 @@ def aggregate_weekly_trends(
             else None
         )
 
-        # Average efficiency factor
+        # Average efficiency factor (all runs)
         ef_list = [r["aerobic_ef"] for r in week_runs if r["aerobic_ef"] is not None]
         avg_ef = round(sum(ef_list) / len(ef_list), 3) if ef_list else None
+
+        # Base runs (Zone 1/2 discipline >= 70%) for aerobic efficiency
+        base_runs = [
+            r
+            for r in week_runs
+            if r.get("total_zone_seconds", 0) > 0
+            and (r.get("z1_z2_seconds", 0) / r["total_zone_seconds"]) >= 0.70
+        ]
+        base_ef_list = [
+            r["aerobic_ef"] for r in base_runs if r["aerobic_ef"] is not None
+        ]
+        base_avg_ef = (
+            round(sum(base_ef_list) / len(base_ef_list), 3)
+            if base_ef_list
+            else None
+        )
+        base_dist = sum(r["distance_km"] for r in base_runs)
+        base_time = sum(r["moving_time_s"] for r in base_runs)
+        base_avg_pace_s = (base_time / base_dist) if base_dist > 0 else None
 
         # Longest run in week
         longest_km = max((r["distance_km"] for r in week_runs), default=0.0)
@@ -206,6 +225,9 @@ def aggregate_weekly_trends(
                 "avg_hr": round(avg_hr, 1),
                 "z1_z2_pct": z1_z2_pct,
                 "aerobic_ef": avg_ef,
+                "base_ef": base_avg_ef,
+                "base_avg_pace_s": base_avg_pace_s,
+                "base_runs_count": len(base_runs),
                 "zone_breakdown_s": [z1_s, z2_s, z3_s, z4_s, z5_s],
                 "zone_breakdown_pct": [
                     round((z / z_total) * 100.0, 1) if z_total > 0 else 0.0
