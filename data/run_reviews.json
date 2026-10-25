@@ -5090,5 +5090,80 @@
       "zone_distribution_text": "Z1: 6m 18s | Z2: 18m 32s | Z3: 11m 22s | Z4: 13m 47s"
     },
     "analyzed_at": "2026-10-23T09:25:23.956337"
+  },
+  "i201332629": {
+    "id": "i201332629",
+    "date": "2026-10-25T08:04:06",
+    "name": "Gerasdorf bei Wien - Aerober Anker & Grundlagenlauf (",
+    "distance_km": 9.1,
+    "moving_time_s": 3992,
+    "moving_time_str": "1h 06m",
+    "pace_str": "7:19 /km",
+    "avg_hr": 152.0,
+    "max_hr": 166,
+    "cadence_spm": 150.7,
+    "elevation_gain_m": 21.1,
+    "training_load": 66.0,
+    "z1_z2_pct": 96.6,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 669,
+        "time_str": "11m 09s",
+        "pct": 16.8
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 3190,
+        "time_str": "53m 10s",
+        "pct": 79.9
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo)",
+        "seconds": 134,
+        "time_str": "2m 14s",
+        "pct": 3.4
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "8x 7m14s 153bpm",
+      "1x 2m22s 145bpm",
+      "1x 83s 155bpm",
+      "1x 5m 152bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "review": {
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (96.6% in Z1/Z2). Die Herzfrequenz blieb mit Ø 152 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 11m 09s, Z2: 53m 10s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Ø 150 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "zone_distribution_text": "Z1: 11m 09s | Z2: 53m 10s | Z3: 2m 14s | Z4: 0s"
+    },
+    "analyzed_at": "2026-10-25T10:29:27.988509"
   }
 }

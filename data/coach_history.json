@@ -83,6 +83,19 @@
     "recommendation": "Slot 3 am Wochenende über 45–50 Minuten als reinen Z2-Dauerlauf (< 158 bpm) steuern. Pace ignorieren, aktive Regeneration und Fettstoffwechsel sichern.",
     "target_type": "easy_run",
     "target_hr_max": 158,
+    "status": "erfüllt",
+    "actual": "Vorgabe war ein Z2-Dauerlauf (< 158 bpm) über 45–50 Minuten. Gelaufen wurden 9,10 km in 1h 06m mit Ø 152 bpm und 96,6 % in Z1/Z2.",
+    "effect": "Die aerobe Vorgabe wurde sauber umgesetzt; 53 Minuten in Z2 stärken Fettstoffwechsel und Kapillarisierung. Die Überziehung der Dauer auf 66 Minuten trieb den Wochen-Load auf 160 und drückte den TSB auf -11,3.",
+    "evaluated_run_ids": [
+      "i201332629"
+    ]
+  },
+  {
+    "id": "cycle-008",
+    "date": "2026-10-25",
+    "recommendation": "Slot 1 zu Wochenbeginn zur Erholung nutzen: Maximal 40–45 Minuten rein aerob (< 158 bpm), um den Umfangssprung der Vorwoche abzufedern.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
     "status": "offen",
     "actual": "Ausstehend (wird nach den nächsten Läufen analysiert)",
     "effect": "-"
