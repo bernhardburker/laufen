@@ -1597,9 +1597,9 @@
           <span class="kpi-sub" id="kpiEfSub">Z2-Basis (m/min / bpm)</span>
         </div>
         <div class="kpi-card">
-          <span class="kpi-title">Aktuelle Form (TSB)</span>
+          <span class="kpi-title">Aktuelle Form (TSB heute)</span>
           <div class="kpi-value" id="kpiTsb" style="color: var(--indigo);">{{ CURRENT_TSB }}</div>
-          <span class="kpi-sub">Fitness (CTL): {{ CURRENT_CTL }} &middot; Ermüdung: {{ CURRENT_ATL }}</span>
+          <span class="kpi-sub">Tagesstand (inkl. Ruhetags-Decay) &middot; CTL: {{ CURRENT_CTL }} &middot; ATL: {{ CURRENT_ATL }}</span>
         </div>
       </section>
 
@@ -2176,6 +2176,8 @@
 
               const st4Dir = escapeHtml(st4.directive || '');
               const st4RecH = st4.recovery_hours || 24;
+              const st4Tsb = escapeHtml(st4.tsb_context || '');
+              const st4TsbBadge = st4Tsb ? ` &middot; ${st4Tsb}` : '';
 
               innerContent = `
                 <div class="run-stages-grid">
@@ -2192,7 +2194,7 @@
                     ${st3Html}
                   </div>
                   <div class="run-stage-card">
-                    <div class="run-stage-title">🛌 4. Nächster Lauf &amp; Erholung <span style="font-size:0.7rem; color:var(--cyan);">(${st4RecH}h Erholung)</span></div>
+                    <div class="run-stage-title">🛌 4. Nächster Lauf &amp; Erholung <span style="font-size:0.7rem; color:var(--cyan);">(${st4RecH}h Erholung${st4TsbBadge})</span></div>
                     <div class="run-stage-body">${st4Dir}</div>
                   </div>
                 </div>

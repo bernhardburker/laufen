@@ -899,7 +899,7 @@ def render_daily_recommendation_html(recommendation: Dict[str, Any]) -> str:
             f'<div class="daily-metric"><span class="daily-metric-lbl">Zielpuls</span><span class="daily-metric-val">&lt; {target_hr} bpm</span></div>'
         )
     metrics_chips.append(
-        f'<div class="daily-metric"><span class="daily-metric-lbl">Form (TSB)</span><span class="daily-metric-val">{tsb_val:+.1f}</span></div>'
+        f'<div class="daily-metric"><span class="daily-metric-lbl">Form (TSB heute)</span><span class="daily-metric-val">{tsb_val:+.1f}</span></div>'
     )
 
     chips_html = "\n".join(metrics_chips)
@@ -986,8 +986,9 @@ def main() -> int:
     print(f"Status:   {rec['headline']} [{rec['badge']}]")
     print(f"Details:  {rec['details']}")
     if rec['suggested_duration_min'] > 0:
-        print(f"Vorgabe:  {rec['suggested_duration_min']} Min. @ Puls < {rec['suggested_target_hr']} bpm")
-    print(f"Erholung: TSB {rec['tsb']:+.1f}")
+        hr_info = f" @ Puls < {rec['suggested_target_hr']} bpm" if rec.get('suggested_target_hr', 0) > 0 else ""
+        print(f"Vorgabe:  {rec['suggested_duration_min']} Min.{hr_info}")
+    print(f"Erholung: TSB heute {rec['tsb']:+.1f} (Tagesstand inkl. Ruhetags-Decay)")
     print("======================================================================")
     return 0
 

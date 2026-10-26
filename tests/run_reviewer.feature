@@ -39,3 +39,14 @@ Feature: Incremental per-run deep analysis and persistent review cache
     Given an activity on a flexible mid-week slot with over 10 minutes in Zone 4
     When run intent is resolved
     Then the intended type is "threshold" and the planned slot is flexible threshold
+
+  Scenario: Next run stage integrates stage 3 optimization into recovery directive
+    Given a planned threshold run with 13 minutes in Zone 4 and post-interval drift
+    When deep run metrics and review are evaluated
+    Then stage 4 incorporates the stage 3 optimization into the next run directive
+    And stage 4 specifies the targeted next slot and recovery window
+
+  Scenario: Next run stage incorporates cadence optimization for base run
+    Given an activity with heart rate zone times, cadence, elevation, and intervals
+    When deep run metrics and review are evaluated
+    Then stage 4 includes cadence economy in the next run directive

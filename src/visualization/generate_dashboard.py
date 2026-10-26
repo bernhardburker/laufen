@@ -216,6 +216,8 @@ def build_table_rows(
 
                 st4_dir = html.escape(str(st4.get("directive", "")))
                 st4_rec_h = st4.get("recovery_hours", 24)
+                st4_tsb = html.escape(str(st4.get("tsb_context", "")))
+                st4_tsb_str = f" &middot; {st4_tsb}" if st4_tsb else ""
 
                 stages_html = (
                     f'<div class="run-stages-grid">'
@@ -232,7 +234,7 @@ def build_table_rows(
                     f'    {st3_html}'
                     f'  </div>'
                     f'  <div class="run-stage-card">'
-                    f'    <div class="run-stage-title">🛌 4. Nächster Lauf &amp; Erholung <span style="font-size:0.7rem; color:var(--cyan);">({st4_rec_h}h Erholung)</span></div>'
+                    f'    <div class="run-stage-title">🛌 4. Nächster Lauf &amp; Erholung <span style="font-size:0.7rem; color:var(--cyan);">({st4_rec_h}h Erholung{st4_tsb_str})</span></div>'
                     f'    <div class="run-stage-body">{st4_dir}</div>'
                     f'  </div>'
                     f'</div>'

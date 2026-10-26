@@ -466,11 +466,88 @@ def generate_actionable_optimizations(
     return optimizations
 
 
+def resolve_next_slot(
+    metrics: Dict[str, Any],
+    athlete_profile: Optional[Dict[str, Any]] = None,
+    intent: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Resolves the next chronological weekly slot based on run date or planned slot."""
+    run_date_str = str(metrics.get("date") or "")[:10]
+    weekday_name = ""
+    if run_date_str:
+        try:
+            d = datetime.date.fromisoformat(run_date_str)
+            weekday_name = d.strftime("%A").lower()
+        except Exception:
+            weekday_name = ""
+
+    slots = (athlete_profile or {}).get("athlete", {}).get("weekly_slots", [])
+
+    if weekday_name in ("monday", "tuesday"):
+        curr_slot_num = 1
+    elif weekday_name in ("wednesday", "thursday", "friday"):
+        curr_slot_num = 2
+    elif weekday_name in ("saturday", "sunday"):
+        curr_slot_num = 3
+    else:
+        planned = str((intent or {}).get("planned_slot", "")).lower()
+        if "slot 1" in planned:
+            curr_slot_num = 1
+        elif "slot 2" in planned:
+            curr_slot_num = 2
+        elif "slot 3" in planned:
+            curr_slot_num = 3
+        else:
+            curr_slot_num = 2
+
+    next_slot_num = 1 if curr_slot_num >= 3 else (curr_slot_num + 1)
+
+    matched_next = None
+    for s in slots:
+        if (s.get("slot") or s.get("id")) == next_slot_num:
+            matched_next = s
+            break
+
+    if matched_next:
+        slot_name = matched_next.get("name", f"Slot {next_slot_num}")
+        role = matched_next.get("role", "flexible")
+    else:
+        if next_slot_num == 1:
+            slot_name = "Slot 1 (Wochenanfang – Tempo/Intervalle)"
+            role = "quality"
+        elif next_slot_num == 2:
+            slot_name = "Slot 2 (Wochenmitte – Flexibel)"
+            role = "flexible"
+        else:
+            slot_name = "Slot 3 (Wochenende – Aerober Anker)"
+            role = "base_anchor"
+
+    default_workout_type = "easy_run"
+    if role == "quality":
+        default_workout_type = "intervals"
+    elif role == "base_anchor":
+        default_workout_type = "easy_run"
+    else:
+        default_workout_type = "easy_run"
+
+    duration = 50 if role == "base_anchor" else (35 if role == "quality" else 45)
+
+    return {
+        "slot_id": next_slot_num,
+        "next_slot": slot_name,
+        "next_workout_type": default_workout_type,
+        "duration_min": duration,
+        "role": role,
+    }
+
+
 def determine_post_run_recovery(
     metrics: Dict[str, Any],
     athlete_profile: Optional[Dict[str, Any]] = None,
+    intent: Optional[Dict[str, Any]] = None,
+    optimizations: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
-    """Generates Stage 4 recovery window and directive for the next chronological slot."""
+    """Generates Stage 4 recovery window and directive integrating Stage 3 optimizations."""
     intensity_class = metrics.get("intensity_class", "aerobe_basis")
     training_load = metrics.get("training_load", 0.0)
     tsb_at_run = metrics.get("tsb_at_run")
@@ -493,19 +570,59 @@ def determine_post_run_recovery(
     else:
         tsb_context = tsb_str
 
+    next_slot_info = resolve_next_slot(metrics, athlete_profile=athlete_profile, intent=intent)
+    next_slot = next_slot_info["next_slot"]
+    next_workout_type = next_slot_info["next_workout_type"]
+    duration_min = next_slot_info["duration_min"]
+
+    # Synthesize insights from Stage 3 optimizations
+    opt_list = optimizations or []
+    alt_opt = next((o for o in opt_list if o.get("category") == "alternative_workout"), None)
+    cadence_opt = next((o for o in opt_list if o.get("category") == "cadence"), None)
+    recovery_opt = next((o for o in opt_list if o.get("category") == "recovery"), None)
+    pacing_opt = next((o for o in opt_list if o.get("category") == "pacing"), None)
+
+    focus_title = ""
+    directive_parts = []
+
     if is_quality:
-        directive = (
-            f"Mindestens 24–48h keine intensiven Spitzen. Nächste Einheit: "
-            f"Aerober Anker / Grundlagenlauf strictly < {z2_max} bpm, Pace ignorieren."
-        )
-        next_slot = "Slot 3 (Wochenende – Aerober Anker)"
-        next_workout_type = "easy_run"
-        duration_min = 50
+        directive_parts.append(f"Mindestens 48h Erholung ohne intensive Spitzen ({tsb_context}).")
     else:
-        directive = f"Erholung verläuft planmäßig. Nächste Einheit im Wochenrhythmus fortführen."
-        next_slot = "Nächster Wochen-Slot"
-        next_workout_type = "easy_run"
-        duration_min = 45
+        directive_parts.append(f"Erholung verläuft planmäßig ({recovery_hours}h Erholungsfenster).")
+
+    if alt_opt:
+        focus_title = alt_opt.get("title", "")
+        directive_parts.append(
+            f"Nächste Einheit: {next_slot}. Für die nächste Qualitätseinheit empfohlen: "
+            f"3x 8m durch 5x 4m Micro-Threshold ersetzen, um thermische Drift zu reduzieren."
+        )
+    elif cadence_opt:
+        focus_title = cadence_opt.get("title", "")
+        directive_parts.append(
+            f"Nächste Einheit: {next_slot}. Fokus auf Kadenzökonomie "
+            f"(Schrittfrequenz Richtung 158–165 spm) und Gehpausen an Anstiegen konsequent nutzen."
+        )
+    elif recovery_opt:
+        focus_title = recovery_opt.get("title", "")
+        directive_parts.append(
+            f"Nächste Einheit: {next_slot}. Bei Temporeizen in den Trabpausen "
+            f"konsequente 60–90s Gehpausen einlegen, um den Parasympathikus zu aktivieren."
+        )
+    elif pacing_opt:
+        focus_title = pacing_opt.get("title", "")
+        directive_parts.append(
+            f"Nächste Einheit: {next_slot}. Bei Intervallen die ersten 2 Minuten "
+            f"starr nach Pace anlaufen und nicht auf den trägen Puls warten."
+        )
+    else:
+        if is_quality:
+            directive_parts.append(
+                f"Nächste Einheit: {next_slot} strictly < {z2_max} bpm, Pace ignorieren."
+            )
+        else:
+            directive_parts.append(
+                f"Nächste Einheit ({next_slot}) im Wochenrhythmus fortführen."
+            )
 
     return {
         "recovery_hours": recovery_hours,
@@ -514,7 +631,8 @@ def determine_post_run_recovery(
         "next_workout_type": next_workout_type,
         "target_hr_max": z2_max,
         "duration_min": duration_min,
-        "directive": directive,
+        "directive": " ".join(directive_parts),
+        "optimization_focus": focus_title,
     }
 
 
@@ -567,7 +685,12 @@ def evaluate_run_deep(
     stage3 = generate_actionable_optimizations(metrics, intent)
 
     # Stage 4: Next run
-    stage4 = determine_post_run_recovery(metrics, athlete_profile)
+    stage4 = determine_post_run_recovery(
+        metrics,
+        athlete_profile=athlete_profile,
+        intent=intent,
+        optimizations=stage3,
+    )
 
     # Derive top-level legacy fields
     intensity_class = metrics["intensity_class"]

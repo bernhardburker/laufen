@@ -357,3 +357,33 @@ def then_intended_type_threshold(driver: RunReviewerDriver) -> None:
     intent = driver.resolved_intent
     assert intent.get("intended_type") == "threshold"
     assert "Schwellen-Option" in intent.get("planned_slot", "")
+
+
+@then("stage 4 incorporates the stage 3 optimization into the next run directive")
+def then_stage4_incorporates_stage3(driver: RunReviewerDriver) -> None:
+    stage3 = driver.deep_review.get("stages", {}).get("stage3_optimizations", [])
+    stage4 = driver.deep_review.get("stages", {}).get("stage4_next_run", {})
+    assert len(stage3) > 0
+    assert (
+        stage4.get("optimization_focus") == stage3[0].get("title")
+        or "Micro-Threshold" in stage4.get("optimization_focus", "")
+    )
+    assert (
+        "Micro-Threshold" in stage4.get("directive", "")
+        or "5x 4m" in stage4.get("directive", "")
+    )
+
+
+@then("stage 4 specifies the targeted next slot and recovery window")
+def then_stage4_specifies_slot_and_window(driver: RunReviewerDriver) -> None:
+    stage4 = driver.deep_review.get("stages", {}).get("stage4_next_run", {})
+    assert stage4.get("recovery_hours") == 48
+    assert "Slot" in stage4.get("next_slot", "")
+    assert stage4.get("target_hr_max") is not None
+
+
+@then("stage 4 includes cadence economy in the next run directive")
+def then_stage4_includes_cadence_economy(driver: RunReviewerDriver) -> None:
+    stage4 = driver.deep_review.get("stages", {}).get("stage4_next_run", {})
+    assert "Kadenz" in stage4.get("directive", "")
+    assert "Kadenz" in stage4.get("optimization_focus", "")

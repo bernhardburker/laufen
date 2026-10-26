@@ -8808,15 +8808,16 @@
         "stage4_next_run": {
           "recovery_hours": 24,
           "tsb_context": "TSB -2.6 (CTL 12.8 / ATL 15.4)",
-          "next_slot": "Nächster Wochen-Slot",
+          "next_slot": "Slot 2 (Wochenmitte)",
           "next_workout_type": "easy_run",
           "target_hr_max": 158,
           "duration_min": 45,
-          "directive": "Erholung verläuft planmäßig. Nächste Einheit im Wochenrhythmus fortführen."
+          "directive": "Erholung verläuft planmäßig (24h Erholungsfenster). Nächste Einheit (Slot 2 (Wochenmitte)) im Wochenrhythmus fortführen.",
+          "optimization_focus": ""
         }
       }
     },
-    "analyzed_at": "2026-10-26T15:50:53.783578"
+    "analyzed_at": "2026-10-26T20:19:06.198374"
   },
   "i197459228": {
     "id": "i197459228",
@@ -8946,15 +8947,16 @@
         "stage4_next_run": {
           "recovery_hours": 24,
           "tsb_context": "TSB -2.2 (CTL 12.8 / ATL 15.0)",
-          "next_slot": "Nächster Wochen-Slot",
+          "next_slot": "Slot 3 (Wochenende)",
           "next_workout_type": "easy_run",
           "target_hr_max": 158,
-          "duration_min": 45,
-          "directive": "Erholung verläuft planmäßig. Nächste Einheit im Wochenrhythmus fortführen."
+          "duration_min": 50,
+          "directive": "Erholung verläuft planmäßig (24h Erholungsfenster). Nächste Einheit: Slot 3 (Wochenende). Fokus auf Kadenzökonomie (Schrittfrequenz Richtung 158–165 spm) und Gehpausen an Anstiegen konsequent nutzen.",
+          "optimization_focus": "Kadenzökonomie & Gehpausen an Anstiegen"
         }
       }
     },
-    "analyzed_at": "2026-10-26T15:50:53.783578"
+    "analyzed_at": "2026-10-26T20:19:06.198374"
   },
   "i199548212": {
     "id": "i199548212",
@@ -9075,15 +9077,16 @@
         "stage4_next_run": {
           "recovery_hours": 24,
           "tsb_context": "TSB +0.1 (CTL 12.2 / ATL 12.1)",
-          "next_slot": "Nächster Wochen-Slot",
+          "next_slot": "Slot 2 (Wochenmitte)",
           "next_workout_type": "easy_run",
           "target_hr_max": 158,
           "duration_min": 45,
-          "directive": "Erholung verläuft planmäßig. Nächste Einheit im Wochenrhythmus fortführen."
+          "directive": "Erholung verläuft planmäßig (24h Erholungsfenster). Nächste Einheit (Slot 2 (Wochenmitte)) im Wochenrhythmus fortführen.",
+          "optimization_focus": ""
         }
       }
     },
-    "analyzed_at": "2026-10-26T15:50:53.783578"
+    "analyzed_at": "2026-10-26T20:19:06.198374"
   },
   "i200612231": {
     "id": "i200612231",
@@ -9260,15 +9263,16 @@
         "stage4_next_run": {
           "recovery_hours": 48,
           "tsb_context": "TSB -2.9 (CTL 12.7 / ATL 15.6)",
-          "next_slot": "Slot 3 (Wochenende – Aerober Anker)",
+          "next_slot": "Slot 3 (Wochenende)",
           "next_workout_type": "easy_run",
           "target_hr_max": 158,
           "duration_min": 50,
-          "directive": "Mindestens 24–48h keine intensiven Spitzen. Nächste Einheit: Aerober Anker / Grundlagenlauf strictly < 158 bpm, Pace ignorieren."
+          "directive": "Mindestens 48h Erholung ohne intensive Spitzen (TSB -2.9 (CTL 12.7 / ATL 15.6)). Nächste Einheit: Slot 3 (Wochenende). Für die nächste Qualitätseinheit empfohlen: 3x 8m durch 5x 4m Micro-Threshold ersetzen, um thermische Drift zu reduzieren.",
+          "optimization_focus": "Alternative: 5x 4m Micro-Threshold"
         }
       }
     },
-    "analyzed_at": "2026-10-26T15:50:53.783578"
+    "analyzed_at": "2026-10-26T20:19:06.198374"
   },
   "i201332629": {
     "id": "i201332629",
@@ -9407,14 +9411,15 @@
         "stage4_next_run": {
           "recovery_hours": 48,
           "tsb_context": "TSB -6.8 (CTL 13.7 / ATL 20.5)",
-          "next_slot": "Slot 3 (Wochenende – Aerober Anker)",
-          "next_workout_type": "easy_run",
+          "next_slot": "Slot 1 (Wochenanfang)",
+          "next_workout_type": "intervals",
           "target_hr_max": 158,
-          "duration_min": 50,
-          "directive": "Mindestens 24–48h keine intensiven Spitzen. Nächste Einheit: Aerober Anker / Grundlagenlauf strictly < 158 bpm, Pace ignorieren."
+          "duration_min": 35,
+          "directive": "Mindestens 48h Erholung ohne intensive Spitzen (TSB -6.8 (CTL 13.7 / ATL 20.5)). Nächste Einheit: Slot 1 (Wochenanfang). Fokus auf Kadenzökonomie (Schrittfrequenz Richtung 158–165 spm) und Gehpausen an Anstiegen konsequent nutzen.",
+          "optimization_focus": "Kadenzökonomie & Gehpausen an Anstiegen"
         }
       }
     },
-    "analyzed_at": "2026-10-26T15:50:53.783578"
+    "analyzed_at": "2026-10-26T20:19:06.198374"
   }
 }
