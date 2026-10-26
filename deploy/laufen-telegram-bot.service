@@ -1,0 +1,16 @@
+[Unit]
+Description=Laufen Hub - Bidirectional Telegram Coach Bot & Daily Briefing Scheduler
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=berni
+WorkingDirectory=/mnt/data/work/laufen
+EnvironmentFile=-/mnt/data/work/laufen/.env
+ExecStart=/mnt/data/work/laufen/run bot
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

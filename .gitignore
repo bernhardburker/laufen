@@ -41,6 +41,7 @@ data/*
 !data/run_reviews.json
 !data/ai_coach_summary.json
 !data/ai_coach_commentary.md
+athletes/*/telegram_state.json
 *.fit
 *.tcx
 *.gpx

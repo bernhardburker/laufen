@@ -1,0 +1,11 @@
+services:
+  laufen-telegram-bot:
+    image: python:3.12-slim
+    container_name: laufen-telegram-bot
+    working_dir: /app
+    volumes:
+      - ../:/app
+    env_file:
+      - ../.env
+    command: ["python3", "src/integrations/telegram_bot.py"]
+    restart: unless-stopped

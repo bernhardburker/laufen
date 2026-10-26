@@ -896,6 +896,7 @@ def sync_adaptive_plan(
                 api_base_url=api_base_url,
             )
             ev_id = res.get("id", "neu")
+            payload["id"] = ev_id
             print(f"[ANGELEGT] {target_date_iso} | {name} (ID: {ev_id})")
             results["scheduled"].append(payload)
         except Exception as e:
@@ -904,6 +905,52 @@ def sync_adaptive_plan(
 
     print("=" * 60)
     return results
+
+
+def override_workout_on_date(
+    target_date_iso: str,
+    new_payload: dict | None,
+    api_key: str,
+    athlete_id: str = "0",
+    api_base_url: str = "https://intervals.icu/api/v1",
+    dry_run: bool = False,
+) -> dict:
+    """Deletes any uncompleted planned WORKOUT events on target_date_iso and optionally schedules new_payload."""
+    result: dict = {"deleted": [], "scheduled": None, "target_date": target_date_iso}
+
+    if not dry_run and api_key:
+        events = fetch_existing_events(
+            api_key=api_key,
+            athlete_id=athlete_id,
+            oldest=target_date_iso,
+            newest=target_date_iso,
+            api_base_url=api_base_url,
+        )
+        for ev in events:
+            ev_date = str(ev.get("start_date_local") or "")[:10]
+            if ev_date == target_date_iso and ev.get("category") == "WORKOUT" and not ev.get("paired_activity_id"):
+                ev_id = ev.get("id")
+                if ev_id:
+                    delete_workout_event(ev_id, api_key, athlete_id, api_base_url)
+                    result["deleted"].append(ev)
+
+    if new_payload is not None:
+        if dry_run:
+            fake_payload = dict(new_payload)
+            fake_payload.setdefault("id", "dry_run_id")
+            result["scheduled"] = fake_payload
+        elif api_key:
+            res = send_workout_event(
+                payload=new_payload,
+                api_key=api_key,
+                athlete_id=athlete_id,
+                api_base_url=api_base_url,
+            )
+            scheduled_copy = dict(new_payload)
+            scheduled_copy["id"] = res.get("id", "neu")
+            result["scheduled"] = scheduled_copy
+
+    return result
 
 
 def main() -> None:
