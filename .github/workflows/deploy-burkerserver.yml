@@ -28,15 +28,21 @@ jobs:
       - name: 📥 Repository auschecken
         uses: actions/checkout@v4
 
+      - name: 🔑 Bestehende .env aus ~/laufen übernehmen
+        run: |
+          if [ -f "$HOME/laufen/.env" ]; then
+            echo "Kopiere bestehende .env aus $HOME/laufen..."
+            cp "$HOME/laufen/.env" .env
+          fi
+
       - name: 🔧 Umgebung initialisieren
         run: |
-          chmod +x ./init.sh
+          chmod +x ./init.sh ./run
           ./init.sh
-          echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
 
       - name: 🧪 Offline Test-Suite ausführen
         run: |
-          pytest tests/ -m "not e2e"
+          ./run test
 
   # -------------------------------------------------------------
   # Job 2: Staging Live E2E Integration (Sandbox Athlete berni-test)
@@ -50,21 +56,21 @@ jobs:
       - name: 📥 Repository auschecken
         uses: actions/checkout@v4
 
+      - name: 🔑 Bestehende .env aus ~/laufen übernehmen
+        run: |
+          if [ -f "$HOME/laufen/.env" ]; then
+            echo "Kopiere bestehende .env aus $HOME/laufen..."
+            cp "$HOME/laufen/.env" .env
+          fi
+
       - name: 🔧 Umgebung initialisieren
         run: |
-          chmod +x ./init.sh
+          chmod +x ./init.sh ./run
           ./init.sh
-          echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
 
       - name: 🎯 Live E2E Tests gegen berni-test ausführen
-        env:
-          INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
         run: |
-          if [ -z "$INTERVALS_API_KEY" ]; then
-            echo "::warning ::INTERVALS_API_KEY nicht in GitHub Secrets hinterlegt. Überspringe Live-E2E."
-          else
-            pytest tests/ -m e2e
-          fi
+          ./run test:e2e
 
   # -------------------------------------------------------------
   # Job 3: Production Deployment to burkerserver
@@ -85,11 +91,12 @@ jobs:
           TARGET_DIR="$HOME/dockerContainer/laufen"
           mkdir -p "$TARGET_DIR"
 
-          # Falls noch keine .env oder athletes vorhanden sind, initial aus ~/laufen übernehmen
+          # Bestehende .env aus ~/laufen übernehmen falls im Ziel noch nicht vorhanden
           if [ ! -f "$TARGET_DIR/.env" ] && [ -f "$HOME/laufen/.env" ]; then
             echo "📋 Übernehme bestehende .env aus ~/laufen..."
             cp "$HOME/laufen/.env" "$TARGET_DIR/.env"
           fi
+          # Bestehende Athleten-Daten aus ~/laufen initial übernehmen
           if [ ! -d "$TARGET_DIR/athletes" ] && [ -d "$HOME/laufen/athletes" ]; then
             echo "📋 Übernehme bestehende athletes Daten aus ~/laufen..."
             cp -r "$HOME/laufen/athletes" "$TARGET_DIR/athletes"
