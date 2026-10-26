@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # run - Central Task Runner & CLI for Laufen Management Hub
+# Multi-tenant runner supporting --athlete <slug> and --all batch execution.
 # ==============================================================================
 
 set -euo pipefail
@@ -32,21 +33,30 @@ show_help() {
 ======================================================================
   Lauf- & Trainingsmanagement-Hub - Task Runner
 ======================================================================
-Usage: ./run <command> [arguments...]
+Usage: ./run <command> [arguments...] [--athlete <slug>] [--all]
+
+Multi-Athlete Management:
+  athletes          Display table of all registered athletes
+  add-athlete <slug> --intervals-id <id> [--name <name>]
+                    Onboard new athlete, sync profile & bootstrap history
+
+Tenant Execution Options:
+  --athlete <slug>  Execute command specifically for given athlete
+  --all             Execute command iteratively across all active athletes
 
 Commands:
-  sync              Download activities from Intervals.icu
-  wellness [ARGS..] Download wellness & sleep data from Intervals.icu
+  sync              Download activities & wellness from Intervals.icu
+  wellness          Download wellness & sleep data from Intervals.icu
   upload [ARGS...]  Upload activity files from export directory to Intervals.icu
   sync-profile      Sync athlete profile & HR zones from Intervals.icu
   report            Display combined recent runs & weekly trends
   runs              Display recent running activities table
   trends            Display weekly trends, volume & zone discipline
   history           Display Coach memory, past recommendations & feedback loop
-  today             Display daily evaluated training recommendation ("Workout of the Day")
+  today             Display daily evaluated training recommendation
   coach [ARGS...]   Execute AI Running Coach pipeline with LLM integration
   review [ARGS...]  Incrementally review unanalyzed runs and cache results
-  dashboard         Generate HTML dashboard (dist/index.html)
+  dashboard         Generate HTML dashboard (dist/<dashboard_slug>/index.html)
   preview [PORT]    Build dashboard and launch local webserver (default: 8080)
   plan [ARGS...]    Create or schedule structured workouts to Intervals.icu
   dispatch [ARGS...] Trigger GitHub Actions dashboard build workflow via dispatch
@@ -55,12 +65,12 @@ Commands:
   help              Show this help menu
 
 Examples:
-  ./run sync
-  ./run sync-profile
-  ./run report
-  ./run history
-  ./run dashboard
-  ./run preview 8080
+  ./run athletes
+  ./run add-athlete anna --intervals-id i849201
+  ./run sync --athlete berni
+  ./run sync --all
+  ./run dashboard --all
+  ./run report --athlete berni
   ./run plan --type easy_run --duration 45m --date tomorrow
   ./run test
 ======================================================================
@@ -72,79 +82,165 @@ if [[ $# -eq 0 ]]; then
   exit 0
 fi
 
-COMMAND="$1"
-shift || true
+# Pre-parse global multi-athlete flags
+TARGET_ATHLETE=""
+RUN_ALL=false
+CLEAN_ARGS=()
 
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --athlete|-a)
+      TARGET_ATHLETE="${2:-}"
+      shift 2 || true
+      ;;
+    --all)
+      RUN_ALL=true
+      shift
+      ;;
+    *)
+      CLEAN_ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+if [[ ${#CLEAN_ARGS[@]} -eq 0 ]]; then
+  show_help
+  exit 0
+fi
+
+COMMAND="${CLEAN_ARGS[0]}"
+REMAINING_ARGS=("${CLEAN_ARGS[@]:1}")
+
+# Non-athlete scoped global commands
 case "$COMMAND" in
-  sync)
-    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_intervals.py" "$@"
-    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_wellness.py" || true
-    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/planner/schedule_workout.py" --adaptive-plan || true
-    ;;
-  wellness|sync-wellness)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_wellness.py" "$@"
-    ;;
-  upload)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/upload_activities.py" "$@"
-    ;;
-  sync-profile)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/sync_athlete.py" "$@"
-    ;;
-  report)
-    echo "======================================================================"
-    echo "  Lauf- & Trainings-Report"
-    echo "======================================================================"
-    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/recent_runs.py" --limit 5 "$@"
-    echo ""
-    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/trends.py" "$@"
-    ;;
-  runs)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/recent_runs.py" "$@"
-    ;;
-  trends)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/trends.py" "$@"
-    ;;
-  history)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/coach_history.py" "$@"
-    ;;
-  today|daily)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/daily_recommendation.py" "$@"
-    ;;
-  coach|ai-coach)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/ai_coach.py" --execute "$@"
-    ;;
-  review|reviews)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/run_reviewer.py" "$@"
-    ;;
-  dashboard)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/visualization/generate_dashboard.py" "$@"
-    ;;
-  preview)
-    PORT="${1:-8080}"
-    echo "[INFO] Building dashboard..."
-    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/visualization/generate_dashboard.py"
-    echo "======================================================================"
-    echo "  Local Dashboard Preview"
-    echo "  URL: http://localhost:$PORT"
-    echo "  Press Ctrl+C to terminate the preview server"
-    echo "======================================================================"
-    exec "$PYTHON_EXEC" -m http.server "$PORT" --directory "$WORKSPACE_ROOT/dist"
-    ;;
-  plan)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/planner/schedule_workout.py" "$@"
-    ;;
-  dispatch)
-    exec "$WORKSPACE_ROOT/.github/scripts/dispatch-workflow.sh" "$@"
-    ;;
-  test)
-    exec "$PYTEST_EXEC" "$WORKSPACE_ROOT/tests" "$@"
-    ;;
-  init)
-    exec "$WORKSPACE_ROOT/init.sh" "$@"
-    ;;
   help|-h|--help)
     show_help
     exit 0
+    ;;
+  test)
+    exec "$PYTEST_EXEC" "$WORKSPACE_ROOT/tests" "${REMAINING_ARGS[@]}"
+    ;;
+  init)
+    exec "$WORKSPACE_ROOT/init.sh" "${REMAINING_ARGS[@]}"
+    ;;
+  dispatch)
+    if [[ -n "$TARGET_ATHLETE" ]]; then
+      exec "$WORKSPACE_ROOT/.github/scripts/dispatch-workflow.sh" --athlete "$TARGET_ATHLETE" "${REMAINING_ARGS[@]}"
+    else
+      exec "$WORKSPACE_ROOT/.github/scripts/dispatch-workflow.sh" "${REMAINING_ARGS[@]}"
+    fi
+    ;;
+  athletes|list-athletes)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/onboard_athlete.py" --list "${REMAINING_ARGS[@]}"
+    ;;
+  add-athlete|onboard)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/onboard_athlete.py" "${REMAINING_ARGS[@]}"
+    ;;
+esac
+
+# Batch execution across all active athletes
+if [[ "$RUN_ALL" == "true" ]]; then
+  SLUGS=$("$PYTHON_EXEC" "$WORKSPACE_ROOT/src/athletes.py" --list-slugs)
+  if [[ -z "$SLUGS" ]]; then
+    echo "No active athletes found in registry."
+    exit 0
+  fi
+  for s in $SLUGS; do
+    echo "======================================================================"
+    echo "  Executing '$COMMAND' for athlete: $s"
+    echo "======================================================================"
+    "$0" "$COMMAND" --athlete "$s" "${REMAINING_ARGS[@]}"
+  done
+  exit 0
+fi
+
+# Resolve athlete environment variables for target or default athlete
+eval "$("$PYTHON_EXEC" "$WORKSPACE_ROOT/src/athletes.py" --env "${TARGET_ATHLETE:-}")"
+
+case "$COMMAND" in
+  sync)
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_intervals.py" --output "$ACTIVITIES_PATH" --athlete-id "$INTERVALS_ATHLETE_ID" "${REMAINING_ARGS[@]}"
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_wellness.py" --output "$WELLNESS_PATH" --athlete-id "$INTERVALS_ATHLETE_ID" "${REMAINING_ARGS[@]}" || true
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/planner/schedule_workout.py" --adaptive-plan --athlete-id "$INTERVALS_ATHLETE_ID" --activities-file "$ACTIVITIES_PATH" "${REMAINING_ARGS[@]}" || true
+    ;;
+  wellness|sync-wellness)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_wellness.py" --output "$WELLNESS_PATH" --athlete-id "$INTERVALS_ATHLETE_ID" "${REMAINING_ARGS[@]}"
+    ;;
+  upload)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/upload_activities.py" "${REMAINING_ARGS[@]}"
+    ;;
+  sync-profile)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/sync_athlete.py" --output "$ATHLETE_CONFIG_PATH" --athlete-id "$INTERVALS_ATHLETE_ID" "${REMAINING_ARGS[@]}"
+    ;;
+  report)
+    echo "======================================================================"
+    echo "  Lauf- & Trainings-Report (${ATHLETE_DISPLAY_NAME})"
+    echo "======================================================================"
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/recent_runs.py" --limit 5 --input "$ACTIVITIES_PATH" "${REMAINING_ARGS[@]}"
+    echo ""
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/trends.py" --input "$ACTIVITIES_PATH" "${REMAINING_ARGS[@]}"
+    ;;
+  runs)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/recent_runs.py" --input "$ACTIVITIES_PATH" "${REMAINING_ARGS[@]}"
+    ;;
+  trends)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/trends.py" --input "$ACTIVITIES_PATH" "${REMAINING_ARGS[@]}"
+    ;;
+  history)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/coach_history.py" --history "$COACH_HISTORY_PATH" "${REMAINING_ARGS[@]}"
+    ;;
+  today|daily)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/daily_recommendation.py" --input "$ACTIVITIES_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" "${REMAINING_ARGS[@]}"
+    ;;
+  coach|ai-coach)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/ai_coach.py" --execute --input "$ACTIVITIES_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" --reviews "$RUN_REVIEWS_PATH" --output-json "$AI_SUMMARY_PATH" --output-md "$AI_COMMENTARY_PATH" "${REMAINING_ARGS[@]}"
+    ;;
+  review|reviews)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/run_reviewer.py" --input "$ACTIVITIES_PATH" --reviews "$RUN_REVIEWS_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" "${REMAINING_ARGS[@]}"
+    ;;
+  dashboard)
+    mkdir -p "$DASHBOARD_OUTPUT_DIR"
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/visualization/generate_dashboard.py" \
+      --input "$ACTIVITIES_PATH" \
+      --output "$DASHBOARD_OUTPUT_DIR/index.html" \
+      --ai-coach "$AI_COMMENTARY_PATH" \
+      --ai-summary "$AI_SUMMARY_PATH" \
+      --coach-history "$COACH_HISTORY_PATH" \
+      --run-reviews "$RUN_REVIEWS_PATH" \
+      --title "Lauf- & Leistungs-Dashboard (${ATHLETE_DISPLAY_NAME})" \
+      "${REMAINING_ARGS[@]}"
+    if [[ "$ATHLETE_IS_DEFAULT" == "true" ]]; then
+      cp -f "$DASHBOARD_OUTPUT_DIR/index.html" "$WORKSPACE_ROOT/dist/index.html"
+    fi
+    ;;
+  preview)
+    PORT="${1:-8080}"
+    mkdir -p "$DASHBOARD_OUTPUT_DIR"
+    echo "[INFO] Building dashboard for ${ATHLETE_DISPLAY_NAME}..."
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/visualization/generate_dashboard.py" \
+      --input "$ACTIVITIES_PATH" \
+      --output "$DASHBOARD_OUTPUT_DIR/index.html" \
+      --ai-coach "$AI_COMMENTARY_PATH" \
+      --ai-summary "$AI_SUMMARY_PATH" \
+      --coach-history "$COACH_HISTORY_PATH" \
+      --run-reviews "$RUN_REVIEWS_PATH" \
+      --title "Lauf- & Leistungs-Dashboard (${ATHLETE_DISPLAY_NAME})"
+    if [[ "$ATHLETE_IS_DEFAULT" == "true" ]]; then
+      cp -f "$DASHBOARD_OUTPUT_DIR/index.html" "$WORKSPACE_ROOT/dist/index.html"
+      PREVIEW_DIR="$WORKSPACE_ROOT/dist"
+    else
+      PREVIEW_DIR="$DASHBOARD_OUTPUT_DIR"
+    fi
+    echo "======================================================================"
+    echo "  Local Dashboard Preview (${ATHLETE_DISPLAY_NAME})"
+    echo "  URL: http://localhost:$PORT"
+    echo "  Press Ctrl+C to terminate the preview server"
+    echo "======================================================================"
+    exec "$PYTHON_EXEC" -m http.server "$PORT" --directory "$PREVIEW_DIR"
+    ;;
+  plan)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/planner/schedule_workout.py" --athlete-id "$INTERVALS_ATHLETE_ID" --activities-file "$ACTIVITIES_PATH" "${REMAINING_ARGS[@]}"
     ;;
   *)
     echo "Error: Unknown command '$COMMAND'" >&2

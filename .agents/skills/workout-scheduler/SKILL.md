@@ -16,15 +16,24 @@ Create, parameterize, and schedule structured running workouts directly onto the
 
 When the user asks to schedule, plan, or create a workout (or asks for training advice), follow this interactive, data-driven workflow:
 
+### Step 0: Identify Target Athlete (Multi-Tenant Hub)
+Check configured athletes via `./run athletes` or `athletes/registry.json`.
+- If the user specifies an athlete (e.g. "für Markus" or "für Berni Test"), use that athlete slug.
+- If multiple athletes exist and none was specified, either clarify or default to the `default_athlete` in `athletes/registry.json`.
+- Always pass `--athlete <slug>` to CLI runner commands when targeting a specific runner.
+
 ### Step 1: Recent Training & Gap Analysis
-Before proposing or finalizing a workout, inspect the athlete's recent training history:
-1. **Sync / Check Recent Data**:
-   - Check `data/intervals_activities.json`. If missing or older than a few days, fetch recent activities:
+Before proposing or finalizing a workout, inspect the athlete's recent training history and objective markers:
+1. **Sync / Check Recent Data & Markers**:
+   - Inspect physiological readiness and cognitive guardrails:
      ```bash
-     python3 src/integrations/download_intervals.py --oldest <date-30-days-ago>
+     ./run plan --markers [--athlete <slug>] --json
      ```
-   - Run `python3 src/analysis/recent_runs.py` (shows recent 10 runs by default) to inspect individual runs (date, distance, pace, HR, load).
-   - Run `python3 src/analysis/trends.py --json` to get weekly volume, average pace, average HR, and `z1_z2_pct`.
+   - Check recent runs and volume:
+     ```bash
+     ./run runs [--athlete <slug>]
+     ./run trends [--athlete <slug>] --json
+     ```
 2. **Identify Training Balance & Gaps**:
    - **Aerobic Base (80/20 Rule)**: Check `z1_z2_pct`. If `< 70-80%`, the runner is spending too much time in the "grey zone" (Zone 3/4) and lacks low-intensity Zone 2 base building.
    - **Fatigue & Timing**: When was the last run? Was it hard (high HR, threshold tempo)? Does the athlete need a recovery day or an easy run?

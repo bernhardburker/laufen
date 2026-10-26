@@ -1,0 +1,17 @@
+{
+  "default_athlete": "berni",
+  "athletes": {
+    "berni": {
+      "intervals_id": "i697752",
+      "display_name": "Berni",
+      "active": true,
+      "dashboard_slug": "berni"
+    },
+    "berni-test": {
+      "intervals_id": "i771119",
+      "display_name": "Berni Test",
+      "active": true,
+      "dashboard_slug": "berni-test-415ebf"
+    }
+  }
+}

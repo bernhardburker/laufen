@@ -1,0 +1,83 @@
+id: laufen
+name: Laufen & Training
+icon: "🏃"
+description: >
+  Trainingsanalyse und Laufplanung: Aktivitäten, Wochen-Trends, Paces,
+  Herzfrequenzzonen, Abrufen geplanter Workouts und Erstellen strukturierter Workouts auf Intervals.icu / Garmin.
+system_prompt: system_prompt.md
+runtime: python3
+timeout_seconds: 60
+tools:
+  - name: get_activities
+    description: Ruft die letzten Laufaktivitäten ab (gecacht für 15 Minuten, mit force_refresh aktualisierbar).
+    command: [agent/tools/get_activities.py]
+    parameters:
+      type: object
+      properties:
+        days:
+          type: integer
+          default: 28
+          description: "Anzahl vergangener Tage (Standard: 28)"
+        force_refresh:
+          type: boolean
+          default: false
+          description: "Erzwingt Live-Download von Intervals.icu"
+    shared: read
+
+  - name: get_weekly_trends
+    description: Aggregiert wöchentliche Kilometer, Durchschnittspace und Belastung über mehrere Wochen.
+    command: [agent/tools/get_trends.py]
+    parameters:
+      type: object
+      properties:
+        weeks:
+          type: integer
+          default: 8
+          description: "Anzahl Wochen für den Trend (Standard: 8)"
+
+  - name: get_upcoming_workouts
+    description: Zeigt bereits geplante Trainings und Workouts für die nächsten Tage an.
+    command: [agent/tools/get_upcoming_workouts.py]
+    parameters:
+      type: object
+      properties:
+        days:
+          type: integer
+          default: 7
+          description: "Anzahl Tage in die Zukunft (Standard: 7)"
+    shared: read
+
+  - name: schedule_workout
+    description: Plant ein strukturiertes Workout auf Intervals.icu (synchronisiert automatisch auf die Garmin-Uhr).
+    command: [src/planner/schedule_workout.py]
+    parameters:
+      type: object
+      properties:
+        date:
+          type: string
+          description: "Datum des Trainings: ISO-Datum (YYYY-MM-DD), 'today' oder 'tomorrow'"
+        type:
+          type: string
+          enum: [easy_run, intervals, tempo_run, long_run, recovery_run, fartlek, threshold_intervals]
+          description: "Typ des Workouts"
+        name:
+          type: string
+          description: "Titel des Workouts (z. B. 'Easy Run Z2', '4x1000m Schwellenintervalle')"
+        duration:
+          type: string
+          description: "Dauer (z. B. '45m', '60m', '1h')"
+        reps:
+          type: integer
+          description: "Anzahl der Wiederholungen (für Intervalle)"
+        work:
+          type: string
+          description: "Belastungsteil (z. B. '1km', '4m', '800m')"
+        recovery:
+          type: string
+          description: "Erholungsteil (z. B. '400m', '2m')"
+        target:
+          type: string
+          description: "Zielbereich (z. B. 'Zone 2 HR', 'Pace 4:30/km')"
+      required: [date, type]
+    requires_confirmation: true
+    dry_run_flag: --dry-run

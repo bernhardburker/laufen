@@ -1,0 +1,141 @@
+{
+  "athlete": {
+    "id": "i697752",
+    "name": "BerniBurker",
+    "classification": "Hobbyläufer (Basisaufbau)",
+    "training_mode": "flexi_hybrid",
+    "training_model_name": "Flexi-Modell (3 flexible Säulen)",
+    "target_runs_per_week": 3,
+    "weekly_slots": [
+      {
+        "slot": 1,
+        "name": "Slot 1 (Wochenanfang)",
+        "role": "quality",
+        "allowed_days": [
+          "monday",
+          "tuesday"
+        ],
+        "allowed_types": [
+          "intervals",
+          "tempo_run"
+        ],
+        "preferred_type": "intervals",
+        "description": "Tempo- oder Intervalltraining (Speed / Hügel / Fahrtspiel)",
+        "target": "5x 1m @ 05:15/km Pace oder 6x Berganläufe",
+        "requires_base_anchor": true
+      },
+      {
+        "slot": 2,
+        "name": "Slot 2 (Wochenmitte)",
+        "role": "flexible",
+        "allowed_days": [
+          "wednesday",
+          "thursday",
+          "friday"
+        ],
+        "allowed_types": [
+          "tempo_run",
+          "easy_run"
+        ],
+        "default_type": "easy_run",
+        "preferred_type": "tempo_run",
+        "description": "Aerobe Basis (Z2) oder Schwellenlauf (Z4) bei hoher Frische",
+        "target": "40–45m @ Z2 HR (< 158 bpm) oder 3x 8m @ Z4 HR (168-174 bpm)",
+        "target_hr_range": [
+          168,
+          174
+        ],
+        "requires_base_anchor": true
+      },
+      {
+        "slot": 3,
+        "name": "Slot 3 (Wochenende)",
+        "role": "base_anchor",
+        "allowed_days": [
+          "saturday",
+          "sunday"
+        ],
+        "workout_type": "easy_run",
+        "name_display": "Aerober Anker & Long Run (Slot 3)",
+        "description": "Lockerer Grundlagenlauf strictly in Zone 2",
+        "target": "50m @ Z2 HR (< 158 bpm)",
+        "target_hr_max": 158,
+        "duration_min": 50,
+        "is_mandatory_base": true
+      }
+    ],
+    "heart_rate": {
+      "resting_hr": 46,
+      "max_hr": 204,
+      "lthr": 178,
+      "zones": {
+        "z1_recovery": {
+          "zone": 1,
+          "name": "Recovery",
+          "min": 0,
+          "max": 150
+        },
+        "z2_aerobic": {
+          "zone": 2,
+          "name": "Aerobic",
+          "min": 151,
+          "max": 158
+        },
+        "z3_tempo": {
+          "zone": 3,
+          "name": "Tempo",
+          "min": 159,
+          "max": 168
+        },
+        "z4_subthreshold": {
+          "zone": 4,
+          "name": "SubThreshold",
+          "min": 169,
+          "max": 177
+        },
+        "z5_superthreshold": {
+          "zone": 5,
+          "name": "SuperThreshold",
+          "min": 178,
+          "max": 181
+        },
+        "z6_aerobic_capacity": {
+          "zone": 6,
+          "name": "Aerobic Capacity",
+          "min": 182,
+          "max": 186
+        },
+        "z7_anaerobic": {
+          "zone": 7,
+          "name": "Anaerobic",
+          "min": 187,
+          "max": 204
+        }
+      },
+      "raw_hr_zones": [
+        150,
+        158,
+        168,
+        177,
+        181,
+        186,
+        204
+      ],
+      "raw_zone_names": [
+        "Recovery",
+        "Aerobic",
+        "Tempo",
+        "SubThreshold",
+        "SuperThreshold",
+        "Aerobic Capacity",
+        "Anaerobic"
+      ]
+    },
+    "pace_targets_min_per_km": {
+      "easy_run": "06:30 - 07:00",
+      "long_run": "06:40 - 07:15",
+      "tempo_run": "05:45 - 06:00",
+      "intervals_1k": "05:00 - 05:20"
+    }
+  }
+}

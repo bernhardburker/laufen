@@ -40,24 +40,35 @@ if [ -z "$agy_bin" ]; then
   exit 0
 fi
 
-mkdir -p "$(dirname "$OUTPUT_FILE")"
+OUTPUT_DIR="$(dirname "$OUTPUT_FILE")"
+mkdir -p "$OUTPUT_DIR"
 
 MODEL="${AGY_MODEL:-Gemini 3.8 Flash (Medium)}"
 TIMEOUT="${AGY_TIMEOUT:-3m}"
-JSON_OUTPUT="$REPO_ROOT/data/ai_coach_summary.json"
+JSON_OUTPUT="${4:-$OUTPUT_DIR/ai_coach_summary.json}"
+HISTORY_FILE="${5:-$OUTPUT_DIR/coach_history.json}"
+REVIEWS_FILE="${6:-$OUTPUT_DIR/run_reviews.json}"
+
+# Legacy fallback if tenant history/reviews don't exist yet
+if [ ! -f "$HISTORY_FILE" ] && [ -f "$REPO_ROOT/data/coach_history.json" ]; then
+  cp -n "$REPO_ROOT/data/coach_history.json" "$HISTORY_FILE" || true
+fi
+if [ ! -f "$REVIEWS_FILE" ] && [ -f "$REPO_ROOT/data/run_reviews.json" ]; then
+  cp -n "$REPO_ROOT/data/run_reviews.json" "$REVIEWS_FILE" || true
+fi
 
 export AGY_BIN="$agy_bin"
 export AGY_MODEL="$MODEL"
 export AGY_TIMEOUT="$TIMEOUT"
 
-echo "==> Running AI Coach engine (using abstracted LLM client with model '$MODEL')..."
+echo "==> Running AI Coach engine for target output '$OUTPUT_FILE' (model '$MODEL')..."
 if "$PYTHON_EXEC" "$REPO_ROOT/src/analysis/ai_coach.py" \
   --execute \
   --skip-if-no-pending \
   --input "$ACTIVITIES_FILE" \
   --athlete "$ATHLETE_FILE" \
-  --history "$REPO_ROOT/data/coach_history.json" \
-  --reviews "$REPO_ROOT/data/run_reviews.json" \
+  --history "$HISTORY_FILE" \
+  --reviews "$REVIEWS_FILE" \
   --output-json "$JSON_OUTPUT" \
   --output-md "$OUTPUT_FILE" \
   --model "$MODEL" \

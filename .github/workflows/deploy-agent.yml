@@ -1,0 +1,35 @@
+name: Deploy Agent Bundle to Burkerserver
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-laufen-agent
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: 🚀 Deploy Laufen Agent Bundle
+    runs-on: self-hosted
+    steps:
+      - name: 📥 Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: 📦 Sync Agent Bundle nach ~/dockercontainer/agents/laufen
+        run: |
+          set -euo pipefail
+          TARGET_DIR="$HOME/dockercontainer/agents/laufen"
+          mkdir -p "$TARGET_DIR"
+
+          echo "📂 Synchronisiere Agent Bundle (athletes/ & data/ werden geschützt)..."
+          rsync -av --delete \
+            --exclude='athletes' \
+            --exclude='users' \
+            --exclude='.git' \
+            --exclude='.venv' \
+            --exclude='data' \
+            --exclude='.env' \
+            ./ "$TARGET_DIR/"
+
+          echo "✔ Laufen Agent Bundle erfolgreich deployt nach $TARGET_DIR"

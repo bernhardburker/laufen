@@ -1,0 +1,80 @@
+{
+  "athlete": {
+    "id": "i771119",
+    "name": "Berni Test Burker",
+    "heart_rate": {
+      "resting_hr": 55,
+      "max_hr": 202,
+      "lthr": 183,
+      "zones": {
+        "z1_recovery": {
+          "zone": 1,
+          "name": "Recovery",
+          "min": 0,
+          "max": 154
+        },
+        "z2_aerobic": {
+          "zone": 2,
+          "name": "Aerobic",
+          "min": 155,
+          "max": 163
+        },
+        "z3_tempo": {
+          "zone": 3,
+          "name": "Tempo",
+          "min": 164,
+          "max": 172
+        },
+        "z4_subthreshold": {
+          "zone": 4,
+          "name": "SubThreshold",
+          "min": 173,
+          "max": 182
+        },
+        "z5_superthreshold": {
+          "zone": 5,
+          "name": "SuperThreshold",
+          "min": 183,
+          "max": 187
+        },
+        "z6_aerobic_capacity": {
+          "zone": 6,
+          "name": "Aerobic Capacity",
+          "min": 188,
+          "max": 192
+        },
+        "z7_anaerobic": {
+          "zone": 7,
+          "name": "Anaerobic",
+          "min": 193,
+          "max": 202
+        }
+      },
+      "raw_hr_zones": [
+        154,
+        163,
+        172,
+        182,
+        187,
+        192,
+        202
+      ],
+      "raw_zone_names": [
+        "Recovery",
+        "Aerobic",
+        "Tempo",
+        "SubThreshold",
+        "SuperThreshold",
+        "Aerobic Capacity",
+        "Anaerobic"
+      ]
+    },
+    "pace_targets_min_per_km": {
+      "easy_run": "06:30 - 07:00",
+      "long_run": "06:40 - 07:15",
+      "tempo_run": "05:45 - 06:00",
+      "intervals_1k": "05:00 - 05:20"
+    },
+    "display_name": "Berni Test"
+  }
+}

@@ -8,6 +8,11 @@ on:
   # Allows manual refresh trigger from GitHub Actions tab
   workflow_dispatch:
     inputs:
+      athlete:
+        description: 'Target athlete slug (leave empty to process all active athletes)'
+        required: false
+        type: string
+        default: ''
       force_full_history:
         description: 'Download full history (from 2000-01-01)'
         required: false
@@ -64,59 +69,84 @@ jobs:
         env:
           INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
           INTERVALS_ATHLETE_ID: ${{ secrets.INTERVALS_ATHLETE_ID || '0' }}
+          TARGET_ATHLETE: ${{ inputs.athlete }}
         run: |
-          mkdir -p data
-          if [ -n "$INTERVALS_API_KEY" ]; then
-            echo "Fetching fresh activities from Intervals.icu..."
-            python3 src/integrations/download_intervals.py --output data/intervals_activities.json
-            echo "Fetching fresh wellness data from Intervals.icu..."
-            python3 src/integrations/download_wellness.py --output data/intervals_wellness.json || echo "::warning ::Wellness sync failed"
-          elif [ -f "data/intervals_activities.json" ]; then
-            echo "Using existing data/intervals_activities.json..."
+          mkdir -p data dist
+          if [ -n "$TARGET_ATHLETE" ]; then
+            TARGET_FLAG="--athlete $TARGET_ATHLETE"
           else
-            echo "::warning ::No INTERVALS_API_KEY secret configured and no existing data file. Generating empty dashboard."
+            TARGET_FLAG="--all"
+          fi
+          if [ -n "$INTERVALS_API_KEY" ]; then
+            echo "Fetching fresh activities & wellness ($TARGET_FLAG)..."
+            ./run sync $TARGET_FLAG || echo "::warning ::Sync step failed"
+            # Maintain legacy root fallback if berni data was updated
+            if [ -f "athletes/berni/intervals_activities.json" ]; then
+              cp -f athletes/berni/intervals_activities.json data/intervals_activities.json
+            fi
+            if [ -f "athletes/berni/intervals_wellness.json" ]; then
+              cp -f athletes/berni/intervals_wellness.json data/intervals_wellness.json
+            fi
+          elif [ -f "data/intervals_activities.json" ]; then
+            echo "Using existing activity data..."
+          else
+            echo "::warning ::No INTERVALS_API_KEY secret configured and no data file found."
             echo "[]" > data/intervals_activities.json
           fi
 
-      - name: Synchronize adaptive workout plan
+      - name: Review unanalyzed runs and update cache
         env:
-          INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
-          INTERVALS_ATHLETE_ID: ${{ secrets.INTERVALS_ATHLETE_ID || '0' }}
+          TARGET_ATHLETE: ${{ inputs.athlete }}
         run: |
-          if [ -n "$INTERVALS_API_KEY" ]; then
-            echo "Synchronizing rolling adaptive workout plan..."
-            python3 src/planner/schedule_workout.py --adaptive-plan || echo "::warning ::Adaptive plan sync failed"
+          if [ -n "$TARGET_ATHLETE" ]; then
+            ./run review --athlete "$TARGET_ATHLETE" || echo "::warning ::Run review failed"
+          else
+            ./run review --all || echo "::warning ::Run review failed"
           fi
 
-      - name: Review unanalyzed runs and update cache
-        run: |
-          python3 src/analysis/run_reviewer.py \
-            --input data/intervals_activities.json \
-            --reviews data/run_reviews.json \
-            --athlete config/athlete.json
-
-      - name: Generate Agentic AI Coach Review (agy)
+      - name: Generate Agentic AI Coach Reviews (agy)
         id: ai_coach
         continue-on-error: true
         env:
           AGY_MODEL: ${{ vars.AGY_MODEL || 'Gemini 3.8 Flash (Medium)' }}
           AGY_TIMEOUT: '3m'
+          TARGET_ATHLETE: ${{ inputs.athlete }}
         run: |
           chmod +x .github/scripts/run-ai-coach.sh
-          ./.github/scripts/run-ai-coach.sh data/intervals_activities.json data/ai_coach_commentary.md config/athlete.json
+          if [ -n "$TARGET_ATHLETE" ]; then
+            SLUGS="$TARGET_ATHLETE"
+          else
+            SLUGS="$(python3 src/athletes.py --list-slugs)"
+          fi
+          for slug in $SLUGS; do
+            echo "==> Running AI Coach for athlete: $slug"
+            ./.github/scripts/run-ai-coach.sh \
+              "athletes/$slug/intervals_activities.json" \
+              "athletes/$slug/ai_coach_commentary.md" \
+              "athletes/$slug/athlete.json" || true
+          done
+          if [ -f "athletes/berni/ai_coach_commentary.md" ]; then
+            cp -f athletes/berni/ai_coach_commentary.md data/ai_coach_commentary.md
+          fi
 
-      - name: Publish AI Coach Review to Job Summary
-        if: always() && hashFiles('data/ai_coach_commentary.md') != ''
+      - name: Publish AI Coach Reviews to Job Summary
+        if: always()
         run: |
-          echo "## 🤖 KI-Laufcoach Analyse (Antigravity AI)" >> "$GITHUB_STEP_SUMMARY"
-          cat data/ai_coach_commentary.md >> "$GITHUB_STEP_SUMMARY"
+          for f in athletes/*/ai_coach_commentary.md; do
+            if [ -f "$f" ]; then
+              slug="$(basename "$(dirname "$f")")"
+              echo "## 🤖 KI-Laufcoach Analyse: $slug (Antigravity AI)" >> "$GITHUB_STEP_SUMMARY"
+              cat "$f" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
 
       - name: Persist Coach Artifacts to Repository
-        if: always() && (hashFiles('data/coach_history.json') != '' || hashFiles('data/run_reviews.json') != '' || hashFiles('data/ai_coach_summary.json') != '' || hashFiles('data/ai_coach_commentary.md') != '')
+        if: always()
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action [Coach Memory]"
-          FILES_TO_CHECK="data/coach_history.json data/run_reviews.json data/ai_coach_summary.json data/ai_coach_commentary.md"
+          FILES_TO_CHECK="athletes/*/coach_history.json athletes/*/run_reviews.json athletes/*/ai_coach_summary.json athletes/*/ai_coach_commentary.md data/coach_history.json data/run_reviews.json data/ai_coach_summary.json data/ai_coach_commentary.md"
           EXISTING_FILES=""
           for f in $FILES_TO_CHECK; do
             if [ -f "$f" ]; then
@@ -126,7 +156,7 @@ jobs:
           if [ -n "$EXISTING_FILES" ] && ! git diff --quiet HEAD -- $EXISTING_FILES; then
             echo "Persisting updated coach artifacts to repository: $EXISTING_FILES"
             git add $EXISTING_FILES
-            git commit -m "chore(coach): update coach history and run reviews [skip ci]"
+            git commit -m "chore(coach): update multi-athlete coach artifacts [skip ci]"
             for attempt in 1 2 3; do
               echo "Push attempt $attempt..."
               git pull --rebase origin main || true
@@ -140,16 +170,15 @@ jobs:
             echo "No changes in coach artifacts to persist."
           fi
 
-      - name: Generate HTML Dashboard
+      - name: Generate HTML Dashboards
+        env:
+          TARGET_ATHLETE: ${{ inputs.athlete }}
         run: |
-          python3 src/visualization/generate_dashboard.py \
-            --input data/intervals_activities.json \
-            --template templates/dashboard.html \
-            --output dist/index.html \
-            --ai-coach data/ai_coach_commentary.md \
-            --ai-summary data/ai_coach_summary.json \
-            --coach-history data/coach_history.json \
-            --run-reviews data/run_reviews.json
+          if [ -n "$TARGET_ATHLETE" ]; then
+            ./run dashboard --athlete "$TARGET_ATHLETE"
+          else
+            ./run dashboard --all
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

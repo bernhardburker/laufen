@@ -1,0 +1,59 @@
+{
+  "status_title": "Umfangssprung abfedern & aerobe Basis sichern",
+  "status_badge": "Basis stabilisieren",
+  "status_level": "info",
+  "coach_commentary": "### Status Quo & Wochenanalyse\nServus Berni. Letzte Woche (KW 43) standen knapp 21 Kilometer und drei Läufe auf der Uhr – das ist fast eine Verdopplung gegenüber den Vorwochen (11,5 bis 13 km). Mit dem Schwellenlauf am 23.10. und dem langen Kanten über 9,1 km am Sonntag hast du eine ordentliche Reizkombination gesetzt. Die Ermüdung (ATL 20.5) liegt über der Fitness (CTL 13.7), was einen TSB von -6.8 ergibt. Die Beine haben spürbar gearbeitet, auch wenn der Lauf am Sonntag mit 96,6 % in Zone 1/2 pulsseitig sauber abgedeckelt war.\n\n### Ausblick & Wochenaufgabe\nNach dem Umfangssprung ist diese Woche Konsolidierung angesagt, damit der Reiz anschlägt und sich keine Überlastung an Sehnen und Waden einschleicht. \n\n**Deine Wochenaufgabe:** Nutze Slot 1 (heute oder Dienstag) rein regenerativ. Geh für maximal 40 bis 45 Minuten auf die Strecke, Deckel bei strikt 158 bpm. Die Pace spielt keine Rolle – wenn es am Berg bergauf geht, nimm Tempo raus oder geh kurz. Slot 2 bleibt Mitte der Woche flexibel, am Wochenende folgt wieder ein ruhiger Z2-Lauf.",
+  "history_evaluation": {
+    "compliance_status": "erfüllt",
+    "actual_summary": "Seit der Vorgabe vom 25.10. steht noch kein neuer Lauf in den Daten – die Beine hatten nach dem 9,1-km-Sonntagslauf planmäßig Pause. Die Empfehlung für Slot 1 steht unverändert an.",
+    "effect_analysis": "Der 9,1-km-Lauf am Sonntag zeigte bei einer Pace von 7:19 min/km einen stabilen Durchschnittspuls von 152 bpm (96,6 % in Z1/Z2). Die aerobe Entkopplung blieb gering, allerdings drückt der kumulierte Wochenload (160) den TSB auf -6.8.",
+    "next_recommendation": "Slot 1 (Mo/Di) als leichten Grundlagenlauf absolvieren: 40–45 Minuten strikt unter 158 bpm bleiben, Pace komplett ignorieren.",
+    "next_workout_type": "easy_run",
+    "next_target_hr": 158,
+    "next_duration_min": 45
+  },
+  "insights": [
+    {
+      "title": "Aerobe Zonendisziplin in KW 43",
+      "type": "success",
+      "badge": "82.1% Z1/Z2",
+      "text": "Nach 22,6 % Z1/Z2 in KW 40 lag der aerobe Anteil in KW 43 bei 82,1 %. Sowohl der Lauf am 20.10. (100 %) als auch der lange Lauf am 25.10. (96,6 %) wurden diszipliniert unter 158 bpm gesteuert."
+    },
+    {
+      "title": "Umfangssprung & Ermüdungsbalance",
+      "type": "warning",
+      "badge": "+81% km / Wo.",
+      "text": "Der Anstieg von 11,5 km (KW 42) auf 20,9 km (KW 43) bedeutet einen Load-Sprung von 83 auf 160. Der TSB steht bei -6.8. Um Überlastungen im Sehnenapparat zu vermeiden, sollte das Wochenvolumen nun bei 16–18 km stabilisiert werden."
+    },
+    {
+      "title": "Schwellenreiz gesetzt",
+      "type": "info",
+      "badge": "25m Z3/Z4",
+      "text": "Die Einheit am 23.10. lieferte rund 25 Minuten im Schwellen- und Übergangsbereich (Ø 159 bpm, Spitze 176 bpm). Das entspricht dem Flexi-Modell (15–20 % Z3/Z4) und setzt einen soliden Reiz fürs Herzschlagvolumen."
+    }
+  ],
+  "recommendations": [
+    {
+      "title": "Grundlagenläufe rein über Herzfrequenz steuern",
+      "tag": "Priorität 1: Aerobe Basis",
+      "tag_class": "tag-amber",
+      "text": "Halte die Obergrenze von 158 bpm in Slot 1 und Slot 3 strikt ein. Nimm Gehpausen an Anstiegen in Kauf, sobald der Puls 155 bpm überschreitet. Die Pace ist ein reines Resultat der Tagesform."
+    },
+    {
+      "title": "Wochenvolumen konsolidieren",
+      "tag": "Belastungssteuerung",
+      "tag_class": "tag-cyan",
+      "text": "Nach dem Peak in KW 43 das Wochenvolumen bei etwa 16 bis 18 km halten (3 Einheiten: z. B. 5 km locker, 5–6 km flexibel, 7–8 km Z2 Long Run), um den Umfangssprung physiologisch zu verarbeiten."
+    },
+    {
+      "title": "Schwellenreiz nur bei ausgeruhten Beinen",
+      "tag": "Flexi-Modell",
+      "tag_class": "tag-green",
+      "text": "Slot 2 (Mi–Fr) nur dann mit Schwellenanteil (168–174 bpm) laufen, wenn sich die Beine nach Slot 1 und einem Ruhetag komplett frisch anfühlen. Andernfalls als weiteren Z2-Dauerlauf durchführen."
+    }
+  ],
+  "athlete": {
+    "name": "Berni",
+    "classification": "Hobbyläufer (Basisaufbau)"
+  }
+}
