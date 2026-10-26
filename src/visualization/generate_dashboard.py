@@ -185,6 +185,62 @@ def build_table_rows(
                 if coach_tip
                 else ""
             )
+
+            stages = r_eval.get("stages")
+            if stages and isinstance(stages, dict):
+                st1 = stages.get("stage1_physiology", {})
+                st2 = stages.get("stage2_compliance", {})
+                st3 = stages.get("stage3_optimizations", [])
+                st4 = stages.get("stage4_next_run", {})
+
+                st2_status = st2.get("status", "erfüllt")
+                st2_badge_cls = (
+                    "tag-green"
+                    if st2_status == "erfüllt"
+                    else ("tag-amber" if st2_status == "teilweise" else "tag-cyan")
+                )
+                st2_label = html.escape(str(st2.get("status_label", "Erfüllt")))
+                st2_slot = html.escape(str(st2.get("planned_slot", "Slot")))
+                st2_comp = html.escape(str(st2.get("target_comparison", "")))
+
+                st3_html_parts = []
+                for opt in st3:
+                    o_title = html.escape(str(opt.get("title", "")))
+                    o_text = html.escape(str(opt.get("text", "")))
+                    cmd = opt.get("cli_command")
+                    cmd_html = f'<div class="run-cli-cmd">{html.escape(cmd)}</div>' if cmd else ""
+                    st3_html_parts.append(
+                        f'<div class="run-stage-body"><strong>{o_title}:</strong> {o_text}{cmd_html}</div>'
+                    )
+                st3_html = "".join(st3_html_parts)
+
+                st4_dir = html.escape(str(st4.get("directive", "")))
+                st4_rec_h = st4.get("recovery_hours", 24)
+
+                stages_html = (
+                    f'<div class="run-stages-grid">'
+                    f'  <div class="run-stage-card">'
+                    f'    <div class="run-stage-title">📊 1. Lauf-Bewertung</div>'
+                    f'    <div class="run-stage-body">{html.escape(str(st1.get("summary", r_summary)))}</div>'
+                    f'  </div>'
+                    f'  <div class="run-stage-card">'
+                    f'    <div class="run-stage-title">🎯 2. Plan-Erfüllung <span class="tag {st2_badge_cls}" style="font-size:0.65rem; padding:1px 5px;">{st2_label}</span> <span style="font-size:0.7rem; color:var(--text-muted);">({st2_slot})</span></div>'
+                    f'    <div class="run-stage-body">{st2_comp}</div>'
+                    f'  </div>'
+                    f'  <div class="run-stage-card">'
+                    f'    <div class="run-stage-title">⚡ 3. Vergleich &amp; Optimierung</div>'
+                    f'    {st3_html}'
+                    f'  </div>'
+                    f'  <div class="run-stage-card">'
+                    f'    <div class="run-stage-title">🛌 4. Nächster Lauf &amp; Erholung <span style="font-size:0.7rem; color:var(--cyan);">({st4_rec_h}h Erholung)</span></div>'
+                    f'    <div class="run-stage-body">{st4_dir}</div>'
+                    f'  </div>'
+                    f'</div>'
+                )
+                inner_content = stages_html
+            else:
+                inner_content = f'<div class="run-review-text">{r_summary}</div>{tip_html}'
+
             review_html = (
                 f'<details class="run-review-details">'
                 f'<summary class="run-review-summary">'
@@ -192,8 +248,7 @@ def build_table_rows(
                 f'<span class="review-toggle-hint">Analyse anzeigen <span class="chevron">▼</span></span>'
                 f'</summary>'
                 f'<div class="run-review-content">'
-                f'<div class="run-review-text">{r_summary}</div>'
-                f'{tip_html}'
+                f'{inner_content}'
                 f'</div>'
                 f'</details>'
             )

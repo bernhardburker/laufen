@@ -53,6 +53,7 @@ export AGY_TIMEOUT="$TIMEOUT"
 echo "==> Running AI Coach engine (using abstracted LLM client with model '$MODEL')..."
 if "$PYTHON_EXEC" "$REPO_ROOT/src/analysis/ai_coach.py" \
   --execute \
+  --skip-if-no-pending \
   --input "$ACTIVITIES_FILE" \
   --athlete "$ATHLETE_FILE" \
   --history "$REPO_ROOT/data/coach_history.json" \

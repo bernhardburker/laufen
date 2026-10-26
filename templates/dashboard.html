@@ -896,6 +896,48 @@
       white-space: normal;
     }
 
+    .run-stages-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .run-stage-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 6px;
+      padding: 6px 10px;
+    }
+
+    .run-stage-title {
+      font-weight: 600;
+      color: #e2e8f0;
+      font-size: 0.75rem;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .run-stage-body {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .run-cli-cmd {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 2px 6px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 4px;
+      font-family: monospace;
+      color: #38bdf8;
+      font-size: 0.70rem;
+    }
+
     td.col-activity {
       white-space: normal;
       min-width: 250px;
@@ -2112,6 +2154,51 @@
             }
             const coachTip = escapeHtml(rEval.coach_tip || '');
             const tipHtml = coachTip ? `<div class="run-review-tip">💡 ${coachTip}</div>` : '';
+            let innerContent = `<div class="run-review-text">${rSummary}</div>${tipHtml}`;
+            if (rEval.stages) {
+              const st1 = rEval.stages.stage1_physiology || {};
+              const st2 = rEval.stages.stage2_compliance || {};
+              const st3 = rEval.stages.stage3_optimizations || [];
+              const st4 = rEval.stages.stage4_next_run || {};
+
+              const st2Status = st2.status || 'erfüllt';
+              const st2BadgeCls = (st2Status === 'erfüllt') ? 'tag-green' : ((st2Status === 'teilweise') ? 'tag-amber' : 'tag-cyan');
+              const st2Label = escapeHtml(st2.status_label || 'Erfüllt');
+              const st2Slot = escapeHtml(st2.planned_slot || 'Slot');
+              const st2Comp = escapeHtml(st2.target_comparison || '');
+
+              const st3Html = st3.map(opt => {
+                const oTitle = escapeHtml(opt.title || '');
+                const oText = escapeHtml(opt.text || '');
+                const cmdHtml = opt.cli_command ? `<div class="run-cli-cmd">${escapeHtml(opt.cli_command)}</div>` : '';
+                return `<div class="run-stage-body"><strong>${oTitle}:</strong> ${oText}${cmdHtml}</div>`;
+              }).join('');
+
+              const st4Dir = escapeHtml(st4.directive || '');
+              const st4RecH = st4.recovery_hours || 24;
+
+              innerContent = `
+                <div class="run-stages-grid">
+                  <div class="run-stage-card">
+                    <div class="run-stage-title">📊 1. Lauf-Bewertung</div>
+                    <div class="run-stage-body">${escapeHtml(st1.summary || rSummary)}</div>
+                  </div>
+                  <div class="run-stage-card">
+                    <div class="run-stage-title">🎯 2. Plan-Erfüllung <span class="tag ${st2BadgeCls}" style="font-size:0.65rem; padding:1px 5px;">${st2Label}</span> <span style="font-size:0.7rem; color:var(--text-muted);">(${st2Slot})</span></div>
+                    <div class="run-stage-body">${st2Comp}</div>
+                  </div>
+                  <div class="run-stage-card">
+                    <div class="run-stage-title">⚡ 3. Vergleich &amp; Optimierung</div>
+                    ${st3Html}
+                  </div>
+                  <div class="run-stage-card">
+                    <div class="run-stage-title">🛌 4. Nächster Lauf &amp; Erholung <span style="font-size:0.7rem; color:var(--cyan);">(${st4RecH}h Erholung)</span></div>
+                    <div class="run-stage-body">${st4Dir}</div>
+                  </div>
+                </div>
+              `;
+            }
+
             reviewHtml = `
               <details class="run-review-details">
                 <summary class="run-review-summary">
@@ -2119,8 +2206,7 @@
                   <span class="review-toggle-hint">Analyse anzeigen <span class="chevron">▼</span></span>
                 </summary>
                 <div class="run-review-content">
-                  <div class="run-review-text">${rSummary}</div>
-                  ${tipHtml}
+                  ${innerContent}
                 </div>
               </details>
             `;

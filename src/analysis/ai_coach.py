@@ -475,21 +475,42 @@ def run_ai_coach(
     fallback_on_error: bool = True,
     update_reviews_first: bool = True,
     dry_run: bool = False,
+    skip_if_no_pending: bool = False,
+    force: bool = False,
 ) -> Dict[str, Any]:
     """Execute end-to-end AI coach pipeline using an abstracted LLM client.
 
     1. Optionally updates deep per-run review cache heuristically first.
-    2. Constructs context-rich coaching prompt.
-    3. Invokes LLM via abstracted LLMClient.
-    4. Parses structured JSON response and saves summary / commentary.
-    5. Updates adaptive coaching memory history.
-    6. Falls back gracefully to heuristic analysis on failure.
+    2. Checks for pending runs (skips LLM call on rest days if skip_if_no_pending).
+    3. Constructs context-rich coaching prompt.
+    4. Invokes LLM via abstracted LLMClient.
+    5. Parses structured JSON response and saves summary / commentary.
+    6. Updates adaptive coaching memory history.
+    7. Falls back gracefully to heuristic analysis on failure.
     """
     athlete_path = athlete_file or (PROJECT_ROOT / "config" / "athlete.json")
     hist_path = history_file or (PROJECT_ROOT / "data" / "coach_history.json")
     rev_path = reviews_file or (PROJECT_ROOT / "data" / "run_reviews.json")
     out_json_path = output_json or (PROJECT_ROOT / "data" / "ai_coach_summary.json")
     out_md_path = output_md or (PROJECT_ROOT / "data" / "ai_coach_commentary.md")
+
+    # Step 0: Check for pending runs if requested
+    if skip_if_no_pending and not force and out_json_path.is_file() and out_md_path.is_file():
+        activities = load_activities(activities_file) if activities_file.is_file() else []
+        runs = filter_runs(activities)
+        history = load_coach_history(hist_path)
+        open_rec = get_open_recommendation(history)
+        rec_date = open_rec.get("date", "2000-01-01") if open_rec else "2000-01-01"
+        evaluated_ids = get_evaluated_run_ids(history)
+        runs_since = find_runs_since(runs, rec_date, exclude_run_ids=evaluated_ids)
+        if not runs_since:
+            print("[INFO] No pending runs since last evaluation. Reusing existing coach commentary on rest day.")
+            return {
+                "status": "skipped",
+                "reason": "no_pending_runs",
+                "output_json": str(out_json_path),
+                "output_md": str(out_md_path),
+            }
 
     # Step 1: Pre-populate or refresh heuristic run reviews
     if update_reviews_first and activities_file.is_file() and not dry_run:
@@ -662,6 +683,17 @@ def main() -> int:
         help="Disable automatic heuristic fallback on LLM failure",
     )
     parser.add_argument(
+        "--skip-if-no-pending",
+        action="store_true",
+        help="Skip LLM call if no pending runs are awaiting evaluation and existing summary is available",
+    )
+    parser.add_argument(
+        "--force",
+        "-f",
+        action="store_true",
+        help="Force execution even if no pending runs exist",
+    )
+    parser.add_argument(
         "--prepare-prompt",
         action="store_true",
         help="Generate AI Coach prompt",
@@ -811,6 +843,8 @@ def main() -> int:
             llm_client=client,
             fallback_on_error=not args.no_fallback,
             dry_run=args.dry_run,
+            skip_if_no_pending=args.skip_if_no_pending,
+            force=args.force,
         )
 
         if result.get("status") == "dry_run":

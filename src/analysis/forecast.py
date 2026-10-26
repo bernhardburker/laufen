@@ -9,7 +9,10 @@ training insights and actionable coaching recommendations.
 
 from __future__ import annotations
 
+import datetime
+import json
 import math
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
@@ -234,11 +237,22 @@ def generate_volume_forecast(
 
 def calculate_fitness_form_trend(
     activities: List[Dict[str, Any]],
+    wellness_file: Optional[Path] = None,
+    wellness_records: Optional[List[Dict[str, Any]]] = None,
+    as_of_date: Optional[Any] = None,
 ) -> Dict[str, Any]:
-    """Calculate CTL (Fitness), ATL (Fatigue), and TSB (Form) trend and current status."""
+    """Calculate CTL (Fitness), ATL (Fatigue), and TSB (Form) trend and current status.
+    
+    If as_of_date or wellness data is provided, incorporates wellness CTL/ATL or
+    applies day-by-day exponential decay for rest days since the last activity:
+      CTL_t = CTL_{t-1} * e^(-1/42)
+      ATL_t = ATL_{t-1} * e^(-1/7)
+      TSB_t = CTL_t - ATL_t
+    """
     timeline = []
     latest_ctl: Optional[float] = None
     latest_atl: Optional[float] = None
+    latest_run_date_str: Optional[str] = None
 
     for act in sorted(
         activities,
@@ -258,6 +272,7 @@ def calculate_fitness_form_trend(
             tsb_val = round(ctl_val - atl_val, 1)
             latest_ctl = ctl_val
             latest_atl = atl_val
+            latest_run_date_str = date_str
             timeline.append(
                 {
                     "date": date_str,
@@ -272,7 +287,60 @@ def calculate_fitness_form_trend(
         latest_ctl = 14.6
         latest_atl = 16.6
 
-    current_tsb = round(latest_ctl - latest_atl, 1)
+    current_ctl = latest_ctl
+    current_atl = latest_atl
+    data_source = "activities"
+
+    # Check wellness records if provided or if wellness_file exists
+    records: Optional[List[Dict[str, Any]]] = wellness_records
+    if records is None and wellness_file and wellness_file.is_file():
+        try:
+            with open(wellness_file, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+                if isinstance(loaded, list):
+                    records = loaded
+        except Exception:
+            records = None
+
+    target_d = None
+    if as_of_date is not None:
+        if isinstance(as_of_date, str):
+            try:
+                target_d = datetime.date.fromisoformat(as_of_date[:10])
+            except Exception:
+                pass
+        elif hasattr(as_of_date, "strftime"):
+            target_d = as_of_date
+
+    # 1. Attempt to resolve from wellness record matching target date
+    if records and target_d:
+        target_str = target_d.isoformat()
+        dated_records = [
+            w for w in records
+            if str(w.get("id") or w.get("date") or "")[:10] <= target_str
+            and w.get("ctl") is not None
+            and w.get("atl") is not None
+        ]
+        if dated_records:
+            dated_records.sort(key=lambda w: str(w.get("id") or w.get("date") or "")[:10], reverse=True)
+            w_latest = dated_records[0]
+            current_ctl = round(float(w_latest["ctl"]), 1)
+            current_atl = round(float(w_latest["atl"]), 1)
+            data_source = "wellness"
+
+    # 2. If target date is past latest run and wellness didn't supply it, apply exponential decay
+    elif target_d and latest_run_date_str:
+        try:
+            last_d = datetime.date.fromisoformat(latest_run_date_str)
+            days_gap = (target_d - last_d).days
+            if days_gap > 0:
+                current_ctl = round(latest_ctl * math.exp(-days_gap / 42.0), 1)
+                current_atl = round(latest_atl * math.exp(-days_gap / 7.0), 1)
+                data_source = "decayed"
+        except Exception:
+            pass
+
+    current_tsb = round(current_ctl - current_atl, 1)
 
     if current_tsb > 5.0:
         tsb_status = "Sehr frisch / Getapert (Optimal für Wettkampf)"
@@ -292,9 +360,10 @@ def calculate_fitness_form_trend(
         tsb_color = "var(--rose)"
 
     return {
-        "latest_ctl": latest_ctl,
-        "latest_atl": latest_atl,
+        "latest_ctl": current_ctl,
+        "latest_atl": current_atl,
         "current_tsb": current_tsb,
+        "data_source": data_source,
         "tsb_status": tsb_status,
         "tsb_level": tsb_level,
         "tsb_color": tsb_color,

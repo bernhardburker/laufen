@@ -668,7 +668,9 @@ def generate_daily_recommendation(
     ref_date = reference_date or date.today()
     ref_date_str = ref_date.strftime("%d.%m.%Y")
 
-    form = form_data or (calculate_fitness_form_trend(runs) if runs else {})
+    form = form_data or (
+        calculate_fitness_form_trend(runs, as_of_date=ref_date) if runs else {}
+    )
     tsb = float(form.get("current_tsb", 0.0))
     ctl = float(form.get("latest_ctl", 0.0))
     atl = float(form.get("latest_atl", 0.0))

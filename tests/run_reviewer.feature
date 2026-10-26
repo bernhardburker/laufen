@@ -27,3 +27,15 @@ Feature: Incremental per-run deep analysis and persistent review cache
     Then the run rating is "zuegig"
     And the rating label is "Zügiger Dauerlauf (Zone 3)"
     And the review summary does not contain "Intensitätsfalle" or "Grauzone"
+
+  Scenario: Planned threshold run with warmup cooldown and drift is classified as compliant threshold session
+    Given a planned threshold run with 13 minutes in Zone 4 and post-interval drift
+    When deep run metrics and review are evaluated
+    Then the run rating is "intensiv"
+    And the review contains 4-stage evaluation with compliant status "erfüllt"
+    And the review proposes recovery directive for 48 hours
+
+  Scenario: Flexible mid-week slot disambiguates between base and threshold intent
+    Given an activity on a flexible mid-week slot with over 10 minutes in Zone 4
+    When run intent is resolved
+    Then the intended type is "threshold" and the planned slot is flexible threshold

@@ -1,0 +1,8 @@
+Warmup
+- {warmup} Z2 HR
+
+- {step1_dur} {step1_target}
+- {step2_dur} {step2_target}
+
+Cooldown
+- {cooldown} Z1 HR

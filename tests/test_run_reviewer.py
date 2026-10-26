@@ -155,10 +155,50 @@ class RunReviewerDriver:
         self.runs = [self.sample_run]
         self.save_activities()
 
+    def setup_threshold_run(self) -> None:
+        self.sample_run = {
+            "id": "run-threshold-1",
+            "type": "Run",
+            "name": "Wien - Schwellenlauf (7 km)",
+            "start_date_local": "2026-10-23T07:00:00",
+            "distance": 7150.0,
+            "moving_time": 2996,
+            "average_heartrate": 159.0,
+            "max_heartrate": 176.0,
+            "average_cadence": 76.4,
+            "icu_training_load": 58.0,
+            "icu_hr_zone_times": [378, 1112, 682, 827, 0, 0, 0],
+            "interval_summary": ["3x 5m59s 168bpm", "2x 8m13s 157bpm"],
+        }
+        self.runs = [self.sample_run]
+        self.save_activities()
+
+    def setup_flexible_threshold_run(self) -> None:
+        self.sample_run = {
+            "id": "run-flex-1",
+            "type": "Run",
+            "name": "Morgenlauf",
+            "start_date_local": "2026-10-23T07:00:00",
+            "distance": 7000.0,
+            "moving_time": 2800,
+            "average_heartrate": 160.0,
+            "max_heartrate": 175.0,
+            "average_cadence": 77.0,
+            "icu_training_load": 56.0,
+            "icu_hr_zone_times": [300, 1000, 700, 800, 0, 0, 0],
+        }
+        self.runs = [self.sample_run]
+        self.save_activities()
+
+    def resolve_intent(self) -> None:
+        self.extracted_metrics = extract_deep_run_metrics(self.sample_run, self.athlete_profile)
+        from src.analysis.run_reviewer import resolve_run_intent
+        self.resolved_intent = resolve_run_intent(self.sample_run, self.extracted_metrics, self.athlete_profile)
+
     def evaluate_deep_run(self) -> None:
         self.extracted_metrics = extract_deep_run_metrics(self.sample_run)
         from src.analysis.run_reviewer import evaluate_run_deep
-        self.deep_review = evaluate_run_deep(self.extracted_metrics, self.athlete_profile)
+        self.deep_review = evaluate_run_deep(self.extracted_metrics, self.athlete_profile, run_raw=self.sample_run)
 
     def build_prompt_with_cache(self) -> None:
         self.coach_prompt = build_coach_prompt(
@@ -273,3 +313,47 @@ def then_summary_no_grauzone(driver: RunReviewerDriver) -> None:
     summary = driver.deep_review.get("summary", "")
     assert "Intensitätsfalle" not in summary
     assert "Grauzone" not in summary
+
+
+@given("a planned threshold run with 13 minutes in Zone 4 and post-interval drift")
+def given_planned_threshold_run(driver: RunReviewerDriver) -> None:
+    driver.setup_threshold_run()
+
+
+@then('the run rating is "intensiv"')
+def then_run_rating_intensiv(driver: RunReviewerDriver) -> None:
+    assert driver.deep_review.get("rating") == "intensiv"
+
+
+@then('the review contains 4-stage evaluation with compliant status "erfüllt"')
+def then_review_contains_4stages_erfuellt(driver: RunReviewerDriver) -> None:
+    stages = driver.deep_review.get("stages", {})
+    assert "stage1_physiology" in stages
+    assert "stage2_compliance" in stages
+    assert "stage3_optimizations" in stages
+    assert "stage4_next_run" in stages
+    assert stages["stage2_compliance"]["status"] == "erfüllt"
+
+
+@then("the review proposes recovery directive for 48 hours")
+def then_review_proposes_recovery(driver: RunReviewerDriver) -> None:
+    stage4 = driver.deep_review.get("stages", {}).get("stage4_next_run", {})
+    assert stage4.get("recovery_hours") == 48
+    assert "48h" in stage4.get("directive", "") or "Erholung" in stage4.get("directive", "")
+
+
+@given("an activity on a flexible mid-week slot with over 10 minutes in Zone 4")
+def given_flexible_midweek_threshold(driver: RunReviewerDriver) -> None:
+    driver.setup_flexible_threshold_run()
+
+
+@when("run intent is resolved")
+def when_run_intent_resolved(driver: RunReviewerDriver) -> None:
+    driver.resolve_intent()
+
+
+@then('the intended type is "threshold" and the planned slot is flexible threshold')
+def then_intended_type_threshold(driver: RunReviewerDriver) -> None:
+    intent = driver.resolved_intent
+    assert intent.get("intended_type") == "threshold"
+    assert "Schwellen-Option" in intent.get("planned_slot", "")

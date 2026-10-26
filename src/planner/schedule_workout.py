@@ -228,6 +228,52 @@ def build_workout_payload(args: argparse.Namespace, project_root: Path) -> dict:
                 }
             )
 
+        elif w_type == "micro_threshold":
+            warmup = args.warmup or "10m"
+            cooldown = args.cooldown or "10m"
+            reps = args.reps or 5
+            work = args.work or "4m"
+            work_target = args.target or "05:45/km Pace"
+            recovery = args.recovery or "90s"
+            recovery_target = args.recovery_target or "Z1 HR"
+
+            if not name:
+                name = f"Micro-Threshold ({reps}x {work})"
+            description = render_template(
+                templates_dir / "micro_threshold.txt",
+                {
+                    "warmup": warmup,
+                    "reps": reps,
+                    "work": work,
+                    "work_target": work_target,
+                    "recovery": recovery,
+                    "recovery_target": recovery_target,
+                    "cooldown": cooldown,
+                },
+            )
+
+        elif w_type == "progressive_threshold":
+            warmup = args.warmup or "15m"
+            cooldown = args.cooldown or "10m"
+            step1_dur = args.duration or "10m"
+            step1_target = "Z3 HR"
+            step2_dur = args.work or "10m"
+            step2_target = args.target or "Z4 HR"
+
+            if not name:
+                name = "Progressive Threshold Run"
+            description = render_template(
+                templates_dir / "progressive_threshold.txt",
+                {
+                    "warmup": warmup,
+                    "step1_dur": step1_dur,
+                    "step1_target": step1_target,
+                    "step2_dur": step2_dur,
+                    "step2_target": step2_target,
+                    "cooldown": cooldown,
+                },
+            )
+
         elif w_type == "fartlek":
             warmup = args.warmup or "10m"
             cooldown = args.cooldown or "5m"
@@ -888,7 +934,17 @@ def main() -> None:
     # Workout specification
     parser.add_argument(
         "--type",
-        choices=["easy_run", "recovery_run", "long_run", "intervals", "tempo_run", "threshold_intervals", "fartlek"],
+        choices=[
+            "easy_run",
+            "recovery_run",
+            "long_run",
+            "intervals",
+            "tempo_run",
+            "threshold_intervals",
+            "micro_threshold",
+            "progressive_threshold",
+            "fartlek",
+        ],
         help="Predefined workout archetype",
     )
     parser.add_argument(
