@@ -1,0 +1,157 @@
+name: CI, Staging & CD Deployment to Burkerserver
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_e2e:
+        description: 'Skip staging live E2E tests'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-burkerserver
+  cancel-in-progress: false
+
+jobs:
+  # -------------------------------------------------------------
+  # Job 1: Fast Offline CI (Unit & Mocked BDD Tests)
+  # -------------------------------------------------------------
+  ci:
+    name: 🧪 CI Automated Tests (Offline)
+    runs-on: self-hosted
+    steps:
+      - name: 📥 Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: 🔧 Umgebung initialisieren
+        run: |
+          chmod +x ./init.sh
+          ./init.sh
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
+
+      - name: 🧪 Offline Test-Suite ausführen
+        run: |
+          pytest tests/ -m "not e2e"
+
+  # -------------------------------------------------------------
+  # Job 2: Staging Live E2E Integration (Sandbox Athlete berni-test)
+  # -------------------------------------------------------------
+  staging-e2e:
+    name: 🎯 Staging Live E2E (Intervals.icu Sandbox)
+    needs: [ci]
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.skip_e2e }}
+    runs-on: self-hosted
+    steps:
+      - name: 📥 Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: 🔧 Umgebung initialisieren
+        run: |
+          chmod +x ./init.sh
+          ./init.sh
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
+
+      - name: 🎯 Live E2E Tests gegen berni-test ausführen
+        env:
+          INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
+        run: |
+          if [ -z "$INTERVALS_API_KEY" ]; then
+            echo "::warning ::INTERVALS_API_KEY nicht in GitHub Secrets hinterlegt. Überspringe Live-E2E."
+          else
+            pytest tests/ -m e2e
+          fi
+
+  # -------------------------------------------------------------
+  # Job 3: Production Deployment to burkerserver
+  # -------------------------------------------------------------
+  deploy:
+    name: 🚀 Deploy to Burkerserver
+    needs: [ci, staging-e2e]
+    if: always() && (needs.ci.result == 'success') && (needs.staging-e2e.result == 'success' || needs.staging-e2e.result == 'skipped') && (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+    runs-on: self-hosted
+
+    steps:
+      - name: 📥 Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: 📦 Application Bundle nach ~/dockerContainer/laufen synchronisieren
+        run: |
+          set -euo pipefail
+          TARGET_DIR="$HOME/dockerContainer/laufen"
+          mkdir -p "$TARGET_DIR"
+
+          # Falls noch keine .env oder athletes vorhanden sind, initial aus ~/laufen übernehmen
+          if [ ! -f "$TARGET_DIR/.env" ] && [ -f "$HOME/laufen/.env" ]; then
+            echo "📋 Übernehme bestehende .env aus ~/laufen..."
+            cp "$HOME/laufen/.env" "$TARGET_DIR/.env"
+          fi
+          if [ ! -d "$TARGET_DIR/athletes" ] && [ -d "$HOME/laufen/athletes" ]; then
+            echo "📋 Übernehme bestehende athletes Daten aus ~/laufen..."
+            cp -r "$HOME/laufen/athletes" "$TARGET_DIR/athletes"
+          fi
+
+          echo "📂 Synchronisiere App-Code nach $TARGET_DIR (athletes/ & .env geschützt)..."
+          rsync -av --delete \
+            --exclude='athletes' \
+            --exclude='users' \
+            --exclude='.git' \
+            --exclude='.venv' \
+            --exclude='data' \
+            --exclude='.env' \
+            ./ "$TARGET_DIR/"
+
+          cd "$TARGET_DIR"
+          chmod +x ./init.sh ./run
+          ./init.sh
+
+      - name: 📊 Dashboard für alle Athleten bauen
+        run: |
+          set -euo pipefail
+          TARGET_DIR="$HOME/dockerContainer/laufen"
+          cd "$TARGET_DIR"
+
+          echo "📊 Generiere lokales Dashboard..."
+          ./run dashboard --all || echo "::warning ::Dashboard Generierung meldete Warnungen"
+
+      - name: 🤖 Telegram Bot Service installieren & neu starten
+        run: |
+          set -euo pipefail
+          TARGET_DIR="$HOME/dockerContainer/laufen"
+
+          # User-Systemd Unit installieren
+          mkdir -p "$HOME/.config/systemd/user"
+          cp "$TARGET_DIR/deploy/laufen-telegram-bot.service" "$HOME/.config/systemd/user/laufen-telegram-bot.service"
+
+          # Daemon neu laden, aktivieren und neu starten
+          systemctl --user daemon-reload
+          systemctl --user enable laufen-telegram-bot.service
+          systemctl --user restart laufen-telegram-bot.service
+
+      - name: 🩺 Production Verification & Health Check
+        run: |
+          set -euo pipefail
+          TARGET_DIR="$HOME/dockerContainer/laufen"
+
+          echo "🩺 Warte 3 Sekunden auf Bot-Initialisierung..."
+          sleep 3
+
+          # Status des Bot-Services prüfen
+          if systemctl --user is-active --quiet laufen-telegram-bot.service; then
+            echo "✔ laufen-telegram-bot.service ist aktiv und läuft einwandfrei!"
+          else
+            echo "❌ laufen-telegram-bot.service ist nicht aktiv!"
+            journalctl --user -u laufen-telegram-bot.service -n 50 --no-pager
+            exit 1
+          fi
+
+          # Dashboard-Prüfung
+          if [ -f "$TARGET_DIR/dist/index.html" ]; then
+            echo "✔ Dashboard dist/index.html existiert und ist aktuell!"
+          else
+            echo "::warning ::dist/index.html wurde im Zielverzeichnis nicht gefunden"
+          fi

@@ -5,12 +5,12 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=berni
-WorkingDirectory=/mnt/data/work/laufen
-EnvironmentFile=-/mnt/data/work/laufen/.env
-ExecStart=/mnt/data/work/laufen/run bot
-Restart=on-failure
+WorkingDirectory=%h/dockerContainer/laufen
+EnvironmentFile=-%h/dockerContainer/laufen/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=%h/dockerContainer/laufen/run bot
+Restart=always
 RestartSec=10
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
