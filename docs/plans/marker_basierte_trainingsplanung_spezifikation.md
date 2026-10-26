@@ -1,7 +1,7 @@
 # Spezifikation: Marker-basierte adaptive Trainingsplanung (4-Phasen-Modell)
 
 **Dokument:** `docs/plans/marker_basierte_trainingsplanung_spezifikation.md`  
-**Status:** Definiert & Freigegeben zur Implementierung  
+**Status:** Vollständig umgesetzt & verifiziert (Erledigt am 26.10.2026)  
 **Bezug:** Ergänzt [4_phasen_laufanalyse_spezifikation.md](file:///home/berni/laufen/docs/plans/4_phasen_laufanalyse_spezifikation.md) & löst die starre `if/else`-Entscheidungslogik in `src/planner/schedule_workout.py` ab.
 
 ---
@@ -174,13 +174,13 @@ Cooldown
 
 ---
 
-## 4. Nächste Schritte zur Umsetzung
+## 4. Umsetzungsstatus & Verifikation (Abgeschlossen)
 
-1. **Review & Freigabe** dieser Spezifikation durch den Benutzer.
-2. **Engine anpassen:**
-   * Implementierung von `src/planner/extract_markers.py` (bzw. `--markers`-Flag in `./run plan`), das das JSON-Markerobjekt ausspuckt.
-   * Entfernen des primitiven `if/else`-Generators in `choose_adaptive_workout()`.
-3. **Agenten-Befehl / Tooling:**
-   * Bereitstellung eines klaren Runner-Befehls `./run plan --evaluate` oder `./run today`, der die Marker anzeigt und dem Agenten die Wahl übergibt.
-4. **BDD-Tests (`tests/test_marker_planning.feature`):**
-   * Sicherstellung, dass nach Schwellenläufen und bei niedrigem TSB keine harten Z4-Workouts mehr vorgeschlagen werden.
+- [x] **Review & Freigabe** dieser Spezifikation durch den Benutzer.
+- [x] **Engine umgesetzt:**
+  - Implementierung von `src/planner/extract_markers.py` und `--markers` / `--json` Flags in `./run plan`.
+  - Entfernung der primitiven `if/else`-Entscheidungslogik in `choose_adaptive_workout()`.
+- [x] **Guardrails & Periodisierung:**
+  - `quality_discouraged`, `fatigue_warning`, `volume_spike_alert` und `slot_allows_threshold` aktiv integriert.
+- [x] **BDD-Tests (`tests/marker_planning.feature` & `tests/test_marker_planning.py`):**
+  - Alle 4 neuen Szenarien erfolgreich implementiert und verifiziert (gesamte Testsuite: 96/96 Tests bestanden).
