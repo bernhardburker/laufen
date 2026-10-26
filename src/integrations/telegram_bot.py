@@ -141,8 +141,17 @@ def save_telegram_state(state_path: Path, state: Dict[str, Any]) -> None:
         f.write("\n")
 
 
-def build_briefing_keyboard(target_date_iso: str) -> Dict[str, Any]:
+def build_briefing_keyboard(target_date_iso: str, is_rest_day: bool = False) -> Dict[str, Any]:
     """Builds the inline keyboard buttons attached to a daily workout briefing."""
+    if is_rest_day:
+        return {
+            "inline_keyboard": [
+                [
+                    {"text": "✅ Ruhetag beibehalten", "callback_data": f"keep_rest:{target_date_iso}"},
+                    {"text": "🏃 Heute locker laufen (30m)", "callback_data": f"run_today:{target_date_iso}"},
+                ],
+            ]
+        }
     return {
         "inline_keyboard": [
             [
@@ -274,6 +283,7 @@ def send_daily_briefing_for_athlete(
 
     target_date_str = sync_res.get("target_date") or today_iso
     target_date_obj = datetime.date.fromisoformat(target_date_str)
+    is_rest_day_today = bool(sync_res.get("is_rest_day", False))
 
     # 2. Extract readiness & guardrails markers
     markers = extract_planning_markers(
@@ -293,7 +303,9 @@ def send_daily_briefing_for_athlete(
         ref_date_iso=today_iso,
     )
 
-    keyboard = build_briefing_keyboard(target_date_str) if proposal else None
+    # For rest days, buttons target TODAY (today_iso), not tomorrow!
+    keyboard_target_date = today_iso if is_rest_day_today else target_date_str
+    keyboard = build_briefing_keyboard(keyboard_target_date, is_rest_day=is_rest_day_today)
     send_res = bot_client.send_message(
         chat_id=ctx.telegram_chat_id,
         text=msg_text,
@@ -366,6 +378,37 @@ def handle_telegram_update(
             bot_client.send_message(chat_id=chat_id, text=reply)
             return {"status": "accepted", "athlete": ctx.slug, "target_date": target_date_iso}
 
+        if action_key == "keep_rest":
+            override_workout_on_date(
+                target_date_iso=target_date_iso,
+                new_payload=None,
+                api_key=intervals_api_key,
+                athlete_id=ctx.intervals_id,
+                api_base_url=intervals_api_base,
+                dry_run=dry_run,
+                is_rest_day=True,
+            )
+            state["current_proposal"] = None
+            save_telegram_state(state_path, state)
+            reply = f"🛋️ Sehr gut, {ctx.display_name}! Der heutige Ruhetag ({target_date_iso}) bleibt fixiert. Gute Erholung!"
+            bot_client.send_message(chat_id=chat_id, text=reply)
+            return {"status": "keep_rest", "athlete": ctx.slug, "target_date": target_date_iso}
+
+        if action_key == "run_today":
+            synth_text = "Möchte heute doch locker 30 min in Zone 2 laufen"
+            return _process_athlete_feedback_text(
+                user_text=synth_text,
+                ctx=ctx,
+                chat_id=chat_id,
+                bot_client=bot_client,
+                intervals_api_key=intervals_api_key,
+                intervals_api_base=intervals_api_base,
+                llm_client=llm_client,
+                root=root,
+                today=today,
+                dry_run=dry_run,
+            )
+
         if action_key == "rest":
             override_workout_on_date(
                 target_date_iso=target_date_iso,
@@ -374,10 +417,11 @@ def handle_telegram_update(
                 athlete_id=ctx.intervals_id,
                 api_base_url=intervals_api_base,
                 dry_run=dry_run,
+                is_rest_day=True,
             )
             state["current_proposal"] = None
             save_telegram_state(state_path, state)
-            reply = f"🛋️ Verstanden, {ctx.display_name}! Ich habe das geplante Workout am {target_date_iso} aus Intervals.icu entfernt. Genieße deinen Ruhetag!"
+            reply = f"🛋️ Verstanden, {ctx.display_name}! Ich habe das geplante Workout am {target_date_iso} aus Intervals.icu entfernt und als Ruhetag eingetragen. Genieße deinen Ruhetag!"
             bot_client.send_message(chat_id=chat_id, text=reply)
             return {"status": "rest_day", "athlete": ctx.slug, "target_date": target_date_iso}
 
