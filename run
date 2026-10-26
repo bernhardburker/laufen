@@ -78,7 +78,8 @@ shift || true
 case "$COMMAND" in
   sync)
     "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_intervals.py" "$@"
-    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/planner/schedule_workout.py" --adaptive-plan "$@" || true
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_wellness.py" || true
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/planner/schedule_workout.py" --adaptive-plan || true
     ;;
   wellness|sync-wellness)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_wellness.py" "$@"

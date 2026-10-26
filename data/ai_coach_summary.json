@@ -1,0 +1,53 @@
+{
+  "status_title": "Positive Tendenz zur aeroben Disziplin",
+  "status_badge": "Z2-Fokus beibehalten",
+  "status_level": "info",
+  "coach_commentary": "### Status Quo & Analyse\nHallo Berni. Die Auswertung deines letzten Laufs vom 12. Oktober zeigt, dass die Vorgabe exakt umgesetzt wurde: 49 Minuten mit 99,6 % Anteil in Zone 1 und 2 bei einem Durchschnittspuls von 150 bpm. Dass die Pace dabei auf 7:42 min/km gesunken ist, ist physiologisch genau der richtige Schritt, um den bisherigen Drift in Zone 3 zu stoppen.\n\nIm Gesamtbild bleibt jedoch Arbeit zu tun: Dein historischer Z1/Z2-Anteil liegt bei 55,0 %, was für einen sauberen Basisaufbau nach dem 80/20-Prinzip noch zu niedrig ist. Mit durchschnittlich 11,9 km pro Woche bei knapp zwei Einheiten ist das Gesamtvolumen zudem noch sehr schmal. Um Anpassungen im Fettstoffwechsel und der Kapillarisierung zu festigen, zählt jetzt Kontinuität vor Tempo.\n\n### Wochenaufgabe\nAbsolviere in dieser Woche zwei Einheiten nach demselben Muster: 45 bis 50 Minuten rein nach Herzfrequenz gesteuert (< 158 bpm, Zielbereich um 148–152 bpm). Sollte der Puls an Steigungen ansteigen, nimm ohne Zögern Gehschritte zur Hilfe. Die Pace bleibt komplett nebensächlich.",
+  "history_evaluation": {
+    "compliance_status": "erfüllt",
+    "actual_summary": "Die Empfehlung vom 08.10. (45–50 min Grundlagenlauf mit Temporeduktion zur Vermeidung von Z3-Drift) wurde am 12.10. mit 49 Minuten, 6,45 km und 99,6 % Z1/Z2-Disziplin mustergültig umgesetzt.",
+    "effect_analysis": "Bei einer Pace von 7:42 min/km blieb der Durchschnittspuls bei stabilen 150 bpm (Maximalpuls 159 bpm). Gegenüber dem Lauf vom 08.10. (Pace 7:05 min/km bei 19 min Z3-Drift) zeigt die bewusste Drosselung eine wirksame Entlastung des Herz-Kreislauf-Systems bei unkritischer Ermüdung (TSB -2,6).",
+    "next_recommendation": "Weiteren Grundlagenlauf über 45–50 Minuten durchführen. Herzfrequenz konsequent unter 158 bpm halten, Pace vollständig ignorieren und bei Steigungen Gehpausen einlegen.",
+    "next_workout_type": "easy_run",
+    "next_target_hr": 158,
+    "next_duration_min": 45
+  },
+  "insights": [
+    {
+      "title": "Historischer Nachholbedarf in Zone 2",
+      "type": "warning",
+      "badge": "55.0% Z1/Z2 gesamt",
+      "text": "Über den Gesamtzeitraum liegt der Anteil im aeroben Grundlagenbereich bei lediglich 55,0 % statt der angestrebten 80 %. Frühere Einheiten fielen regelmäßig in die tempomäßige Grauzone (Zone 3 und 4). Die jüngsten Läufe (KW 41 mit 80,3 %, KW 42 mit 99,6 %) zeigen jedoch den richtigen Kurswechsel."
+    },
+    {
+      "title": "Geringe wöchentliche Reizdichte",
+      "type": "info",
+      "badge": "Ø 11.9 km / Wo.",
+      "text": "Mit durchschnittlich 1,9 Läufen und 11,9 km pro Woche ist der Trainingsreiz noch sehr punktuell. Für eine nachhaltige aerobe Weiterentwicklung sollte mittelfristig eine dritte kurze Laufeinheit pro Woche etabliert werden, sobald die Grundlagenläufe stabil verarbeitet werden."
+    }
+  ],
+  "recommendations": [
+    {
+      "title": "Grundlagenläufe strikt über Herzfrequenz steuern",
+      "tag": "Priorität 1: Aerobe Basis",
+      "tag_class": "tag-amber",
+      "text": "Halte die Herzfrequenz bei Easy Runs ausnahmslos unter der Obergrenze von 158 bpm (idealer Zielbereich 145–152 bpm). Schalte die Pace-Anzeige auf der Uhr ab; Gehpausen an Anstiegen oder bei einsetzendem Pulsdrift sind ausdrücklich vorgesehen."
+    },
+    {
+      "title": "Intensitätsdisziplin nach 80/20 wahren",
+      "tag": "Trainingsstruktur",
+      "tag_class": "tag-cyan",
+      "text": "Vermeide weiterhin die ermüdende Schwellengrauzone (Z3/Z4 zwischen 159 und 177 bpm). Solange die aerobe Basis nicht gefestigt ist, sollten intensive Einheiten nahe der Laktatschwelle (LTHR 178 bpm) höchstens sehr dosiert und klar strukturiert stattfinden."
+    },
+    {
+      "title": "Frequenz vor Distanz steigern",
+      "tag": "Umfangsaufbau",
+      "tag_class": "tag-green",
+      "text": "Für das Niveau 'Basisaufbau' gilt: Zuerst die Konstanz auf 2 bis 3 Einheiten pro Woche absichern (jeweils 40–50 Minuten), bevor Einzellaufdistanzen verlängert oder Wochenumfänge über 15–18 km gesteigert werden."
+    }
+  ],
+  "athlete": {
+    "name": "Berni",
+    "classification": "Hobbyläufer (Basisaufbau)"
+  }
+}

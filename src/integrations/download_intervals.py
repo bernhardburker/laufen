@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-"""
-download_intervals.py
+"""download_intervals.py
 
-Lädt Aktivitäten von Intervals.icu über die REST API herunter
-und speichert sie lokal im Verzeichnis 'data/'.
+Downloads running and fitness activities from Intervals.icu REST API
+and saves them locally in the 'data/' directory.
 
-Funktionen:
-- Lädt standardmäßig den gesamten Aktivitätsverlauf herunter.
-- Ermittelt API-Schlüssel aus System-Umgebungsvariable oder .env-Datei.
-- Berechnet Pace (min/km) und formatiert Distanzen & Herzfrequenzen.
-- Keine externen Python-Bibliotheken erforderlich (reine Standardbibliothek).
+Features:
+- Downloads full activity history or customizable date ranges.
+- Resolves API key from environment variable or .env file.
+- Computes pace (min/km) and formats distances and heart rates.
+- Uses only Python standard library (no external dependencies required).
 """
 
 import argparse
@@ -24,7 +23,7 @@ from pathlib import Path
 
 
 def load_env_file(filepath: Path) -> None:
-    """Liest Schlüssel-Wert-Paare aus einer .env-Datei in os.environ, falls noch nicht gesetzt."""
+    """Loads key-value pairs from a .env file into os.environ if not already present."""
     if not filepath.is_file():
         return
     with open(filepath, "r", encoding="utf-8") as f:
@@ -35,13 +34,12 @@ def load_env_file(filepath: Path) -> None:
             key, val = line.split("=", 1)
             key = key.strip()
             val = val.strip().strip("'\"")
-            # Nur setzen, wenn in os.environ noch nicht vorhanden
             if key not in os.environ and val:
                 os.environ[key] = val
 
 
 def format_duration(seconds: float | int | None) -> str:
-    """Formatiert Sekunden in hh:mm:ss oder mm:ss."""
+    """Formats seconds into hh:mm:ss or mm:ss."""
     if seconds is None:
         return "--:--"
     total_secs = int(seconds)
@@ -54,7 +52,7 @@ def format_duration(seconds: float | int | None) -> str:
 
 
 def format_pace(speed_m_per_s: float | None) -> str:
-    """Konvertiert Geschwindigkeit (m/s) in Lauf-Pace (min/km)."""
+    """Converts speed (m/s) into running pace (min/km)."""
     if not speed_m_per_s or speed_m_per_s <= 0:
         return "--:--"
     sec_per_km = 1000.0 / speed_m_per_s
@@ -70,7 +68,7 @@ def fetch_intervals_activities(
     newest: str | None = None,
     api_base_url: str = "https://intervals.icu/api/v1",
 ) -> list[dict]:
-    """Ruft Aktivitäten von der Intervals.icu API ab."""
+    """Fetches activities from the Intervals.icu REST API."""
     if not newest:
         newest = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
 
@@ -96,70 +94,66 @@ def fetch_intervals_activities(
     except urllib.error.HTTPError as e:
         error_msg = e.read().decode("utf-8", errors="replace")
         if e.code == 401 or e.code == 403:
-            sys.exit(f"Fehler {e.code}: Authentifizierung bei Intervals.icu fehlgeschlagen. Bitte INTERVALS_API_KEY prüfen.")
-        sys.exit(f"HTTP-Fehler {e.code} beim Abruf der Aktivitäten: {error_msg}")
+            sys.exit(f"Error {e.code}: Authentication with Intervals.icu failed. Please verify INTERVALS_API_KEY.")
+        sys.exit(f"HTTP Error {e.code} while fetching activities: {error_msg}")
     except urllib.error.URLError as e:
-        sys.exit(f"Netzwerkfehler beim Verbinden mit Intervals.icu: {e.reason}")
+        sys.exit(f"Network error while connecting to Intervals.icu: {e.reason}")
 
 
 def main() -> None:
-    # 1. Projektpfad & .env prüfen
     project_root = Path(__file__).resolve().parent.parent.parent
     dotenv_path = os.getenv("DOTENV_PATH")
     load_env_file(Path(dotenv_path) if dotenv_path else project_root / ".env")
 
-    # 2. Argumente parsen
     parser = argparse.ArgumentParser(
-        description="Lädt Aktivitäten von Intervals.icu herunter und speichert sie lokal."
+        description="Download activities from Intervals.icu and persist locally as JSON."
     )
     parser.add_argument(
         "--oldest",
         default="2000-01-01",
-        help="Startdatum im Format YYYY-MM-DD (Standard: 2000-01-01 für alle Aktivitäten)",
+        help="Start date in YYYY-MM-DD format (default: 2000-01-01 for all activities)",
     )
     parser.add_argument(
         "--newest",
         default=None,
-        help="Enddatum im Format YYYY-MM-DD (Standard: morgen)",
+        help="End date in YYYY-MM-DD format (default: tomorrow)",
     )
     parser.add_argument(
         "--output",
         default=str(project_root / "data" / "intervals_activities.json"),
-        help="Zieldatei für den JSON-Export (Standard: data/intervals_activities.json)",
+        help="Destination path for JSON export (default: data/intervals_activities.json)",
     )
     parser.add_argument(
         "--save-individual",
         action="store_true",
-        help="Speichert jede Aktivität zusätzlich als separate JSON-Datei unter data/activities/",
+        help="Save each activity as individual JSON file in data/activities/",
     )
     parser.add_argument(
         "--athlete-id",
         default=os.getenv("INTERVALS_ATHLETE_ID", "0"),
-        help="Athlete-ID auf Intervals.icu (Standard: '0' für den angemeldeten Benutzer)",
+        help="Athlete ID on Intervals.icu (default: '0' for authenticated user)",
     )
     parser.add_argument(
         "--type-filter",
         default=None,
-        help="Filtert nach Aktivitätstyp (z. B. 'Run')",
+        help="Filter by activity type (e.g. 'Run')",
     )
-
     parser.add_argument(
         "--api-base",
         default=os.getenv("INTERVALS_API_BASE", "https://intervals.icu/api/v1"),
-        help="Base-URL der Intervals.icu API (Standard: https://intervals.icu/api/v1)",
+        help="Base URL of Intervals.icu API (default: https://intervals.icu/api/v1)",
     )
 
     args = parser.parse_args()
 
-    # 3. API-Key validieren
     api_key = os.getenv("INTERVALS_API_KEY")
     if not api_key:
         sys.exit(
-            "Fehler: INTERVALS_API_KEY ist weder in der Umgebung noch in .env gesetzt.\n"
-            "Bitte via Shell exportieren oder in .env eintragen."
+            "Error: INTERVALS_API_KEY is not set in environment or .env file.\n"
+            "Please export it in your shell or add it to .env."
         )
 
-    print(f"Verbinde mit Intervals.icu (Athlete ID: {args.athlete_id})...")
+    print(f"Connecting to Intervals.icu (Athlete ID: {args.athlete_id})...")
     activities = fetch_intervals_activities(
         api_key=api_key,
         athlete_id=args.athlete_id,
@@ -177,7 +171,7 @@ def main() -> None:
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(activities, f, indent=2, ensure_ascii=False)
 
-    print(f"Erfolgreich {len(activities)} Aktivitäten geladen und gespeichert in:")
+    print(f"Successfully downloaded {len(activities)} activities and saved to:")
     print(f"-> {output_path}")
 
     if args.save_individual:
@@ -187,16 +181,14 @@ def main() -> None:
             act_id = act.get("id", "unknown")
             with open(single_dir / f"{act_id}.json", "w", encoding="utf-8") as f:
                 json.dump(act, f, indent=2, ensure_ascii=False)
-        print(f"-> Einzeldateien abgelegt in: {single_dir}")
+        print(f"-> Individual activity files saved in: {single_dir}")
 
-    # 4. Übersicht der letzten Aktivitäten ausgeben
-    print("\nÜbersicht der letzten 10 Aktivitäten:")
-    header = f"{'Datum':<12} | {'Typ':<6} | {'Distanz':>8} | {'Dauer':>8} | {'Pace':>9} | {'Ø Puls':>6} | {'Max Puls':>8} | {'Titel'}"
+    print("\nSummary of recent 10 activities:")
+    header = f"{'Date':<12} | {'Type':<6} | {'Distance':>8} | {'Duration':>8} | {'Pace':>9} | {'Avg HR':>6} | {'Max HR':>8} | {'Title'}"
     print("-" * len(header))
     print(header)
     print("-" * len(header))
 
-    # Neueste zuerst
     sorted_acts = sorted(activities, key=lambda x: str(x.get("start_date_local", "")), reverse=True)
 
     total_run_dist_m = 0.0
@@ -231,7 +223,7 @@ def main() -> None:
         total_km = total_run_dist_m / 1000.0
         avg_run_speed = total_run_dist_m / total_run_time_s if total_run_time_s > 0 else 0
         overall_pace = format_pace(avg_run_speed)
-        print(f"Gesamt Läufe (Run): {run_count} | Gesamtstrecke: {total_km:.1f} km | Gesamtzeit: {format_duration(total_run_time_s)} | Ø Pace: {overall_pace}")
+        print(f"Total Runs: {run_count} | Total Distance: {total_km:.1f} km | Total Duration: {format_duration(total_run_time_s)} | Avg Pace: {overall_pace}")
 
 
 if __name__ == "__main__":

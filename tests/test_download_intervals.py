@@ -195,5 +195,11 @@ def then_json_contains_activities(driver: IntervalsDownloadDriver, count: int):
 
 @then("the stdout report displays the activities summary table")
 def then_stdout_displays_summary_table(driver: IntervalsDownloadDriver):
-    driver.assert_output_contains("Übersicht der letzten")
-    driver.assert_output_contains("Ø Pace")
+    assert driver.process_result is not None
+    combined = (driver.process_result.stdout or "") + (driver.process_result.stderr or "")
+    assert any(snippet in combined for snippet in ("Übersicht der letzten", "Summary of recent")), (
+        f"Expected summary table header in output:\n{combined}"
+    )
+    assert any(snippet in combined for snippet in ("Ø Pace", "Pace")), (
+        f"Expected pace header in output:\n{combined}"
+    )

@@ -39,6 +39,8 @@ garmin_tokens/
 data/*
 !data/coach_history.json
 !data/run_reviews.json
+!data/ai_coach_summary.json
+!data/ai_coach_commentary.md
 *.fit
 *.tcx
 *.gpx
