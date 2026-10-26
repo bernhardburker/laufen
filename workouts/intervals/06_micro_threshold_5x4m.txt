@@ -1,0 +1,13 @@
+# 5x 4m Norwegian Micro-Threshold (Zone 4)
+# Alternative bei starkem Puls-Drift: Kürzere Belastungsblöcke mit kurzen Pausen.
+# Ergibt 20 min Netto-Schwellenzeit bei deutlich stabilerer Herzfrequenz und geringerer Übersäuerung.
+
+Warmup
+- 10m Z1-Z2 HR "Locker einlaufen, Puls behutsam anheben"
+
+5x
+- 4m 05:45/km Pace "Ziel-Pace halten, sauber und ökonomisch laufen"
+- 90s Recovery "Locker traben oder zügig gehen"
+
+Cooldown
+- 10m Z1 HR "Entspannt austrudeln und Puls senken"

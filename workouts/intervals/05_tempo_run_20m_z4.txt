@@ -1,0 +1,13 @@
+# 20 min Kontinuierlicher Schwellenlauf (Zone 4)
+# Pacing-Regel: Nach dem Einlaufen direkt die Ziel-Pace anlaufen (ca. 05:45-06:00/km).
+# Nicht versuchen, den Puls in den ersten 2 Minuten hochzuprügeln – er steigt von selbst in Zone 4 (169–174 bpm).
+# Bei Erreichen von 175 bpm Tempo leicht drosseln, um nicht unkontrolliert in Zone 5 zu kippen.
+
+Warmup
+- 12m Z1-Z2 HR "Locker einlaufen, Puls behutsam anheben"
+
+Main Set
+- 20m 05:50/km Pace "20m kontinuierlich an der Schwelle, gleichmäßiger Rhythmus"
+
+Cooldown
+- 10m Z1 HR "Entspannt austrudeln, Puls senken und erholen"

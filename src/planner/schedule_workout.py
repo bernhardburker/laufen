@@ -25,6 +25,13 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+# Ensure project root is in sys.path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from src.planner.extract_markers import extract_planning_markers
+
 
 def load_env_file(filepath: Path) -> None:
     """Loads environment variables from a .env file if not already set."""
@@ -558,8 +565,13 @@ def choose_adaptive_workout(
     ref_date: datetime.date,
     days_since_last_run: int,
     templates_dir: Path,
+    target_date: datetime.date | None = None,
+    wellness_records: list[dict] | None = None,
+    activities_file: Path | None = None,
+    wellness_file: Path | None = None,
+    project_root: Path | None = None,
 ) -> tuple[str, str]:
-    """Returns (workout_name, workout_description) adapted to current recovery state."""
+    """Returns (workout_name, workout_description) adapted to current recovery state and guardrails."""
     # 1. Long inactivity break -> gentle re-entry
     if days_since_last_run >= 10:
         name = "Easy Run - Sanfter Wiedereinstieg (30m)"
@@ -569,37 +581,67 @@ def choose_adaptive_workout(
         )
         return name, desc
 
-    # 2. Inspect recent runs to determine balance between Quality and Base
-    runs = [a for a in activities if a.get("type") == "Run"]
-    sorted_runs = sorted(
-        runs,
-        key=lambda r: str(r.get("start_date_local") or r.get("date") or ""),
-        reverse=True,
+    # 2. Extract objective planning markers & guardrails
+    planned_target = target_date or ref_date
+    markers = extract_planning_markers(
+        activities_file=activities_file,
+        wellness_file=wellness_file,
+        activities_data=activities,
+        wellness_data=wellness_records,
+        profile_data=athlete_profile,
+        ref_date=ref_date,
+        target_date=planned_target,
+        project_root=project_root,
     )
-    last_run = sorted_runs[0] if sorted_runs else None
+    guardrails = markers.get("guardrails", {})
+    periodization = markers.get("periodization", {})
 
-    # Check if last run was quality
-    last_was_quality = False
-    if last_run:
-        r_type = str(last_run.get("workout_type") or "").lower()
-        r_name = str(last_run.get("name") or "").lower()
-        if any(k in r_name or k in r_type for k in ("interval", "tempo", "schwelle", "threshold", "speed")):
-            last_was_quality = True
-        else:
-            z_times = last_run.get("icu_hr_zone_times") or []
-            if len(z_times) >= 5 and (sum(z_times[4:]) > 180 or (len(z_times) > 3 and z_times[3] > 480)):
-                last_was_quality = True
+    # 3. Check guardrails: fatigue, volume spike or quality spacing
+    is_fatigued = guardrails.get("fatigue_warning", False)
+    volume_spike = guardrails.get("volume_spike_alert", False)
+    quality_discouraged = guardrails.get("quality_discouraged", False)
 
-    if last_was_quality:
-        # After quality session, schedule Base Anchor (Slot 3)
+    if volume_spike or (is_fatigued and quality_discouraged):
+        # High volume yesterday or severe fatigue -> short recovery/easy run
+        name = "Easy Run - Aktive Erholung & Basis (35m Z2)"
+        desc = render_template(
+            templates_dir / "easy_run.txt",
+            {"warmup": "10m", "main": "20m", "cooldown": "5m", "target": "Z2 HR"},
+        )
+        return name, desc
+
+    if quality_discouraged or is_fatigued:
+        # Quality discouraged or fatigue warning -> solid base run without high heart rate
         name = "Aerober Anker & Grundlagenlauf (45m Z2)"
         desc = render_template(
             templates_dir / "easy_run.txt",
             {"warmup": "10m", "main": "30m", "cooldown": "5m", "target": "Z2 HR"},
         )
         return name, desc
-    else:
-        # After base session, schedule Quality / Threshold (Slot 1 or 2)
+
+    # 4. Periodization-aligned quality or base stimulus
+    slot_id = periodization.get("slot_id", 2)
+    slot_allows_threshold = guardrails.get("slot_allows_threshold", False)
+
+    if slot_id == 1:
+        # Slot 1: Neuromuscular Cadence / Speed intervals
+        name = "Intervall- & Kadenztraining (5x 1m Speed)"
+        desc = render_template(
+            templates_dir / "intervals.txt",
+            {
+                "warmup": "10m",
+                "reps": 5,
+                "work": "1m",
+                "work_target": "05:15/km Pace",
+                "recovery": "2m",
+                "recovery_target": "Z1 HR",
+                "cooldown": "10m",
+            },
+        )
+        return name, desc
+
+    if slot_id == 2 and slot_allows_threshold:
+        # Slot 2: Controlled Sub-Threshold session
         name = "Kontrollierter Schwellenlauf (3x 8m Z4)"
         desc = render_template(
             templates_dir / "threshold_intervals.txt",
@@ -614,6 +656,14 @@ def choose_adaptive_workout(
             },
         )
         return name, desc
+
+    # Default / Slot 3: Base Anchor
+    name = "Aerober Anker & Grundlagenlauf (45m Z2)"
+    desc = render_template(
+        templates_dir / "easy_run.txt",
+        {"warmup": "10m", "main": "30m", "cooldown": "5m", "target": "Z2 HR"},
+    )
+    return name, desc
 
 
 def sync_adaptive_plan(
@@ -770,7 +820,14 @@ def sync_adaptive_plan(
     # Step 4: Generate adaptive workout payload
     templates_dir = root / "workouts" / "templates"
     name, description = choose_adaptive_workout(
-        act_list, profile, target_date, days_since_last_run, templates_dir
+        activities=act_list,
+        athlete_profile=profile,
+        ref_date=today,
+        days_since_last_run=days_since_last_run,
+        templates_dir=templates_dir,
+        target_date=target_date,
+        activities_file=activities_file,
+        project_root=root,
     )
 
     payload = {
@@ -922,8 +979,64 @@ def main() -> None:
         action="store_true",
         help="Disable automatic deletion of uncompleted past workouts",
     )
+    parser.add_argument(
+        "--markers",
+        action="store_true",
+        help="Print objective telemetry markers and guardrails for adaptive cognitive planning",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output raw JSON (used with --markers)",
+    )
 
     args, _ = parser.parse_known_args()
+
+    if args.markers:
+        parsed_ref = datetime.date.fromisoformat(args.ref_date) if args.ref_date else None
+        markers = extract_planning_markers(
+            ref_date=parsed_ref,
+            project_root=project_root,
+            activities_file=Path(args.activities_file) if args.activities_file else None,
+        )
+        if args.json:
+            print(json.dumps(markers, indent=2, ensure_ascii=False))
+        else:
+            print("=" * 65)
+            print("  Marker- & Telemetrie-Extraktor für Trainingsplanung")
+            print("=" * 65)
+            print(f"Stichtag (Heute) : {markers['reference_date']}")
+            print(f"Planungsziel     : {markers['target_date']} ({markers['periodization']['target_day_name'].capitalize()})")
+            print(f"Zugeordneter Slot: {markers['periodization']['slot_name']} (ID {markers['periodization']['slot_id']})")
+            print(f"Slot-Fokus       : {markers['periodization']['slot_purpose']}")
+            print("-" * 65)
+            r = markers["readiness"]
+            print("Erholungs- & Readiness-Werte:")
+            print(f"  TSB (Form)     : {r['tsb']} | ATL: {r['atl']} | CTL: {r['ctl']}")
+            print(f"  Schlaf         : {r['sleep_hours_last_night']}h (Score: {r['sleep_score_last_night']})")
+            print(f"  Ruhepuls / HRV : {r['resting_hr_today']} bpm (Schnitt: {r['resting_hr_baseline']}) | HRV: {r['hrv_today']} ms")
+            print("-" * 65)
+            h = markers["history"]
+            print("Trainingshistorie:")
+            print(f"  Tage seit letztem Lauf   : {h['days_since_last_run']} Tag(e)")
+            print(f"  Tage seit letzter Qualität: {h['days_since_last_quality']} Tag(e)")
+            if h["last_quality_run"]:
+                lq = h["last_quality_run"]
+                print(f"  Letzter Qualitätslauf    : {lq['date']} | {lq['name']} ({lq['type']}, Load {lq['load']})")
+            print("-" * 65)
+            g = markers["guardrails"]
+            print("Guardrails & Leitplanken:")
+            print(f"  Qualität abgeraten (quality_discouraged): {g['quality_discouraged']}")
+            print(f"  Ermüdungswarnung (fatigue_warning)     : {g['fatigue_warning']}")
+            print(f"  Ruhetag empfohlen (rest_day_rec)       : {g['rest_day_recommended']}")
+            print(f"  Volumen-Spike (volume_spike_alert)     : {g['volume_spike_alert']}")
+            print(f"  Schwelle erlaubt (slot_allows_threshold): {g['slot_allows_threshold']}")
+            if g["active_warnings"]:
+                print("  Warnhinweise:")
+                for w in g["active_warnings"]:
+                    print(f"    ⚠️  {w}")
+            print("=" * 65)
+        return
 
     if args.adaptive_plan:
         api_key = os.getenv("INTERVALS_API_KEY", "")

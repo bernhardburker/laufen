@@ -1,0 +1,14 @@
+# 3x 8m Schwellenintervalle (Zone 4)
+# Pacing-Regel: Nicht auf den Puls warten! Von Sekunde 1 an Ziel-Pace anlaufen (ca. 05:45-06:00/km).
+# Der Puls zieht nach 2–3 Minuten von selbst in Zone 4 (169–174 bpm) nach.
+# In den Pausen aktiv durchatmen: 2:30 min locker traben oder zügig gehen, um Laktat abzubauen.
+
+Warmup
+- 10m Z1-Z2 HR "Locker einlaufen, Puls behutsam anheben"
+
+3x
+- 8m 05:50/km Pace "Ziel-Pace konstant halten, Puls nachziehen lassen"
+- 2m30s Recovery "Locker traben oder zügig gehen"
+
+Cooldown
+- 10m Z1 HR "Ganz entspannt austrudeln und Puls senken"
