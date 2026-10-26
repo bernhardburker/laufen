@@ -313,7 +313,16 @@ Analysiere ehrlich und nüchtern den Abgleich zwischen der letzten Vorgabe und d
 3. Physiologischer Effekt: Was lässt sich aus den Daten über die aerobe Entwicklung, Pace/Puls-Verhältnis und Ermüdung (TSB) ablesen?
 """
 
-    ref_d = datetime.now(timezone.utc).date()
+    ref_d = datetime.now().date()
+    day_name_de = {
+        "Monday": "Montag",
+        "Tuesday": "Dienstag",
+        "Wednesday": "Mittwoch",
+        "Thursday": "Donnerstag",
+        "Friday": "Freitag",
+        "Saturday": "Samstag",
+        "Sunday": "Sonntag",
+    }.get(ref_d.strftime("%A"), ref_d.strftime("%A"))
     stimulus = calculate_stimulus_context(runs, ref_d, z2_max=z2_max)
     days_since_base = stimulus["days_since_last_base_run"]
     consec_quality = stimulus["consecutive_quality_runs"]
@@ -344,6 +353,7 @@ Analysiere die aktuellen Trainingsdaten des Athleten ({athlete_name}) und erstel
 - **Herzfrequenz-Steuerung bei Grundlageneinheiten**: Für Zone-2-Läufe NIEMALS eine feste Ziel-Pace vorgeben! Grundlagenläufe werden ausschließlich über die Herzfrequenz (< {z2_max} bpm) gesteuert. Die Pace ist ein reines Resultat und zweitrangig (Gehpausen an Anstiegen sind normal und erwünscht).
 
 ### Athleten-Profil & Reiz-Benchmark:
+- Aktuelles Datum (Heute): {ref_d.isoformat()} ({day_name_de})
 - Name: {full_name} ({athlete_name})
 - Einstufung / Level: {classification['category']} ({classification['description']})
 {mode_desc}

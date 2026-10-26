@@ -138,7 +138,7 @@ def initialize_cold_start_history(
     latest_date = (
         str(processed_runs[0].get("date", ""))[:10]
         if processed_runs
-        else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        else datetime.now().strftime("%Y-%m-%d")
     )
 
     total_z1_z2 = sum(r.get("z1_z2_seconds", 0) for r in processed_runs)
@@ -177,7 +177,7 @@ def update_history_with_coach_review(
 ) -> List[Dict[str, Any]]:
     """Updates the open history entry with compliance and effect, then appends the next cycle."""
     open_entry = get_open_recommendation(history)
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today_str = datetime.now().strftime("%Y-%m-%d")
 
     # If an open recommendation exists, close it with the evaluation
     if open_entry:

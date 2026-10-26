@@ -44,7 +44,7 @@ def calculate_days_since_last_run(
     if not runs:
         return 999
 
-    ref = reference_date or datetime.now(timezone.utc).date()
+    ref = reference_date or date.today()
     # Sort reverse chronological
     sorted_runs = sorted(
         runs,
@@ -665,7 +665,7 @@ def generate_daily_recommendation(
     """Evaluates the athlete's current state and produces today's targeted training advice."""
     profile = athlete_profile or {}
     history = coach_history or []
-    ref_date = reference_date or datetime.now(timezone.utc).date()
+    ref_date = reference_date or date.today()
     ref_date_str = ref_date.strftime("%d.%m.%Y")
 
     form = form_data or (calculate_fitness_form_trend(runs) if runs else {})
