@@ -32,6 +32,10 @@ class AthleteContext:
     ai_summary_path: Path
     ai_commentary_path: Path
     dashboard_output_dir: Path
+    telegram_chat_id: str = ""
+    briefing_time: str = "07:00"
+    briefing_enabled: bool = True
+    telegram_state_path: Optional[Path] = None
 
     def ensure_dirs(self) -> None:
         """Creates necessary athlete directory trees if they do not exist."""
@@ -102,6 +106,10 @@ def resolve_athlete_context(
         or "berni"
     ).strip()
 
+    telegram_chat_id = ""
+    briefing_time = "07:00"
+    briefing_enabled = True
+
     # If athlete is found in registry
     if target_slug in athletes_table:
         info = athletes_table[target_slug]
@@ -109,6 +117,9 @@ def resolve_athlete_context(
         display_name = str(info.get("display_name") or target_slug.capitalize())
         active = bool(info.get("active", True))
         dash_slug = str(info.get("dashboard_slug") or target_slug)
+        telegram_chat_id = str(info.get("telegram_chat_id") or "")
+        briefing_time = str(info.get("briefing_time") or "07:00")
+        briefing_enabled = bool(info.get("briefing_enabled", True))
         base_dir = root / "athletes" / target_slug
     else:
         # Check if athlete directory exists even if missing from registry
@@ -156,6 +167,10 @@ def resolve_athlete_context(
                 ai_summary_path=root / "data" / "ai_coach_summary.json",
                 ai_commentary_path=root / "data" / "ai_coach_commentary.md",
                 dashboard_output_dir=root / "dist",
+                telegram_chat_id="",
+                briefing_time="07:00",
+                briefing_enabled=True,
+                telegram_state_path=root / "data" / "telegram_state.json",
             )
         else:
             raise KeyError(f"Athlete '{target_slug}' not found in registry and fallback disabled.")
@@ -175,7 +190,53 @@ def resolve_athlete_context(
         ai_summary_path=base_dir / "ai_coach_summary.json",
         ai_commentary_path=base_dir / "ai_coach_commentary.md",
         dashboard_output_dir=root / "dist" / dash_slug,
+        telegram_chat_id=telegram_chat_id,
+        briefing_time=briefing_time,
+        briefing_enabled=briefing_enabled,
+        telegram_state_path=base_dir / "telegram_state.json",
     )
+
+
+def resolve_athlete_by_telegram_chat_id(
+    chat_id: str | int,
+    project_root: Optional[Path] = None,
+    registry_path: Optional[Path] = None,
+) -> Optional[AthleteContext]:
+    """Finds an active AthleteContext matching a given Telegram chat_id."""
+    target_id = str(chat_id).strip()
+    if not target_id:
+        return None
+    root = project_root or get_project_root()
+    registry = load_registry(registry_path, root)
+    athletes = registry.get("athletes", {})
+    for slug, info in athletes.items():
+        if not info.get("active", True):
+            continue
+        if str(info.get("telegram_chat_id") or "").strip() == target_id:
+            return resolve_athlete_context(slug, project_root=root, registry_path=registry_path)
+    return None
+
+
+def link_telegram_chat_id(
+    athlete_slug: str,
+    chat_id: str | int,
+    briefing_time: Optional[str] = None,
+    project_root: Optional[Path] = None,
+    registry_path: Optional[Path] = None,
+) -> AthleteContext:
+    """Links a Telegram chat_id (and optional briefing_time) to an athlete in registry.json."""
+    root = project_root or get_project_root()
+    registry = load_registry(registry_path, root)
+    athletes = registry.setdefault("athletes", {})
+    clean_slug = athlete_slug.strip().lower()
+    if clean_slug not in athletes:
+        raise KeyError(f"Athlete '{clean_slug}' is not registered in athletes/registry.json.")
+    athletes[clean_slug]["telegram_chat_id"] = str(chat_id).strip()
+    if briefing_time:
+        athletes[clean_slug]["briefing_time"] = briefing_time.strip()
+    athletes[clean_slug].setdefault("briefing_enabled", True)
+    save_registry(registry, registry_path=registry_path, project_root=root)
+    return resolve_athlete_context(clean_slug, project_root=root, registry_path=registry_path)
 
 
 def list_registered_athletes(
@@ -213,6 +274,10 @@ def print_shell_env(ctx: AthleteContext, is_default: bool = False) -> None:
     print(f'export AI_SUMMARY_PATH="{ctx.ai_summary_path}"')
     print(f'export AI_COMMENTARY_PATH="{ctx.ai_commentary_path}"')
     print(f'export DASHBOARD_OUTPUT_DIR="{ctx.dashboard_output_dir}"')
+    print(f'export TELEGRAM_CHAT_ID="{ctx.telegram_chat_id}"')
+    print(f'export BRIEFING_TIME="{ctx.briefing_time}"')
+    print(f'export BRIEFING_ENABLED="{"true" if ctx.briefing_enabled else "false"}"')
+    print(f'export TELEGRAM_STATE_PATH="{ctx.telegram_state_path or (ctx.base_dir / "telegram_state.json")}"')
 
 
 def main() -> None:

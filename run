@@ -59,6 +59,8 @@ Commands:
   dashboard         Generate HTML dashboard (dist/<dashboard_slug>/index.html)
   preview [PORT]    Build dashboard and launch local webserver (default: 8080)
   plan [ARGS...]    Create or schedule structured workouts to Intervals.icu
+  briefing [ARGS...] Sync & send daily Telegram workout briefing to athlete
+  bot [ARGS...]     Launch bidirectional Telegram Coach Bot daemon (long-polling)
   dispatch [ARGS...] Trigger GitHub Actions dashboard build workflow via dispatch
   test [ARGS...]    Run the automated BDD test suite
   init [ARGS...]    Inspect system and update environment paths (.paths.env)
@@ -136,6 +138,13 @@ case "$COMMAND" in
     ;;
   add-athlete|onboard)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/onboard_athlete.py" "${REMAINING_ARGS[@]}"
+  ;;
+  bot|telegram-bot)
+    if [[ -n "$TARGET_ATHLETE" ]]; then
+      exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/telegram_bot.py" --athlete "$TARGET_ATHLETE" "${REMAINING_ARGS[@]}"
+    else
+      exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/telegram_bot.py" "${REMAINING_ARGS[@]}"
+    fi
     ;;
 esac
 
@@ -241,6 +250,9 @@ case "$COMMAND" in
     ;;
   plan)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/planner/schedule_workout.py" --athlete-id "$INTERVALS_ATHLETE_ID" --activities-file "$ACTIVITIES_PATH" "${REMAINING_ARGS[@]}"
+    ;;
+  briefing)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/telegram_bot.py" --briefing --athlete "$ATHLETE_SLUG" "${REMAINING_ARGS[@]}"
     ;;
   *)
     echo "Error: Unknown command '$COMMAND'" >&2

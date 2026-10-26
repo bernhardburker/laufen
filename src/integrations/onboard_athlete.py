@@ -191,17 +191,18 @@ def print_athletes_summary(project_root: Optional[Path] = None) -> None:
         print("=" * 78 + "\n")
         return
 
-    header = f"{'Slug':<12} | {'Name':<16} | {'Intervals ID':<13} | {'Status':<8} | {'Default':<7} | {'Dashboard Slug'}"
+    header = f"{'Slug':<12} | {'Name':<14} | {'Intervals ID':<12} | {'Telegram ID':<12} | {'Time':<5} | {'Status':<8} | {'Dashboard Slug'}"
     print(header)
-    print("-" * 78)
+    print("-" * 92)
     for slug, info in athletes.items():
-        is_default = "Yes" if slug == default_slug else "No"
         status = "Active" if info.get("active", True) else "Inactive"
-        name = str(info.get("display_name") or slug)[:16]
-        iid = str(info.get("intervals_id") or "-")[:13]
+        name = str(info.get("display_name") or slug)[:14]
+        iid = str(info.get("intervals_id") or "-")[:12]
+        tg_id = str(info.get("telegram_chat_id") or "-")[:12]
+        b_time = str(info.get("briefing_time") or "07:00")[:5]
         d_slug = str(info.get("dashboard_slug") or slug)
-        print(f"{slug:<12} | {name:<16} | {iid:<13} | {status:<8} | {is_default:<7} | {d_slug}")
-    print("=" * 78 + "\n")
+        print(f"{slug:<12} | {name:<14} | {iid:<12} | {tg_id:<12} | {b_time:<5} | {status:<8} | {d_slug}")
+    print("=" * 92 + "\n")
 
 
 def main() -> None:
