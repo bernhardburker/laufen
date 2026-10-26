@@ -28,13 +28,6 @@ jobs:
       - name: 📥 Repository auschecken
         uses: actions/checkout@v4
 
-      - name: 🔑 Bestehende .env aus ~/laufen übernehmen
-        run: |
-          if [ -f "$HOME/laufen/.env" ]; then
-            echo "Kopiere bestehende .env aus $HOME/laufen..."
-            cp "$HOME/laufen/.env" .env
-          fi
-
       - name: 🔧 Umgebung initialisieren
         run: |
           chmod +x ./init.sh ./run
@@ -56,19 +49,14 @@ jobs:
       - name: 📥 Repository auschecken
         uses: actions/checkout@v4
 
-      - name: 🔑 Bestehende .env aus ~/laufen übernehmen
-        run: |
-          if [ -f "$HOME/laufen/.env" ]; then
-            echo "Kopiere bestehende .env aus $HOME/laufen..."
-            cp "$HOME/laufen/.env" .env
-          fi
-
       - name: 🔧 Umgebung initialisieren
         run: |
           chmod +x ./init.sh ./run
           ./init.sh
 
       - name: 🎯 Live E2E Tests gegen berni-test ausführen
+        env:
+          INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
         run: |
           ./run test:e2e
 
@@ -90,17 +78,6 @@ jobs:
           set -euo pipefail
           TARGET_DIR="$HOME/dockerContainer/laufen"
           mkdir -p "$TARGET_DIR"
-
-          # Bestehende .env aus ~/laufen übernehmen falls im Ziel noch nicht vorhanden
-          if [ ! -f "$TARGET_DIR/.env" ] && [ -f "$HOME/laufen/.env" ]; then
-            echo "📋 Übernehme bestehende .env aus ~/laufen..."
-            cp "$HOME/laufen/.env" "$TARGET_DIR/.env"
-          fi
-          # Bestehende Athleten-Daten aus ~/laufen initial übernehmen
-          if [ ! -d "$TARGET_DIR/athletes" ] && [ -d "$HOME/laufen/athletes" ]; then
-            echo "📋 Übernehme bestehende athletes Daten aus ~/laufen..."
-            cp -r "$HOME/laufen/athletes" "$TARGET_DIR/athletes"
-          fi
 
           echo "📂 Synchronisiere App-Code nach $TARGET_DIR (athletes/ & .env geschützt)..."
           rsync -av --delete \

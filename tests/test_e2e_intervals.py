@@ -46,12 +46,18 @@ def context() -> E2ETestContext:
 def check_api_key(context: E2ETestContext) -> None:
     api_key = os.getenv("INTERVALS_API_KEY")
     if not api_key:
-        env_file = PROJECT_ROOT / ".env"
-        if env_file.is_file():
-            from src.integrations.upload_activities import load_env_file
+        candidates = [
+            PROJECT_ROOT / ".env",
+            Path.home() / "dockerContainer" / "laufen" / ".env",
+        ]
+        for candidate in candidates:
+            if candidate.is_file():
+                from src.integrations.upload_activities import load_env_file
 
-            load_env_file(env_file)
-            api_key = os.getenv("INTERVALS_API_KEY")
+                load_env_file(candidate)
+                api_key = os.getenv("INTERVALS_API_KEY")
+                if api_key:
+                    break
 
     if not api_key:
         pytest.skip("INTERVALS_API_KEY not configured in environment or .env; skipping live E2E test")
