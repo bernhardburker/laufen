@@ -6,6 +6,8 @@
 ## Testing Policy & Scope
 - **Scope**: Mandatory automated tests for all scripts, CLI tools, background automatisms, data pipelines, and platform integrations (Garmin, Intervals.icu, Strava).
 - **Existing Code**: Whenever existing automatisms or scripts are touched, modified, or refactored, corresponding tests must be added or updated.
+- **External API Isolation**: Standard automated tests (`./run test`) must never perform real HTTP requests to external APIs (Intervals.icu, Garmin, Strava). External dependencies must be mocked.
+- **Live E2E & Staging Sandbox**: Live interactions with external APIs for testing purposes are strictly restricted to designated test tenants (e.g. `berni-test`) to protect real training histories and preserve rate limits.
 - **Operational Exemption**:
   - **No tests required for operational tasks**: Running existing scripts, fetching or evaluating training data, generating reports, scheduling workouts, or adjusting local configuration files.
   - Tests are strictly tied to **code creation and code modifications**.

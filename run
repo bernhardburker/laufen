@@ -62,7 +62,9 @@ Commands:
   briefing [ARGS...] Sync & send daily Telegram workout briefing to athlete
   bot [ARGS...]     Launch bidirectional Telegram Coach Bot daemon (long-polling)
   dispatch [ARGS...] Trigger GitHub Actions dashboard build workflow via dispatch
-  test [ARGS...]    Run the automated BDD test suite
+  test [ARGS...]    Run the automated BDD test suite (100% mocked, offline)
+  test:e2e [ARGS...] Run live E2E integration tests against Intervals.icu (berni-test)
+  seed [ARGS...]    Seed synthetic wellness & activities for staging athlete (berni-test)
   init [ARGS...]    Inspect system and update environment paths (.paths.env)
   help              Show this help menu
 
@@ -122,6 +124,16 @@ case "$COMMAND" in
     ;;
   test)
     exec "$PYTEST_EXEC" "$WORKSPACE_ROOT/tests" "${REMAINING_ARGS[@]}"
+    ;;
+  test:e2e|test-e2e)
+    exec "$PYTEST_EXEC" -m e2e "$WORKSPACE_ROOT/tests" "${REMAINING_ARGS[@]}"
+    ;;
+  seed)
+    if [[ -n "$TARGET_ATHLETE" ]]; then
+      exec "$PYTHON_EXEC" -m src.integrations.seed_athlete --athlete "$TARGET_ATHLETE" "${REMAINING_ARGS[@]}"
+    else
+      exec "$PYTHON_EXEC" -m src.integrations.seed_athlete "${REMAINING_ARGS[@]}"
+    fi
     ;;
   init)
     exec "$WORKSPACE_ROOT/init.sh" "${REMAINING_ARGS[@]}"

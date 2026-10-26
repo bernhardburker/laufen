@@ -79,7 +79,12 @@ athletes/
 > **Backward Compatibility for Existing Tests & Scripts:**
 > If no `--athlete` flag is passed and legacy paths (`data/intervals_activities.json` or `config/athlete.json`) are provided, scripts continue to operate identically. When run without path flags, the `default_athlete` defined in `athletes/registry.json` is resolved automatically.
 
-### 2.2 Schema: `athletes/registry.json`
+### 2.2 Tenant Roles: Production vs. Staging Sandbox
+Tenants in the registry serve explicit operational purposes:
+- **Production Tenant (`berni` / `i697752`):** Real historical data, daily training calendar, production dashboard. Guarded by safety checks against synthetic seeding and automated test writes.
+- **Staging / Test Tenant (`berni-test` / `i771119`):** Dedicated live sandbox on Intervals.icu. Used for contract testing (`./run test:e2e`), API drift verification, and manual dry-runs of new planner templates. Can be populated and cleared anytime via `./run seed --athlete berni-test`.
+
+### 2.3 Schema: `athletes/registry.json`
 
 ```json
 {

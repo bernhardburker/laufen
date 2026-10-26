@@ -12,10 +12,48 @@ Tests and scenarios live directly in `tests/` without deep nesting:
 tests/
 ├── sync_workouts.feature       # Pure Gherkin scenarios (declarative business logic)
 ├── test_sync_workouts.py       # Step definitions + local Driver class
-├── drivers.py                  # Optional: Shared Driver classes across multiple tests
+├── drivers.py                  # Shared Driver classes (MockIntervalsServer, LiveIntervalsDriver)
 ├── conftest.py                 # Optional: Pytest fixtures & driver injection
 └── README.md                   # Architecture documentation & reference examples
 ```
+
+---
+
+## Testing Strategy: Mocking vs. Live E2E & Staging
+
+The repository follows a strict two-tier testing strategy to ensure fast, deterministic offline CI while enabling reliable live contract verification:
+
+```text
+┌────────────────────────────────────────────────────────┐
+│  Tier 2: Live E2E / Staging (berni-test / i771119)     │  <-- Selective / Explicit
+│  • Target: Intervals.icu Sandbox API                   │      (./run test:e2e)
+│  • Tagged with @e2e (deselected by default in CI)      │
+│  • Verifies API contract, workout CRUD & token health  │
+├────────────────────────────────────────────────────────┤
+│  Tier 1: BDD & Pipeline Tests (100% Mocked)            │  <-- Standard / CI / Daily
+│  • Target: Unified Mock HTTP Server (MockIntervals)    │      (./run test)
+│  • Deterministic, offline, 0 network, 0 token costs    │
+│  • Covers all business logic, slots, coach & dashboard │
+└────────────────────────────────────────────────────────┘
+```
+
+### 1. Mock-First Policy for Standard Tests (`./run test`)
+- All tests in `tests/*.feature` must mock external APIs (Intervals.icu, Strava, Garmin, LLM).
+- Standard runs use `MockIntervalsServer` from `tests/drivers.py` and `LLM_PROVIDER=mock`.
+- Tests must execute without internet access and must never require live API secrets.
+
+### 2. Live Staging Sandbox (`berni-test` / `i771119`)
+- Real external API interactions are strictly restricted to the registered staging tenant `berni-test` (`i771119`).
+- Production accounts (`berni`) are guarded against automated writes by safety checks.
+- Live E2E tests are executed via:
+  ```bash
+  ./run test:e2e
+  ```
+- Synthetic test data can be injected and purged from the staging tenant via:
+  ```bash
+  ./run seed --athlete berni-test [--scenario balanced|fatigued|fresh]
+  ./run seed --athlete berni-test --clean
+  ```
 
 ---
 
