@@ -26,6 +26,17 @@ Feature: Bidirectional Telegram Coach Bot and Daily Briefing
     And the athlete "berni" has an active briefing proposal on "2026-10-26"
     When the Telegram bot receives callback query "rest:2026-10-26" from chat id "987654321"
     Then the planned workout on "2026-10-26" is deleted from Intervals.icu
+    And a rest day note is created on Intervals.icu for "2026-10-26"
+    And the last Telegram message sent to "987654321" contains "Ruhetag"
+
+  Scenario: Rest day briefing presents dedicated rest day options and preserves tomorrow plan
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" last ran 1 days ago before "2026-10-26"
+    When the daily briefing is triggered for athlete "berni" on "2026-10-26"
+    Then the last Telegram message sent to "987654321" contains "Ruhetag"
+    And the last Telegram message sent to "987654321" includes rest day keyboard buttons
+    When the Telegram bot receives callback query "keep_rest:2026-10-26" from chat id "987654321"
+    Then a workout is scheduled on Intervals.icu for "2026-10-27"
     And the last Telegram message sent to "987654321" contains "Ruhetag"
 
   Scenario: Scheduled briefing check sends briefing only once when time is reached

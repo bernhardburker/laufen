@@ -807,13 +807,24 @@ def sync_adaptive_plan(
             remaining_events.append(ev)
 
     # Step 2: Determine rest day vs training day
-    # If athlete ran yesterday (or today), today is a rest day!
-    is_rest_day = (days_since_last_run <= 1)
+    # Check if a rest day note already exists in calendar for today
+    today_has_rest_note = any(
+        (str(ev.get("start_date_local") or "")[:10] == today_iso)
+        and (
+            (ev.get("category") == "NOTE" and "ruhetag" in str(ev.get("name") or "").lower())
+            or (ev.get("category") == "HOLIDAY")
+        )
+        for ev in remaining_events
+    )
+
+    # If athlete ran yesterday (or today) or calendar has an explicit rest day note -> rest day!
+    is_rest_day = (days_since_last_run <= 1) or today_has_rest_note
     results["is_rest_day"] = is_rest_day
 
     if is_rest_day:
         target_date = today + datetime.timedelta(days=1)
-        print(f"[STATUS] Letzter Lauf: {last_run_date} ({days_since_last_run} Tag(e) her).")
+        reason = "Ruhetag-Notiz im Kalender" if today_has_rest_note else f"Letzter Lauf vor {days_since_last_run} Tag(en)"
+        print(f"[STATUS] {reason}.")
         print(f"[STATUS] Heute ({today_iso}) ist Ruhetag. Nächstes Training wird für MORGEN ({target_date.isoformat()}) geplant.")
         # If today has an uncompleted planned workout, remove it as today is a rest day
         final_remaining = []
@@ -828,21 +839,6 @@ def sync_adaptive_plan(
                 final_remaining.append(ev)
         remaining_events = final_remaining
     else:
-        # Check if tomorrow already has a scheduled workout
-        tomorrow_iso = (today + datetime.timedelta(days=1)).isoformat()
-        existing_tomorrow = [
-            ev for ev in remaining_events
-            if str(ev.get("start_date_local") or "")[:10] == tomorrow_iso and ev.get("category") == "WORKOUT"
-        ]
-        if existing_tomorrow:
-            ev_name = existing_tomorrow[0].get("name", "Workout")
-            print(f"[STATUS] Für morgen ({tomorrow_iso}) ist bereits ein Training geplant: '{ev_name}'.")
-            print(f"[STATUS] Heute ({today_iso}) bleibt Ruhetag vor dem geplanten Training.")
-            results["skipped"].append(existing_tomorrow[0])
-            results["target_date"] = tomorrow_iso
-            print("=" * 60)
-            return results
-
         target_date = today
         print(f"[STATUS] Letzter Lauf: {last_run_date} ({days_since_last_run} Tag(e) her).")
         print(f"[STATUS] Heute ({today_iso}) ist Trainingstag!")
@@ -914,8 +910,9 @@ def override_workout_on_date(
     athlete_id: str = "0",
     api_base_url: str = "https://intervals.icu/api/v1",
     dry_run: bool = False,
+    is_rest_day: bool = False,
 ) -> dict:
-    """Deletes any uncompleted planned WORKOUT events on target_date_iso and optionally schedules new_payload."""
+    """Deletes any uncompleted planned WORKOUT events on target_date_iso and optionally schedules new_payload or rest note."""
     result: dict = {"deleted": [], "scheduled": None, "target_date": target_date_iso}
 
     if not dry_run and api_key:
@@ -934,7 +931,28 @@ def override_workout_on_date(
                     delete_workout_event(ev_id, api_key, athlete_id, api_base_url)
                     result["deleted"].append(ev)
 
-    if new_payload is not None:
+    if is_rest_day:
+        note_payload = {
+            "category": "NOTE",
+            "start_date_local": f"{target_date_iso}T07:00:00",
+            "name": "🛋️ Ruhetag (Coach)",
+            "description": "Geplanter Ruhetag zur aktiven Erholung und Regeneration.",
+        }
+        if dry_run:
+            fake_note = dict(note_payload)
+            fake_note.setdefault("id", "dry_run_note_id")
+            result["scheduled"] = fake_note
+        elif api_key:
+            res = send_workout_event(
+                payload=note_payload,
+                api_key=api_key,
+                athlete_id=athlete_id,
+                api_base_url=api_base_url,
+            )
+            note_copy = dict(note_payload)
+            note_copy["id"] = res.get("id", "neu_note")
+            result["scheduled"] = note_copy
+    elif new_payload is not None:
         if dry_run:
             fake_payload = dict(new_payload)
             fake_payload.setdefault("id", "dry_run_id")

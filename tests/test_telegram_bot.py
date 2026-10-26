@@ -380,14 +380,38 @@ def then_verify_workout_replaced(driver: TelegramBotDriver, date_str: str, snipp
 @then(parsers.parse('the planned workout on "{date_str}" is deleted from Intervals.icu'))
 def then_verify_workout_deleted(driver: TelegramBotDriver, date_str: str):
     assert "ev_initial" in MockCombinedAPIHandler.deleted_event_ids
-    matching = [
+    workouts = [
         e for e in MockCombinedAPIHandler.intervals_events
         if str(e.get("start_date_local") or "").startswith(date_str)
+        and e.get("category") == "WORKOUT"
     ]
-    assert len(matching) == 0
+    assert len(workouts) == 0
 
 
 @then(parsers.parse('exactly {count:d} Telegram message was sent to "{chat_id}"'))
 def then_verify_message_count(driver: TelegramBotDriver, count: int, chat_id: str):
     msgs = [m for m in MockCombinedAPIHandler.sent_telegram_messages if str(m.get("chat_id")) == chat_id]
     assert len(msgs) == count
+
+
+@then(parsers.parse('a rest day note is created on Intervals.icu for "{date_str}"'))
+def then_verify_rest_note_created(driver: TelegramBotDriver, date_str: str):
+    matching = [
+        e for e in MockCombinedAPIHandler.intervals_events
+        if str(e.get("start_date_local") or "").startswith(date_str)
+        and e.get("category") == "NOTE"
+        and "ruhetag" in str(e.get("name") or "").lower()
+    ]
+    assert len(matching) >= 1, f"Expected rest day note for {date_str}, found {MockCombinedAPIHandler.intervals_events}"
+
+
+@then(parsers.parse('the last Telegram message sent to "{chat_id}" includes rest day keyboard buttons'))
+def then_verify_rest_day_keyboard(driver: TelegramBotDriver, chat_id: str):
+    msgs = [m for m in MockCombinedAPIHandler.sent_telegram_messages if str(m.get("chat_id")) == chat_id]
+    assert len(msgs) > 0
+    markup = msgs[-1].get("reply_markup") or {}
+    assert "inline_keyboard" in markup
+    first_row = markup["inline_keyboard"][0]
+    callbacks = [btn.get("callback_data", "") for btn in first_row]
+    assert any("keep_rest" in cb for cb in callbacks), f"Expected keep_rest in callbacks: {callbacks}"
+

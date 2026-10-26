@@ -67,3 +67,21 @@ Feature: Schedule structured workouts to Intervals.icu
     When the workout schedule script is executed with adaptive planning arguments
     Then the process exits with code 0
     And one scheduled event has date for tomorrow
+
+  Scenario: Adaptive planner is idempotent across multiple executions on the same day
+    Given a mock Intervals.icu event server is running
+    And INTERVALS_API_KEY is configured
+    And no run occurred yesterday
+    When the workout schedule script is executed with adaptive planning arguments
+    And the workout schedule script is executed with adaptive planning arguments
+    Then the process exits with code 0
+    And exactly 1 workout event is scheduled for today
+
+  Scenario: Existing rest day note in calendar prevents scheduling a workout
+    Given a mock Intervals.icu event server is running
+    And INTERVALS_API_KEY is configured
+    And no run occurred yesterday
+    And a rest day note exists in calendar for today
+    When the workout schedule script is executed with adaptive planning arguments
+    Then the process exits with code 0
+    And no workout event is scheduled for today

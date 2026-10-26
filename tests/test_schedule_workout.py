@@ -372,3 +372,39 @@ def step_check_scheduled_tomorrow(driver: WorkoutScheduleDriver):
         if r.get("method") == "POST" and str(r.get("payload", {}).get("start_date_local", "")).startswith(tomorrow_iso)
     ]
     assert len(scheduled) > 0, f"Expected scheduled event for tomorrow ({tomorrow_iso}). Received: {MockIntervalsEventHandler.received_requests}"
+
+
+@given("a rest day note exists in calendar for today")
+def step_rest_day_note_today(driver: WorkoutScheduleDriver):
+    today_iso = driver.test_ref_date.isoformat()
+    MockIntervalsEventHandler.events_db.append({
+        "id": 112233,
+        "category": "NOTE",
+        "name": "🛋️ Ruhetag (Coach)",
+        "start_date_local": f"{today_iso}T07:00:00",
+    })
+
+
+@then("exactly 1 workout event is scheduled for today")
+def step_exactly_one_workout_today(driver: WorkoutScheduleDriver):
+    today_iso = driver.test_ref_date.isoformat()
+    scheduled = [
+        r["payload"] for r in MockIntervalsEventHandler.received_requests
+        if r.get("method") == "POST"
+        and r.get("payload", {}).get("category") == "WORKOUT"
+        and str(r.get("payload", {}).get("start_date_local", "")).startswith(today_iso)
+    ]
+    assert len(scheduled) == 1, f"Expected exactly 1 workout scheduled for today, found {len(scheduled)}"
+
+
+@then("no workout event is scheduled for today")
+def step_no_workout_today(driver: WorkoutScheduleDriver):
+    today_iso = driver.test_ref_date.isoformat()
+    scheduled = [
+        r["payload"] for r in MockIntervalsEventHandler.received_requests
+        if r.get("method") == "POST"
+        and r.get("payload", {}).get("category") == "WORKOUT"
+        and str(r.get("payload", {}).get("start_date_local", "")).startswith(today_iso)
+    ]
+    assert len(scheduled) == 0, f"Expected no workout scheduled for today, found {len(scheduled)}"
+
