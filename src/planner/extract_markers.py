@@ -73,8 +73,27 @@ def get_readiness_markers(
     rhr_baseline = round(sum(recent_rhr) / len(recent_rhr), 1) if recent_rhr else 48.0
 
     sleep_secs = latest_w.get("sleepSecs")
-    sleep_hours = round(float(sleep_secs) / 3600.0, 2) if sleep_secs is not None else 7.5
-    sleep_score = float(latest_w.get("sleepScore")) if latest_w.get("sleepScore") is not None else 80.0
+    latest_id = str(latest_w.get("id") or "")[:10]
+    is_today = (latest_id == ref_date.isoformat())
+    has_sleep = (sleep_secs is not None and float(sleep_secs) > 0)
+    sleep_is_today = bool(is_today and has_sleep)
+    sleep_date = latest_id if latest_id else None
+
+    if is_today and has_sleep:
+        sleep_hours = round(float(sleep_secs) / 3600.0, 2)
+        sleep_score = float(latest_w.get("sleepScore")) if latest_w.get("sleepScore") is not None else 80.0
+    elif is_today and not has_sleep:
+        # Today's record is present (e.g. resting HR synced), but sleep not yet synced.
+        prev_w = dated_records[1] if len(dated_records) > 1 else {}
+        prev_secs = prev_w.get("sleepSecs")
+        sleep_hours = round(float(prev_secs) / 3600.0, 2) if prev_secs is not None else 7.5
+        sleep_score = float(prev_w.get("sleepScore")) if prev_w.get("sleepScore") is not None else 80.0
+        sleep_date = str(prev_w.get("id") or "")[:10] or None
+    else:
+        # Latest record is from a previous day
+        sleep_hours = round(float(sleep_secs) / 3600.0, 2) if sleep_secs is not None else 7.5
+        sleep_score = float(latest_w.get("sleepScore")) if latest_w.get("sleepScore") is not None else 80.0
+
     resting_hr_today = int(latest_w.get("restingHR")) if latest_w.get("restingHR") is not None else int(rhr_baseline)
     hrv_today = round(float(latest_w["hrv"]), 1) if latest_w.get("hrv") is not None else 70.0
 
@@ -104,6 +123,8 @@ def get_readiness_markers(
         "ctl": round(ctl, 1),
         "sleep_hours_last_night": sleep_hours,
         "sleep_score_last_night": sleep_score,
+        "sleep_is_today": sleep_is_today,
+        "sleep_date": sleep_date,
         "resting_hr_today": resting_hr_today,
         "resting_hr_baseline": rhr_baseline,
         "hrv_today": hrv_today,

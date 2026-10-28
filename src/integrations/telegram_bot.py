@@ -143,29 +143,35 @@ def save_telegram_state(state_path: Path, state: Dict[str, Any]) -> None:
         f.write("\n")
 
 
-def build_briefing_keyboard(target_date_iso: str, is_rest_day: bool = False) -> Dict[str, Any]:
+def build_briefing_keyboard(
+    target_date_iso: str,
+    is_rest_day: bool = False,
+    sleep_is_today: bool = True,
+) -> Dict[str, Any]:
     """Builds the inline keyboard buttons attached to a daily workout briefing."""
+    rows: List[List[Dict[str, str]]] = []
+
     if is_rest_day:
-        return {
-            "inline_keyboard": [
-                [
-                    {"text": "✅ Ruhetag beibehalten", "callback_data": f"keep_rest:{target_date_iso}"},
-                    {"text": "🏃 Heute locker laufen (30m)", "callback_data": f"run_today:{target_date_iso}"},
-                ],
-            ]
-        }
-    return {
-        "inline_keyboard": [
-            [
-                {"text": "✅ Passt so", "callback_data": f"accept:{target_date_iso}"},
-                {"text": "📉 Lockerer (Z2)", "callback_data": f"easier:{target_date_iso}"},
-            ],
-            [
-                {"text": "⏱️ Nur 35 Min", "callback_data": f"shorter35:{target_date_iso}"},
-                {"text": "🛋️ Ruhetag", "callback_data": f"rest:{target_date_iso}"},
-            ],
-        ]
-    }
+        rows.append([
+            {"text": "✅ Ruhetag beibehalten", "callback_data": f"keep_rest:{target_date_iso}"},
+            {"text": "🏃 Heute locker laufen (30m)", "callback_data": f"run_today:{target_date_iso}"},
+        ])
+    else:
+        rows.append([
+            {"text": "✅ Passt so", "callback_data": f"accept:{target_date_iso}"},
+            {"text": "📉 Lockerer (Z2)", "callback_data": f"easier:{target_date_iso}"},
+        ])
+        rows.append([
+            {"text": "⏱️ Nur 35 Min", "callback_data": f"shorter35:{target_date_iso}"},
+            {"text": "🛋️ Ruhetag", "callback_data": f"rest:{target_date_iso}"},
+        ])
+
+    if not sleep_is_today:
+        rows.append([
+            {"text": "🔄 Schlaf aktualisieren", "callback_data": f"refresh_sleep:{target_date_iso}"}
+        ])
+
+    return {"inline_keyboard": rows}
 
 
 def format_daily_briefing_message(
@@ -178,6 +184,7 @@ def format_daily_briefing_message(
     readiness = markers.get("readiness", {})
     sleep_h = readiness.get("sleep_hours_last_night", 7.5)
     sleep_score = readiness.get("sleep_score_last_night", 80)
+    sleep_is_today = readiness.get("sleep_is_today", True)
     tsb = readiness.get("tsb", 0.0)
     rhr = readiness.get("resting_hr_today", 48)
 
@@ -192,11 +199,16 @@ def format_daily_briefing_message(
         else (skipped_list[0] if skipped_list else None)
     )
 
+    if sleep_is_today:
+        sleep_line = f"• Schlaf: {sleep_h:.1f}h (Score {sleep_score:.0f}) | Ruhepuls: {rhr} bpm"
+    else:
+        sleep_line = f"• Schlaf: Noch nicht synchronisiert (Uhr noch nicht in Garmin Connect aktualisiert) | Ruhepuls: {rhr} bpm"
+
     lines = [
         f"☀️ Guten Morgen {athlete_name}!",
         "",
         f"📊 Readiness ({ref_date_iso}):",
-        f"• Schlaf: {sleep_h:.1f}h (Score {sleep_score:.0f}) | Ruhepuls: {rhr} bpm",
+        sleep_line,
         f"• Form (TSB): {tsb:+.1f}",
         "",
     ]
@@ -335,7 +347,12 @@ def send_daily_briefing_for_athlete(
 
     # For rest days, buttons target TODAY (today_iso), not tomorrow!
     keyboard_target_date = today_iso if is_rest_day_today else target_date_str
-    keyboard = build_briefing_keyboard(keyboard_target_date, is_rest_day=is_rest_day_today)
+    sleep_is_today = bool(markers.get("readiness", {}).get("sleep_is_today", True))
+    keyboard = build_briefing_keyboard(
+        keyboard_target_date,
+        is_rest_day=is_rest_day_today,
+        sleep_is_today=sleep_is_today,
+    )
     send_res = bot_client.send_message(
         chat_id=ctx.telegram_chat_id,
         text=msg_text,
@@ -401,6 +418,53 @@ def handle_telegram_update(
         state = load_telegram_state(state_path)
         proposal = state.get("current_proposal") or {}
         target_date_iso = date_part or proposal.get("target_date") or today.isoformat()
+
+        if action_key == "refresh_sleep":
+            if intervals_api_key and not dry_run:
+                try:
+                    fresh_wellness = fetch_intervals_wellness(
+                        api_key=intervals_api_key,
+                        athlete_id=ctx.intervals_id,
+                        api_base_url=intervals_api_base,
+                        raise_on_error=True,
+                    )
+                    if fresh_wellness and isinstance(fresh_wellness, list):
+                        ctx.wellness_path.parent.mkdir(parents=True, exist_ok=True)
+                        ctx.wellness_path.write_text(json.dumps(fresh_wellness, indent=2, ensure_ascii=False), encoding="utf-8")
+                except Exception:
+                    pass
+
+            target_date_obj = today
+            try:
+                target_date_obj = datetime.date.fromisoformat(target_date_iso)
+            except Exception:
+                pass
+
+            markers = extract_planning_markers(
+                activities_file=ctx.activities_path,
+                wellness_file=ctx.wellness_path,
+                profile_file=ctx.athlete_config_path,
+                ref_date=today,
+                target_date=target_date_obj,
+                project_root=root,
+            )
+            readiness = markers.get("readiness", {})
+            sleep_is_today = readiness.get("sleep_is_today", False)
+            if sleep_is_today:
+                sleep_h = readiness.get("sleep_hours_last_night", 7.5)
+                sleep_score = readiness.get("sleep_score_last_night", 80)
+                rhr = readiness.get("resting_hr_today", 48)
+                reply = (
+                    f"✅ Schlafdaten für heute erfolgreich aktualisiert:\n"
+                    f"• Schlaf: {sleep_h:.1f}h (Score {sleep_score:.0f}) | Ruhepuls: {rhr} bpm"
+                )
+            else:
+                reply = (
+                    "ℹ️ Auf Intervals.icu liegen noch keine neuen Schlafdaten für heute vor.\n"
+                    "Bitte öffne kurz die Garmin Connect App auf deinem Smartphone und tippe danach erneut auf '🔄 Schlaf aktualisieren'."
+                )
+            bot_client.send_message(chat_id=chat_id, text=reply)
+            return {"status": "sleep_refreshed", "athlete": ctx.slug, "sleep_is_today": sleep_is_today}
 
         if action_key == "accept":
             w_name = proposal.get("name") or "Dein Training"
@@ -757,27 +821,30 @@ def run_bot_daemon(
     registry_path: Optional[Path] = None,
     dry_run: bool = False,
     max_loops: Optional[int] = None,
+    enable_scheduler: bool = False,
 ) -> None:
-    """Runs the long-polling Telegram bot daemon and checks scheduled briefing times every cycle."""
+    """Runs the long-polling Telegram bot daemon. Scheduled briefings can be enabled via enable_scheduler."""
     root = project_root or PROJECT_ROOT
     offset: Optional[int] = None
     loops = 0
 
+    mode_label = "Long-Polling + Scheduler" if enable_scheduler else "Long-Polling Listener"
     print("======================================================================")
-    print("  Laufen Telegram Coach Bot - Active Daemon (Long-Polling + Scheduler)")
+    print(f"  Laufen Telegram Coach Bot - Active Daemon ({mode_label})")
     print("======================================================================")
 
     while True:
         loops += 1
         try:
-            check_and_send_due_briefings(
-                bot_client=bot_client,
-                intervals_api_key=intervals_api_key,
-                intervals_api_base=intervals_api_base,
-                project_root=root,
-                registry_path=registry_path,
-                dry_run=dry_run,
-            )
+            if enable_scheduler:
+                check_and_send_due_briefings(
+                    bot_client=bot_client,
+                    intervals_api_key=intervals_api_key,
+                    intervals_api_base=intervals_api_base,
+                    project_root=root,
+                    registry_path=registry_path,
+                    dry_run=dry_run,
+                )
 
             updates = bot_client.get_updates(offset=offset, timeout=poll_timeout)
             for upd in updates:
@@ -855,6 +922,11 @@ def main() -> None:
         help="Intervals.icu API base URL",
     )
     parser.add_argument(
+        "--scheduler",
+        action="store_true",
+        help="Enable automatic scheduled briefing timer in daemon loop (default: disabled, briefings triggered externally)",
+    )
+    parser.add_argument(
         "--llm-provider",
         default=os.getenv("LLM_PROVIDER"),
         help="Optional LLM provider ('agy', 'gemini', 'mock', or 'none' for heuristic only)",
@@ -926,6 +998,7 @@ def main() -> None:
             project_root=PROJECT_ROOT,
             dry_run=args.dry_run,
             max_loops=1,
+            enable_scheduler=args.scheduler,
         )
         return
 
@@ -937,6 +1010,7 @@ def main() -> None:
         poll_timeout=15,
         project_root=PROJECT_ROOT,
         dry_run=args.dry_run,
+        enable_scheduler=args.scheduler,
     )
 
 

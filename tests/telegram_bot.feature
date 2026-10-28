@@ -45,3 +45,9 @@ Feature: Bidirectional Telegram Coach Bot and Daily Briefing
     When the scheduled briefing check runs at "2026-10-26T07:05:00"
     And the scheduled briefing check runs again at "2026-10-26T07:15:00"
     Then exactly 1 Telegram message was sent to "987654321"
+
+  Scenario: Athlete refreshes sleep data via inline button click when data becomes available
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has an active briefing proposal on "2026-10-26"
+    When the Telegram bot receives callback query "refresh_sleep:2026-10-26" from chat id "987654321"
+    Then the last Telegram message sent to "987654321" contains "Schlaf"
