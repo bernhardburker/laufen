@@ -1,7 +1,8 @@
-### Status Quo & Wochenanalyse
-Servus Berni. Letzte Woche (KW 43) standen knapp 21 Kilometer und drei Läufe auf der Uhr – das ist fast eine Verdopplung gegenüber den Vorwochen (11,5 bis 13 km). Mit dem Schwellenlauf am 23.10. und dem langen Kanten über 9,1 km am Sonntag hast du eine ordentliche Reizkombination gesetzt. Die Ermüdung (ATL 20.5) liegt über der Fitness (CTL 13.7), was einen TSB von -6.8 ergibt. Die Beine haben spürbar gearbeitet, auch wenn der Lauf am Sonntag mit 96,6 % in Zone 1/2 pulsseitig sauber abgedeckelt war.
+### Rückblick auf Slot 1
+Nach der umfangreichen Vorwoche mit rund 21 Kilometern war die Vorgabe für Montag/Dienstag klar: kein Temporeiz, sondern 37 Minuten rein lockeres Auslaufen bei Ø 151 bpm. Mit knapp 97 % in Zone 1 und 2 hast du die Belastung exakt wie besprochen gedrosselt. Die Beine hatten Zeit zu regenerieren, der TSB liegt mit -6,3 wieder in einem unkritischen Bereich.
 
-### Ausblick & Wochenaufgabe
-Nach dem Umfangssprung ist diese Woche Konsolidierung angesagt, damit der Reiz anschlägt und sich keine Überlastung an Sehnen und Waden einschleicht. 
+### Ausblick auf Slot 2 und 3
+Damit ist Slot 1 abgehakt. Für Slot 2 (Mittwoch bis Freitag) steht die Tür für den wöchentlichen Qualitätsreiz offen: Wenn sich die Beine frisch anfühlen, passt ein kontrollierter Schwellenlauf (z. B. 40–45 Minuten mit 15–20 Minuten im Bereich 168–174 bpm). Fühlen sich die Beine schwer an, läufst du stattdessen 45 Minuten rein in Zone 2 (< 158 bpm). Am Wochenende folgt dann Slot 3 als längerer Grundlagenlauf (ca. 50–60 Minuten, strikt aerob).
 
-**Deine Wochenaufgabe:** Nutze Slot 1 (heute oder Dienstag) rein regenerativ. Geh für maximal 40 bis 45 Minuten auf die Strecke, Deckel bei strikt 158 bpm. Die Pace spielt keine Rolle – wenn es am Berg bergauf geht, nimm Tempo raus oder geh kurz. Slot 2 bleibt Mitte der Woche flexibel, am Wochenende folgt wieder ein ruhiger Z2-Lauf.
+### Wochenaufgabe für nächste Woche
+Halte die Wochenfrequenz verlässlich bei 3 Läufen und maximiere den Z2-Anteil auf über 80 % der Gesamtlaufzeit. Steuere die lockeren Einheiten ausnahmslos über den Puls (< 158 bpm) und nimm an Steigungen konsequent Gehpausen in Kauf, wenn die Herzfrequenz ansteigt.

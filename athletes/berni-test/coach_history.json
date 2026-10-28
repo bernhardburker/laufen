@@ -1,0 +1,103 @@
+[
+  {
+    "id": "cycle-001",
+    "date": "2026-10-05",
+    "recommendation": "Grundlagenläufe strikt unter 158 bpm steuern (Zone 2). Pace ignorieren, bei Steigungen gehen.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
+    "status": "erfüllt",
+    "actual": "Die Vorgabe, strikt unter 158 bpm zu bleiben und das Tempo zu ignorieren, wurde beim 45-minütigen Easy Run am 05.10. hervorragend umgesetzt (5,92 km, Ø 150 bpm, 99,8 % Z1/Z2 bei 8:01 min/km).",
+    "effect": "Die deutliche Temporeduktion hielt die kardiovaskuläre Belastung im rein aeroben Fettstoffwechselbereich. Der Trainingsreiz war mit Load 45 optimal dosiert, um die aerobe Basis zu stärken, ohne die Ermüdung (ATL 25,5 / TSB -11,0) weiter unkontrolliert in die Höhe zu treiben.",
+    "evaluated_run_ids": [
+      "i193925536"
+    ]
+  },
+  {
+    "id": "cycle-002",
+    "date": "2026-10-08",
+    "recommendation": "Nächsten Grundlagenlauf über 45-50 Minuten ansetzen. Herzfrequenz weiterhin strikt unter 158 bpm deckeln und keine Tempoambitionen hegen.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
+    "status": "teilweise",
+    "actual": "Die Vorgabe (45-50 Min. Grundlagenlauf unter 158 bpm) wurde vom Umfang her mit 49 Min. (7.05 km) exakt erfüllt. Der Durchschnittspuls lag mit 155 bpm im Soll, allerdings führte ein aerober Drift zu 19m 11s in Zone 3 mit Spitzen bis 164 bpm.",
+    "effect": "Die aerobe Basis stabilisiert sich (W41 Z1/Z2 bei 80.3 %), jedoch zeigt der Herzfrequenzdrift bei anhaltender Belastung über 35 Minuten eine noch limitierte aerobe Ermüdungsresistenz. TSB von -3.6 signalisiert eine kontrollierte, unkritische Belastung.",
+    "evaluated_run_ids": [
+      "i194924144"
+    ]
+  },
+  {
+    "id": "cycle-003",
+    "date": "2026-10-08",
+    "recommendation": "Nächsten Grundlagenlauf über 45-50 Minuten ansetzen. Tempo aktiv reduzieren oder kurze Gehpausen nutzen, sobald die Herzfrequenz 155 bpm übersteigt, um den Z3-Drift vollständig zu vermeiden.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
+    "status": "erfüllt",
+    "actual": "Die Empfehlung vom 08.10. (45–50 min Grundlagenlauf mit Temporeduktion zur Vermeidung von Z3-Drift) wurde am 12.10. mit 49 Minuten, 6,45 km und 99,6 % Z1/Z2-Disziplin mustergültig umgesetzt.",
+    "effect": "Bei einer Pace von 7:42 min/km blieb der Durchschnittspuls bei stabilen 150 bpm (Maximalpuls 159 bpm). Gegenüber dem Lauf vom 08.10. (Pace 7:05 min/km bei 19 min Z3-Drift) zeigt die bewusste Drosselung eine wirksame Entlastung des Herz-Kreislauf-Systems bei unkritischer Ermüdung (TSB -2,6).",
+    "evaluated_run_ids": [
+      "i196510631"
+    ]
+  },
+  {
+    "id": "cycle-004",
+    "date": "2026-10-13",
+    "recommendation": "Weiteren Grundlagenlauf über 45–50 Minuten durchführen. Herzfrequenz konsequent unter 158 bpm halten, Pace vollständig ignorieren und bei Steigungen Gehpausen einlegen.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
+    "status": "erfüllt",
+    "actual": "Am 15. Oktober wurden 5,01 km in 37 Minuten absolviert. Der Durchschnittspuls lag bei 152 bpm mit 89,6 % Anteil in Zone 1/2 (8m 28s Z1, 25m 10s Z2, 3m 54s Z3).",
+    "effect": "Die aerobe Vorgabe wurde sauber umgesetzt. Trotz minimal kürzerer Dauer als die veranschlagten 45–50 Minuten blieb die Belastung rein regenerativ bis grundlagenorientiert (Load 37). Der TSB bleibt mit -2,2 neutral.",
+    "evaluated_run_ids": [
+      "i197459228"
+    ]
+  },
+  {
+    "id": "cycle-005",
+    "date": "2026-10-16",
+    "recommendation": "Wochenend-Grundlagenlauf (Slot 3) über 50–55 Minuten. Herzfrequenz strikt unter 158 bpm halten, Pace ignorieren und bei Steigungen Gehschritte einbauen.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
+    "status": "teilweise",
+    "actual": "Am 20.10. absolvierte Berni 4,68 km in 36 Minuten (Pace: 7:47 /km) mit Ø 152 bpm und Maximalpuls 158 bpm. 100,0 % der Zeit verblieben in Zone 1 und 2.",
+    "effect": "Die Pulsvorgabe wurde punktgenau eingehalten (Maximalpuls traf exakt die Z2-Grenze von 158 bpm). Durch die moderate Belastung (Load 36) blieb die Ermüdung minimal, der TSB liegt ausgeglichen bei +0,1.",
+    "evaluated_run_ids": [
+      "i199548212"
+    ]
+  },
+  {
+    "id": "cycle-006",
+    "date": "2026-10-21",
+    "recommendation": "Slot 2 (Mi–Fr) über 40–45 Minuten: Vorrangig als Z2-Dauerlauf (< 158 bpm) steuern, Tempo ignorieren. Optional bei voller Frische 15 Minuten kontrollierter Schwellenreiz (168–174 bpm).",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
+    "status": "erfüllt",
+    "actual": "Am 23.10. wurden 7,15 km in 49 Minuten absolviert (Pace: 6:59 min/km, Ø Puls: 159 bpm). Mit rund 25 Minuten in Zone 3 und 4 wurde die offene Schwellenoption des flexiblen Slots genutzt.",
+    "effect": "Wirksamer Reiz für Tempohärte und Herzschlagvolumen (Load 58). Der TSB sank auf -2.9 (CTL 12.7, ATL 15.6). Die Beine haben spürbar gearbeitet, weshalb als Nächstes gezielte aerobe Entlastung ansteht.",
+    "evaluated_run_ids": [
+      "i200612231"
+    ]
+  },
+  {
+    "id": "cycle-007",
+    "date": "2026-10-23",
+    "recommendation": "Slot 3 am Wochenende über 45–50 Minuten als reinen Z2-Dauerlauf (< 158 bpm) steuern. Pace ignorieren, aktive Regeneration und Fettstoffwechsel sichern.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
+    "status": "erfüllt",
+    "actual": "Vorgabe war ein Z2-Dauerlauf (< 158 bpm) über 45–50 Minuten. Gelaufen wurden 9,10 km in 1h 06m mit Ø 152 bpm und 96,6 % in Z1/Z2.",
+    "effect": "Die aerobe Vorgabe wurde sauber umgesetzt; 53 Minuten in Z2 stärken Fettstoffwechsel und Kapillarisierung. Die Überziehung der Dauer auf 66 Minuten trieb den Wochen-Load auf 160 und drückte den TSB auf -11,3.",
+    "evaluated_run_ids": [
+      "i201332629"
+    ]
+  },
+  {
+    "id": "cycle-008",
+    "date": "2026-10-25",
+    "recommendation": "Slot 1 zu Wochenbeginn zur Erholung nutzen: Maximal 40–45 Minuten rein aerob (< 158 bpm), um den Umfangssprung der Vorwoche abzufedern.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
+    "status": "offen",
+    "actual": "Ausstehend (wird nach den nächsten Läufen analysiert)",
+    "effect": "-"
+  }
+]

@@ -96,6 +96,19 @@
     "recommendation": "Slot 1 zu Wochenbeginn zur Erholung nutzen: Maximal 40–45 Minuten rein aerob (< 158 bpm), um den Umfangssprung der Vorwoche abzufedern.",
     "target_type": "easy_run",
     "target_hr_max": 158,
+    "status": "erfüllt",
+    "actual": "Die Vorgabe, nach dem Umfangs-Peak von W43 eine reine Erholungseinheit zu laufen, wurde am 27.10. exakt umgesetzt: 4,82 km in 37 Minuten bei Ø 151 bpm und 96,9 % Anteil in Zone 1 und 2.",
+    "effect": "Der TSB hat sich von der Vorwochenbelastung erholt und liegt bei -6,3 (ATL 20,2, CTL 13,9). Das Verhältnis von Tempo (7:44 min/km) zu Puls (151 bpm) entspricht dem gewohnten Grundlagenniveau ohne Anzeichen akuter Überlastung.",
+    "evaluated_run_ids": [
+      "i202170978"
+    ]
+  },
+  {
+    "id": "cycle-009",
+    "date": "2026-10-28",
+    "recommendation": "Slot 2 (Mi–Fr) für einen dosierten Schwellenreiz nutzen, sofern keine Restmüdigkeit vorliegt: 40–45 Minuten Gesamtdauer mit ca. 15–20 Minuten im Bereich 168–174 bpm. Bei schweren Beinen stattdessen rein Z2 (< 158 bpm).",
+    "target_type": "tempo_run",
+    "target_hr_max": 174,
     "status": "offen",
     "actual": "Ausstehend (wird nach den nächsten Läufen analysiert)",
     "effect": "-"

@@ -1,55 +1,49 @@
 {
-  "status_title": "Umfangssprung abfedern & aerobe Basis sichern",
-  "status_badge": "Basis stabilisieren",
-  "status_level": "info",
-  "coach_commentary": "### Status Quo & Wochenanalyse\nServus Berni. Letzte Woche (KW 43) standen knapp 21 Kilometer und drei Läufe auf der Uhr – das ist fast eine Verdopplung gegenüber den Vorwochen (11,5 bis 13 km). Mit dem Schwellenlauf am 23.10. und dem langen Kanten über 9,1 km am Sonntag hast du eine ordentliche Reizkombination gesetzt. Die Ermüdung (ATL 20.5) liegt über der Fitness (CTL 13.7), was einen TSB von -6.8 ergibt. Die Beine haben spürbar gearbeitet, auch wenn der Lauf am Sonntag mit 96,6 % in Zone 1/2 pulsseitig sauber abgedeckelt war.\n\n### Ausblick & Wochenaufgabe\nNach dem Umfangssprung ist diese Woche Konsolidierung angesagt, damit der Reiz anschlägt und sich keine Überlastung an Sehnen und Waden einschleicht. \n\n**Deine Wochenaufgabe:** Nutze Slot 1 (heute oder Dienstag) rein regenerativ. Geh für maximal 40 bis 45 Minuten auf die Strecke, Deckel bei strikt 158 bpm. Die Pace spielt keine Rolle – wenn es am Berg bergauf geht, nimm Tempo raus oder geh kurz. Slot 2 bleibt Mitte der Woche flexibel, am Wochenende folgt wieder ein ruhiger Z2-Lauf.",
+  "status_title": "Regenerativer Wochenstart & solide aerobe Basis",
+  "status_badge": "Basis stabil",
+  "status_level": "success",
+  "coach_commentary": "### Rückblick auf Slot 1\nNach der umfangreichen Vorwoche mit rund 21 Kilometern war die Vorgabe für Montag/Dienstag klar: kein Temporeiz, sondern 37 Minuten rein lockeres Auslaufen bei Ø 151 bpm. Mit knapp 97 % in Zone 1 und 2 hast du die Belastung exakt wie besprochen gedrosselt. Die Beine hatten Zeit zu regenerieren, der TSB liegt mit -6,3 wieder in einem unkritischen Bereich.\n\n### Ausblick auf Slot 2 und 3\nDamit ist Slot 1 abgehakt. Für Slot 2 (Mittwoch bis Freitag) steht die Tür für den wöchentlichen Qualitätsreiz offen: Wenn sich die Beine frisch anfühlen, passt ein kontrollierter Schwellenlauf (z. B. 40–45 Minuten mit 15–20 Minuten im Bereich 168–174 bpm). Fühlen sich die Beine schwer an, läufst du stattdessen 45 Minuten rein in Zone 2 (< 158 bpm). Am Wochenende folgt dann Slot 3 als längerer Grundlagenlauf (ca. 50–60 Minuten, strikt aerob).\n\n### Wochenaufgabe für nächste Woche\nHalte die Wochenfrequenz verlässlich bei 3 Läufen und maximiere den Z2-Anteil auf über 80 % der Gesamtlaufzeit. Steuere die lockeren Einheiten ausnahmslos über den Puls (< 158 bpm) und nimm an Steigungen konsequent Gehpausen in Kauf, wenn die Herzfrequenz ansteigt.",
   "history_evaluation": {
     "compliance_status": "erfüllt",
-    "actual_summary": "Seit der Vorgabe vom 25.10. steht noch kein neuer Lauf in den Daten – die Beine hatten nach dem 9,1-km-Sonntagslauf planmäßig Pause. Die Empfehlung für Slot 1 steht unverändert an.",
-    "effect_analysis": "Der 9,1-km-Lauf am Sonntag zeigte bei einer Pace von 7:19 min/km einen stabilen Durchschnittspuls von 152 bpm (96,6 % in Z1/Z2). Die aerobe Entkopplung blieb gering, allerdings drückt der kumulierte Wochenload (160) den TSB auf -6.8.",
-    "next_recommendation": "Slot 1 (Mo/Di) als leichten Grundlagenlauf absolvieren: 40–45 Minuten strikt unter 158 bpm bleiben, Pace komplett ignorieren.",
-    "next_workout_type": "easy_run",
-    "next_target_hr": 158,
+    "actual_summary": "Die Vorgabe, nach dem Umfangs-Peak von W43 eine reine Erholungseinheit zu laufen, wurde am 27.10. exakt umgesetzt: 4,82 km in 37 Minuten bei Ø 151 bpm und 96,9 % Anteil in Zone 1 und 2.",
+    "effect_analysis": "Der TSB hat sich von der Vorwochenbelastung erholt und liegt bei -6,3 (ATL 20,2, CTL 13,9). Das Verhältnis von Tempo (7:44 min/km) zu Puls (151 bpm) entspricht dem gewohnten Grundlagenniveau ohne Anzeichen akuter Überlastung.",
+    "next_recommendation": "Slot 2 (Mi–Fr) für einen dosierten Schwellenreiz nutzen, sofern keine Restmüdigkeit vorliegt: 40–45 Minuten Gesamtdauer mit ca. 15–20 Minuten im Bereich 168–174 bpm. Bei schweren Beinen stattdessen rein Z2 (< 158 bpm).",
+    "next_workout_type": "tempo_run",
+    "next_target_hr": 174,
     "next_duration_min": 45
   },
   "insights": [
     {
-      "title": "Aerobe Zonendisziplin in KW 43",
+      "title": "Aerobe Zonendisziplin",
       "type": "success",
-      "badge": "82.1% Z1/Z2",
-      "text": "Nach 22,6 % Z1/Z2 in KW 40 lag der aerobe Anteil in KW 43 bei 82,1 %. Sowohl der Lauf am 20.10. (100 %) als auch der lange Lauf am 25.10. (96,6 %) wurden diszipliniert unter 158 bpm gesteuert."
+      "badge": "96.9% Z1/Z2",
+      "text": "Die letzten beiden Läufe (9,1 km am 25.10. und 4,8 km am 27.10.) wurden mit über 96 % Z1/Z2-Anteil diszipliniert unter 158 bpm absolviert. Die Gesamtquote über alle Läufe liegt bei 57,4 %, zeigt aber seit W42 einen klaren Trend nach oben."
     },
     {
-      "title": "Umfangssprung & Ermüdungsbalance",
-      "type": "warning",
-      "badge": "+81% km / Wo.",
-      "text": "Der Anstieg von 11,5 km (KW 42) auf 20,9 km (KW 43) bedeutet einen Load-Sprung von 83 auf 160. Der TSB steht bei -6.8. Um Überlastungen im Sehnenapparat zu vermeiden, sollte das Wochenvolumen nun bei 16–18 km stabilisiert werden."
-    },
-    {
-      "title": "Schwellenreiz gesetzt",
+      "title": "Belastungsverlauf & Kontinuität",
       "type": "info",
-      "badge": "25m Z3/Z4",
-      "text": "Die Einheit am 23.10. lieferte rund 25 Minuten im Schwellen- und Übergangsbereich (Ø 159 bpm, Spitze 176 bpm). Das entspricht dem Flexi-Modell (15–20 % Z3/Z4) und setzt einen soliden Reiz fürs Herzschlagvolumen."
+      "badge": "Ø 12.8 km / Wo.",
+      "text": "Nach dem deutlichen Peak in W43 (20,9 km, Load 160) liegt der aktuelle Wochenschnitt bei 12,8 km. Um Überlastungen im Sehnen- und Bandapparat zu vermeiden, sollte sich das Wochenvolumen nun stabil bei 15 bis 18 km einpendeln."
     }
   ],
   "recommendations": [
     {
-      "title": "Grundlagenläufe rein über Herzfrequenz steuern",
-      "tag": "Priorität 1: Aerobe Basis",
+      "title": "Slot 2: Gezielter Schwellenreiz oder lockere Basis",
+      "tag": "Priorität 1: Reiz-Steuerung",
       "tag_class": "tag-amber",
-      "text": "Halte die Obergrenze von 158 bpm in Slot 1 und Slot 3 strikt ein. Nimm Gehpausen an Anstiegen in Kauf, sobald der Puls 155 bpm überschreitet. Die Pace ist ein reines Resultat der Tagesform."
+      "text": "Nutze das Fenster zwischen Mittwoch und Freitag flexibel: Bei voller Frische ein Schwellenlauf mit 15–20 Minuten im Bereich 168–174 bpm (unterhalb der Laktatschwelle von 178 bpm). Bei Restmüdigkeit stattdessen ein reiner Z2-Dauerlauf (< 158 bpm)."
     },
     {
-      "title": "Wochenvolumen konsolidieren",
-      "tag": "Belastungssteuerung",
+      "title": "Grundlagenläufe strikt über Herzfrequenz steuern",
+      "tag": "Trainingssteuerung",
       "tag_class": "tag-cyan",
-      "text": "Nach dem Peak in KW 43 das Wochenvolumen bei etwa 16 bis 18 km halten (3 Einheiten: z. B. 5 km locker, 5–6 km flexibel, 7–8 km Z2 Long Run), um den Umfangssprung physiologisch zu verarbeiten."
+      "text": "In den Z2-Einheiten (Slot 1 und Slot 3) bleibt die Pace irrelevant. Obergrenze ist 158 bpm. Steigt der Puls bergauf oder bei Gegenwind darüber, sofort das Tempo drosseln oder kurze Gehpausen einlegen."
     },
     {
-      "title": "Schwellenreiz nur bei ausgeruhten Beinen",
-      "tag": "Flexi-Modell",
+      "title": "Wochenpensum behutsam konsolidieren",
+      "tag": "Umfangsaufbau",
       "tag_class": "tag-green",
-      "text": "Slot 2 (Mi–Fr) nur dann mit Schwellenanteil (168–174 bpm) laufen, wenn sich die Beine nach Slot 1 und einem Ruhetag komplett frisch anfühlen. Andernfalls als weiteren Z2-Dauerlauf durchführen."
+      "text": "Ziel für W44 ist ein solider Dreiklang aus den drei Slots (Gesamtumfang ca. 16–18 km). Damit wird der Sprung aus der Vorwoche verdaut, ohne ins Untertraining abzurutschen."
     }
   ],
   "athlete": {
