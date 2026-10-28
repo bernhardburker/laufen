@@ -177,7 +177,7 @@ jobs:
           fi
 
       - name: Trigger local Telegram briefing on Burkerserver
-        if: always()
+        if: success() && github.event_name != 'push'
         run: |
           set -euo pipefail
           TARGET_DIR="$HOME/dockerContainer/laufen"

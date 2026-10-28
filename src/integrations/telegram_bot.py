@@ -1515,6 +1515,12 @@ def main() -> None:
         help="Enable automatic scheduled briefing timer in daemon loop (default: disabled, briefings triggered externally)",
     )
     parser.add_argument(
+        "--force",
+        "-f",
+        action="store_true",
+        help="Force sending notification even if disabled in athlete settings",
+    )
+    parser.add_argument(
         "--llm-provider",
         default=os.getenv("LLM_PROVIDER"),
         help="Optional LLM provider ('agy', 'gemini', 'mock', or 'none' for heuristic only)",
@@ -1567,6 +1573,9 @@ def main() -> None:
 
     if args.briefing:
         ctx = resolve_athlete_context(args.athlete, project_root=PROJECT_ROOT)
+        if not ctx.briefing_enabled and not args.force:
+            print(f"ℹ️ Morning briefing is disabled for {ctx.display_name} in registry.json (use --force to override).")
+            return
         res = send_daily_briefing_for_athlete(
             ctx=ctx,
             bot_client=bot_client,
@@ -1583,6 +1592,9 @@ def main() -> None:
 
     if args.evening:
         ctx = resolve_athlete_context(args.athlete, project_root=PROJECT_ROOT)
+        if not ctx.evening_briefing_enabled and not args.force:
+            print(f"ℹ️ Evening preview is disabled for {ctx.display_name} in registry.json (use --force to override).")
+            return
         res = send_evening_preview_for_athlete(
             ctx=ctx,
             bot_client=bot_client,
@@ -1599,6 +1611,9 @@ def main() -> None:
 
     if args.review:
         ctx = resolve_athlete_context(args.athlete, project_root=PROJECT_ROOT)
+        if not ctx.post_run_summary_enabled and not args.force:
+            print(f"ℹ️ Post-run reviews are disabled for {ctx.display_name} in registry.json (use --force to override).")
+            return
         res = send_post_run_review_for_athlete(
             ctx=ctx,
             bot_client=bot_client,
