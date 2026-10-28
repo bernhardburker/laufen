@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 import subprocess
 import sys
 from typing import Any, Dict, List
@@ -54,11 +55,14 @@ def attempt_production_seed(driver: SeederDriver) -> None:
         "--athlete",
         driver.athlete_slug,
     ]
+    env = os.environ.copy()
+    env["INTERVALS_API_KEY"] = "mock_key"
     driver.process_result = subprocess.run(
         cmd,
         cwd=PROJECT_ROOT,
         capture_output=True,
         text=True,
+        env=env,
     )
 
 

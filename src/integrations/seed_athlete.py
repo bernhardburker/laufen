@@ -228,18 +228,18 @@ def seed_athlete(
     load_env_file(root / ".env")
     api_key = os.getenv("INTERVALS_API_KEY", "").strip()
 
-    if not api_key and not dry_run:
-        sys.exit("Error: INTERVALS_API_KEY not found in environment or .env file.")
-
     athlete_ctx = resolve_athlete_context(athlete_slug, project_root=root)
     athlete_id = athlete_ctx.intervals_id
 
-    # Safety guard: Prevent accidental seeding of production athlete
+    # Safety guard: Prevent accidental seeding of production athlete (highest priority)
     if "test" not in athlete_slug.lower() and athlete_id == "i697752":
         sys.exit(
             f"SAFETY ABORT: Refusing to seed test data into production athlete '{athlete_slug}' ({athlete_id})!\n"
             "Seeding is strictly restricted to staging/test athletes (e.g. 'berni-test')."
         )
+
+    if not api_key and not dry_run:
+        sys.exit("Error: INTERVALS_API_KEY not found in environment or .env file.")
 
     base = api_base_url.rstrip("/")
     print(f"\n🌱 Seeding test data for athlete: '{athlete_slug}' ({athlete_id})")
