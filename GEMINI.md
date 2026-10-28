@@ -49,6 +49,11 @@ tests/
   - `./run test`: Run the BDD test suite
   - `./run init`: Run system initialization
 
+## Deployment & CI/CD Policy
+- **Strictly No Manual Deployments**: Never perform ad-hoc manual deployments (e.g., manual `rsync` to `~/dockerContainer/laufen`, manual copying of application bundles, or manual `systemctl --user restart` on server services).
+- **Exclusively Automated via CI/CD**: All deployments to Burkerserver, staging environments, and production services must be executed exclusively through the automated GitHub Actions CI/CD pipeline (`.github/workflows/deploy-burkerserver.yml`).
+- **Pipeline Integrity**: Code changes must be committed and pushed to `main` (or triggered via `workflow_dispatch`). The pipeline guarantees pre-flight CI testing, staging sandbox validation (`test:e2e`), atomic bundle synchronization, and post-deployment health verification.
+
 ## Verification
 - Whenever scripts or automatisms are created or edited, execute and pass the test suite before completing the task:
   ```bash
