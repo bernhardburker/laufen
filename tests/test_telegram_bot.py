@@ -141,6 +141,10 @@ class TelegramBotDriver:
             bot_token="123456:TEST_TOKEN",
             api_base_url=self.base_url,
         )
+        self.allowed_user_ids: Optional[List[str]] = None
+
+    def set_allowed_user_ids(self, ids_str: str) -> None:
+        self.allowed_user_ids = [i.strip() for i in ids_str.split(",") if i.strip()]
 
     def stop(self) -> None:
         self.server.shutdown()
@@ -283,12 +287,20 @@ class TelegramBotDriver:
             },
         )
 
-    def send_incoming_text(self, text: str, chat_id: str, ref_date_str: str = "2026-10-26") -> None:
+    def send_incoming_text(
+        self,
+        text: str,
+        chat_id: str,
+        user_id: Optional[str] = None,
+        ref_date_str: str = "2026-10-26",
+    ) -> None:
+        effective_from_id = user_id or chat_id
         update = {
             "update_id": 1,
             "message": {
                 "message_id": 10,
                 "chat": {"id": chat_id},
+                "from": {"id": int(effective_from_id) if effective_from_id.isdigit() else effective_from_id},
                 "text": text,
             },
         }
@@ -297,17 +309,26 @@ class TelegramBotDriver:
             bot_client=self.bot_client,
             intervals_api_key="test_intervals_key",
             intervals_api_base=self.base_url,
+            allowed_user_ids=self.allowed_user_ids,
             project_root=self.tmp_path,
             registry_path=self.registry_path,
             ref_date=datetime.date.fromisoformat(ref_date_str),
         )
 
-    def send_callback_query(self, data: str, chat_id: str, ref_date_str: str = "2026-10-26") -> None:
+    def send_callback_query(
+        self,
+        data: str,
+        chat_id: str,
+        user_id: Optional[str] = None,
+        ref_date_str: str = "2026-10-26",
+    ) -> None:
+        effective_from_id = user_id or chat_id
         update = {
             "update_id": 2,
             "callback_query": {
                 "id": "cb_99",
                 "data": data,
+                "from": {"id": int(effective_from_id) if effective_from_id.isdigit() else effective_from_id},
                 "message": {"chat": {"id": chat_id}},
             },
         }
@@ -316,6 +337,7 @@ class TelegramBotDriver:
             bot_client=self.bot_client,
             intervals_api_key="test_intervals_key",
             intervals_api_base=self.base_url,
+            allowed_user_ids=self.allowed_user_ids,
             project_root=self.tmp_path,
             registry_path=self.registry_path,
             ref_date=datetime.date.fromisoformat(ref_date_str),
@@ -539,4 +561,31 @@ def then_settings_keyboard(driver: TelegramBotDriver, chat_id: str):
     assert len(markup["inline_keyboard"]) >= 2
     callbacks = [btn.get("callback_data", "") for row in markup["inline_keyboard"] for btn in row]
     assert any("toggle:morning" in cb for cb in callbacks)
+
+
+@given(parsers.parse('the Telegram bot has allowed user ids "{ids_str}"'))
+def given_allowed_user_ids(driver: TelegramBotDriver, ids_str: str):
+    driver.set_allowed_user_ids(ids_str)
+
+
+@when(parsers.parse('the Telegram bot receives message "{text}" from user id "{user_id}" in chat id "{chat_id}"'))
+def when_bot_receives_message_with_user_id(driver: TelegramBotDriver, text: str, user_id: str, chat_id: str):
+    driver.send_incoming_text(text=text, chat_id=chat_id, user_id=user_id)
+
+
+@when(parsers.parse('the Telegram bot receives callback query "{cb_data}" from user id "{user_id}" in chat id "{chat_id}"'))
+def when_bot_receives_callback_with_user_id(driver: TelegramBotDriver, cb_data: str, user_id: str, chat_id: str):
+    driver.send_callback_query(data=cb_data, chat_id=chat_id, user_id=user_id)
+
+
+@then(parsers.parse('the athlete "{slug}" does not have linked Telegram chat id "{chat_id}" in the registry'))
+def then_verify_not_linked_chat_id(driver: TelegramBotDriver, slug: str, chat_id: str):
+    reg = load_registry(registry_path=driver.registry_path, project_root=driver.tmp_path)
+    assert reg.get("athletes", {}).get(slug, {}).get("telegram_chat_id") != chat_id
+
+
+@then(parsers.parse('the planned workout on "{date_str}" is not modified on Intervals.icu'))
+def then_verify_workout_not_modified(driver: TelegramBotDriver, date_str: str):
+    assert "ev_initial" not in MockCombinedAPIHandler.deleted_event_ids
+
 
