@@ -58,6 +58,7 @@ def fetch_intervals_wellness(
     oldest: Optional[str] = None,
     newest: Optional[str] = None,
     api_base_url: str = "https://intervals.icu/api/v1",
+    raise_on_error: bool = False,
 ) -> List[Dict[str, Any]]:
     """Fetches daily wellness records from Intervals.icu REST API."""
     today = datetime.date.today()
@@ -91,11 +92,15 @@ def fetch_intervals_wellness(
                 return [res]
             return []
     except urllib.error.HTTPError as e:
+        if raise_on_error:
+            raise
         error_msg = e.read().decode("utf-8", errors="replace")
         if e.code in (401, 403):
             sys.exit(f"Error {e.code}: Authentication with Intervals.icu failed. Please check INTERVALS_API_KEY.")
         sys.exit(f"HTTP Error {e.code} while fetching wellness data: {error_msg}")
     except urllib.error.URLError as e:
+        if raise_on_error:
+            raise
         sys.exit(f"Network error while connecting to Intervals.icu: {e.reason}")
 
 

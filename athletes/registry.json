@@ -5,7 +5,9 @@
       "intervals_id": "i697752",
       "display_name": "Berni",
       "active": true,
-      "dashboard_slug": "berni"
+      "dashboard_slug": "berni",
+      "telegram_chat_id": "157754568",
+      "briefing_enabled": true
     },
     "berni-test": {
       "intervals_id": "i771119",

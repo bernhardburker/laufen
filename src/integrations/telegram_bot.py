@@ -39,6 +39,8 @@ from src.athletes import (
     resolve_athlete_by_telegram_chat_id,
     resolve_athlete_context,
 )
+from src.integrations.download_intervals import fetch_intervals_activities
+from src.integrations.download_wellness import fetch_intervals_wellness
 from src.llm import LLMClient, get_llm_client
 from src.planner.extract_markers import extract_planning_markers
 from src.planner.schedule_workout import (
@@ -260,6 +262,34 @@ def send_daily_briefing_for_athlete(
             f"Athlete '{ctx.slug}' does not have a linked telegram_chat_id. "
             f"Send '/start {ctx.slug}' to the bot in Telegram first."
         )
+
+    # 0. Proactively sync fresh activities & wellness from Intervals.icu if credentials exist
+    if intervals_api_key and not dry_run:
+        try:
+            fresh_acts = fetch_intervals_activities(
+                api_key=intervals_api_key,
+                athlete_id=ctx.intervals_id,
+                api_base_url=intervals_api_base,
+                raise_on_error=True,
+            )
+            if fresh_acts and isinstance(fresh_acts, list):
+                ctx.activities_path.parent.mkdir(parents=True, exist_ok=True)
+                ctx.activities_path.write_text(json.dumps(fresh_acts, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            pass
+
+        try:
+            fresh_wellness = fetch_intervals_wellness(
+                api_key=intervals_api_key,
+                athlete_id=ctx.intervals_id,
+                api_base_url=intervals_api_base,
+                raise_on_error=True,
+            )
+            if fresh_wellness and isinstance(fresh_wellness, list):
+                ctx.wellness_path.parent.mkdir(parents=True, exist_ok=True)
+                ctx.wellness_path.write_text(json.dumps(fresh_wellness, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            pass
 
     # 1. Auto-sync adaptive workout to Intervals.icu (Option B)
     profile_data = {}

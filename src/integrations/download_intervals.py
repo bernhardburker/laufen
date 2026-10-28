@@ -67,6 +67,7 @@ def fetch_intervals_activities(
     oldest: str = "2000-01-01",
     newest: str | None = None,
     api_base_url: str = "https://intervals.icu/api/v1",
+    raise_on_error: bool = False,
 ) -> list[dict]:
     """Fetches activities from the Intervals.icu REST API."""
     if not newest:
@@ -92,11 +93,15 @@ def fetch_intervals_activities(
             data = resp.read().decode("utf-8")
             return json.loads(data)
     except urllib.error.HTTPError as e:
+        if raise_on_error:
+            raise
         error_msg = e.read().decode("utf-8", errors="replace")
         if e.code == 401 or e.code == 403:
             sys.exit(f"Error {e.code}: Authentication with Intervals.icu failed. Please verify INTERVALS_API_KEY.")
         sys.exit(f"HTTP Error {e.code} while fetching activities: {error_msg}")
     except urllib.error.URLError as e:
+        if raise_on_error:
+            raise
         sys.exit(f"Network error while connecting to Intervals.icu: {e.reason}")
 
 

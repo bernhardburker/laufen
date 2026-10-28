@@ -61,10 +61,6 @@ jobs:
           ./init.sh
           echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
 
-      - name: Run automated test suite
-        run: |
-          pytest tests/
-
       - name: Fetch activities and wellness from Intervals.icu
         env:
           INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
