@@ -51,3 +51,58 @@ Feature: Bidirectional Telegram Coach Bot and Daily Briefing
     And the athlete "berni" has an active briefing proposal on "2026-10-26"
     When the Telegram bot receives callback query "refresh_sleep:2026-10-26" from chat id "987654321"
     Then the last Telegram message sent to "987654321" contains "Schlaf"
+
+  Scenario: Athlete views notification settings and toggles morning briefing via interactive button
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    When the Telegram bot receives message "/settings" from chat id "987654321"
+    Then the last Telegram message sent to "987654321" contains "Benachrichtigungen"
+    And the last Telegram message sent to "987654321" includes settings keyboard buttons
+    When the Telegram bot receives callback query "toggle:morning" from chat id "987654321"
+    Then the athlete "berni" has morning briefing disabled in the registry
+    And the last Telegram message sent to "987654321" contains "deaktiviert"
+
+  Scenario: Athlete toggles notifications via direct commands
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    When the Telegram bot receives message "/morgen off" from chat id "987654321"
+    Then the athlete "berni" has morning briefing disabled in the registry
+    And the last Telegram message sent to "987654321" contains "Morgen-Check deaktiviert"
+    When the Telegram bot receives message "/abend on" from chat id "987654321"
+    Then the athlete "berni" has evening briefing enabled in the registry
+    And the last Telegram message sent to "987654321" contains "Abend-Vorschau aktiviert"
+
+  Scenario: Scheduled evening preview sends tomorrow workout logistics
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has evening briefing enabled with time "20:30"
+    And the athlete "berni" last ran 2 days ago before "2026-10-26"
+    When the scheduled evening preview check runs at "2026-10-26T20:35:00"
+    Then the last Telegram message sent to "987654321" contains "Abend"
+    And the last Telegram message sent to "987654321" contains "Vorschau auf morgen"
+
+  Scenario: Post-run coach review focuses on coach assessment and future plan implications
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has completed a run "act_100" with name "Lockerer Abendlauf" on "2026-10-26"
+    When the post-run review check is triggered for athlete "berni"
+    Then the last Telegram message sent to "987654321" contains "Coach-Review"
+    And the last Telegram message sent to "987654321" contains "Plan-Erfüllung"
+    And the last Telegram message sent to "987654321" contains "Auswirkung auf deinen weiteren Plan"
+
+  Scenario: Post-run coach review is skipped when athlete disabled review notifications
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has post run reviews disabled
+    And the athlete "berni" has completed a run "act_101" with name "Tempo Run" on "2026-10-26"
+    When the post-run review check is triggered for athlete "berni"
+    Then exactly 0 Telegram message was sent to "987654321"
+
+  Scenario: Unauthorized user message is rejected when user id whitelist is active
+    Given the athlete registry contains athlete "berni" with intervals id "i697752"
+    And the Telegram bot has allowed user ids "123456"
+    When the Telegram bot receives message "/start berni" from user id "999999" in chat id "999999"
+    Then the athlete "berni" does not have linked Telegram chat id "999999" in the registry
+    And the last Telegram message sent to "999999" contains "Zugriff verweigert"
+
+  Scenario: Unauthorized callback query is rejected when user id whitelist is active
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has an active briefing proposal on "2026-10-26"
+    And the Telegram bot has allowed user ids "123456"
+    When the Telegram bot receives callback query "rest:2026-10-26" from user id "999999" in chat id "987654321"
+    Then the planned workout on "2026-10-26" is not modified on Intervals.icu

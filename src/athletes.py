@@ -35,6 +35,10 @@ class AthleteContext:
     telegram_chat_id: str = ""
     briefing_time: str = "07:00"
     briefing_enabled: bool = True
+    morning_briefing_enabled: bool = True
+    evening_briefing_time: str = "20:30"
+    evening_briefing_enabled: bool = True
+    post_run_summary_enabled: bool = True
     telegram_state_path: Optional[Path] = None
 
     def ensure_dirs(self) -> None:
@@ -109,6 +113,10 @@ def resolve_athlete_context(
     telegram_chat_id = ""
     briefing_time = "07:00"
     briefing_enabled = True
+    morning_briefing_enabled = True
+    evening_briefing_time = "20:30"
+    evening_briefing_enabled = True
+    post_run_summary_enabled = True
 
     # If athlete is found in registry
     if target_slug in athletes_table:
@@ -119,7 +127,11 @@ def resolve_athlete_context(
         dash_slug = str(info.get("dashboard_slug") or target_slug)
         telegram_chat_id = str(info.get("telegram_chat_id") or "")
         briefing_time = str(info.get("briefing_time") or "07:00")
-        briefing_enabled = bool(info.get("briefing_enabled", True))
+        briefing_enabled = bool(info.get("morning_briefing_enabled", info.get("briefing_enabled", True)))
+        morning_briefing_enabled = briefing_enabled
+        evening_briefing_time = str(info.get("evening_briefing_time") or "20:30")
+        evening_briefing_enabled = bool(info.get("evening_briefing_enabled", True))
+        post_run_summary_enabled = bool(info.get("post_run_summary_enabled", True))
         base_dir = root / "athletes" / target_slug
     else:
         # Check if athlete directory exists even if missing from registry
@@ -170,6 +182,10 @@ def resolve_athlete_context(
                 telegram_chat_id="",
                 briefing_time="07:00",
                 briefing_enabled=True,
+                morning_briefing_enabled=True,
+                evening_briefing_time="20:30",
+                evening_briefing_enabled=True,
+                post_run_summary_enabled=True,
                 telegram_state_path=root / "data" / "telegram_state.json",
             )
         else:
@@ -193,6 +209,10 @@ def resolve_athlete_context(
         telegram_chat_id=telegram_chat_id,
         briefing_time=briefing_time,
         briefing_enabled=briefing_enabled,
+        morning_briefing_enabled=morning_briefing_enabled,
+        evening_briefing_time=evening_briefing_time,
+        evening_briefing_enabled=evening_briefing_enabled,
+        post_run_summary_enabled=post_run_summary_enabled,
         telegram_state_path=base_dir / "telegram_state.json",
     )
 
@@ -235,6 +255,39 @@ def link_telegram_chat_id(
     if briefing_time:
         athletes[clean_slug]["briefing_time"] = briefing_time.strip()
     athletes[clean_slug].setdefault("briefing_enabled", True)
+    save_registry(registry, registry_path=registry_path, project_root=root)
+    return resolve_athlete_context(clean_slug, project_root=root, registry_path=registry_path)
+
+
+def update_athlete_notification_settings(
+    athlete_slug: str,
+    morning_enabled: Optional[bool] = None,
+    morning_time: Optional[str] = None,
+    evening_enabled: Optional[bool] = None,
+    evening_time: Optional[str] = None,
+    post_run_enabled: Optional[bool] = None,
+    project_root: Optional[Path] = None,
+    registry_path: Optional[Path] = None,
+) -> AthleteContext:
+    """Updates proactive notification settings for an athlete in registry.json."""
+    root = project_root or get_project_root()
+    registry = load_registry(registry_path, root)
+    athletes = registry.setdefault("athletes", {})
+    clean_slug = athlete_slug.strip().lower()
+    if clean_slug not in athletes:
+        raise KeyError(f"Athlete '{clean_slug}' is not registered in athletes/registry.json.")
+    ath = athletes[clean_slug]
+    if morning_enabled is not None:
+        ath["morning_briefing_enabled"] = bool(morning_enabled)
+        ath["briefing_enabled"] = bool(morning_enabled)
+    if morning_time is not None:
+        ath["briefing_time"] = morning_time.strip()
+    if evening_enabled is not None:
+        ath["evening_briefing_enabled"] = bool(evening_enabled)
+    if evening_time is not None:
+        ath["evening_briefing_time"] = evening_time.strip()
+    if post_run_enabled is not None:
+        ath["post_run_summary_enabled"] = bool(post_run_enabled)
     save_registry(registry, registry_path=registry_path, project_root=root)
     return resolve_athlete_context(clean_slug, project_root=root, registry_path=registry_path)
 

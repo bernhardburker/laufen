@@ -266,6 +266,12 @@ case "$COMMAND" in
   briefing)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/telegram_bot.py" --briefing --athlete "$ATHLETE_SLUG" "${REMAINING_ARGS[@]}"
     ;;
+  evening|evening-preview)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/telegram_bot.py" --evening --athlete "$ATHLETE_SLUG" "${REMAINING_ARGS[@]}"
+    ;;
+  post-run-review)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/telegram_bot.py" --review --athlete "$ATHLETE_SLUG" "${REMAINING_ARGS[@]}"
+    ;;
   *)
     echo "Error: Unknown command '$COMMAND'" >&2
     echo "Run './run help' to see all available commands." >&2

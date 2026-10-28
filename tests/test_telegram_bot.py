@@ -21,9 +21,13 @@ from src.athletes import (
 from src.integrations.telegram_bot import (
     TelegramBotClient,
     check_and_send_due_briefings,
+    check_and_send_due_evening_previews,
+    check_and_send_due_post_run_reviews,
     handle_telegram_update,
     save_telegram_state,
     send_daily_briefing_for_athlete,
+    send_evening_preview_for_athlete,
+    send_post_run_review_for_athlete,
 )
 
 # 1. Bind feature scenarios
@@ -171,13 +175,67 @@ class TelegramBotDriver:
         ctx.ensure_dirs()
         if not ctx.athlete_config_path.is_file():
             ctx.athlete_config_path.write_text(
-                json.dumps({"athlete": {"id": intervals_id, "name": slug.capitalize()}}),
+                json.dumps({
+                    "athlete": {
+                        "id": intervals_id,
+                        "name": slug.capitalize(),
+                        "heart_rate": {
+                            "lthr": 178,
+                            "max": 195,
+                            "zones": {
+                                "z1_recovery": {"max": 142},
+                                "z2_aerobic": {"max": 158},
+                                "z3_tempo": {"max": 168},
+                                "z4_threshold": {"max": 178},
+                                "z5_vo2max": {"max": 195},
+                            },
+                        },
+                    }
+                }),
                 encoding="utf-8",
             )
         if not ctx.activities_path.is_file():
             ctx.activities_path.write_text("[]", encoding="utf-8")
         if not ctx.wellness_path.is_file():
             ctx.wellness_path.write_text("[]", encoding="utf-8")
+
+    def set_evening_briefing(self, slug: str, enabled: bool, time_str: str = "20:30") -> None:
+        reg = load_registry(self.registry_path, self.tmp_path)
+        reg["athletes"][slug]["evening_briefing_enabled"] = enabled
+        reg["athletes"][slug]["evening_briefing_time"] = time_str
+        save_registry(reg, registry_path=self.registry_path, project_root=self.tmp_path)
+
+    def set_post_run_reviews(self, slug: str, enabled: bool) -> None:
+        reg = load_registry(self.registry_path, self.tmp_path)
+        reg["athletes"][slug]["post_run_summary_enabled"] = enabled
+        save_registry(reg, registry_path=self.registry_path, project_root=self.tmp_path)
+
+    def add_completed_run(self, slug: str, act_id: str, name: str, date_str: str) -> None:
+        ctx = resolve_athlete_context(slug, project_root=self.tmp_path, registry_path=self.registry_path)
+        activities = []
+        if ctx.activities_path.is_file():
+            try:
+                activities = json.loads(ctx.activities_path.read_text(encoding="utf-8"))
+            except Exception:
+                activities = []
+        act = {
+            "id": act_id,
+            "type": "Run",
+            "name": name,
+            "start_date_local": f"{date_str}T18:00:00",
+            "distance": 8000.0,
+            "moving_time": 2880,
+            "elapsed_time": 2900,
+            "average_heartrate": 150,
+            "max_heartrate": 162,
+            "average_speed": 2.78,
+            "icu_training_load": 45,
+            "icu_ctl": 25.0,
+            "icu_atl": 24.0,
+            "icu_hr_zones": [300, 2200, 380, 0, 0, 0, 0],
+        }
+        activities.append(act)
+        ctx.activities_path.write_text(json.dumps(activities), encoding="utf-8")
 
     def set_last_run_days_ago(self, slug: str, days_ago: int, ref_date_str: str) -> None:
         ctx = resolve_athlete_context(slug, project_root=self.tmp_path, registry_path=self.registry_path)
@@ -281,6 +339,24 @@ class TelegramBotDriver:
             intervals_api_key="test_intervals_key",
             intervals_api_base=self.base_url,
             now=dt,
+            project_root=self.tmp_path,
+            registry_path=self.registry_path,
+        )
+
+    def run_due_evening_check(self, iso_dt_str: str) -> None:
+        dt = datetime.datetime.fromisoformat(iso_dt_str)
+        check_and_send_due_evening_previews(
+            bot_client=self.bot_client,
+            intervals_api_key="test_intervals_key",
+            intervals_api_base=self.base_url,
+            now=dt,
+            project_root=self.tmp_path,
+            registry_path=self.registry_path,
+        )
+
+    def run_post_run_review_check(self, slug: str) -> None:
+        check_and_send_due_post_run_reviews(
+            bot_client=self.bot_client,
             project_root=self.tmp_path,
             registry_path=self.registry_path,
         )
@@ -414,4 +490,53 @@ def then_verify_rest_day_keyboard(driver: TelegramBotDriver, chat_id: str):
     first_row = markup["inline_keyboard"][0]
     callbacks = [btn.get("callback_data", "") for btn in first_row]
     assert any("keep_rest" in cb for cb in callbacks), f"Expected keep_rest in callbacks: {callbacks}"
+
+
+@given(parsers.parse('the athlete "{slug}" has evening briefing enabled with time "{e_time}"'))
+def given_athlete_evening_briefing(driver: TelegramBotDriver, slug: str, e_time: str):
+    driver.set_evening_briefing(slug=slug, enabled=True, time_str=e_time)
+
+
+@given(parsers.parse('the athlete "{slug}" has completed a run "{act_id}" with name "{act_name}" on "{run_date}"'))
+def given_athlete_completed_run(driver: TelegramBotDriver, slug: str, act_id: str, act_name: str, run_date: str):
+    driver.add_completed_run(slug=slug, act_id=act_id, name=act_name, date_str=run_date)
+
+
+@given(parsers.parse('the athlete "{slug}" has post run reviews disabled'))
+def given_athlete_post_run_disabled(driver: TelegramBotDriver, slug: str):
+    driver.set_post_run_reviews(slug=slug, enabled=False)
+
+
+@when(parsers.parse('the scheduled evening preview check runs at "{iso_dt}"'))
+def when_evening_check_runs(driver: TelegramBotDriver, iso_dt: str):
+    driver.run_due_evening_check(iso_dt_str=iso_dt)
+
+
+@when(parsers.parse('the post-run review check is triggered for athlete "{slug}"'))
+def when_post_run_check_triggered(driver: TelegramBotDriver, slug: str):
+    driver.run_post_run_review_check(slug=slug)
+
+
+@then(parsers.parse('the athlete "{slug}" has morning briefing disabled in the registry'))
+def then_morning_disabled(driver: TelegramBotDriver, slug: str):
+    reg = load_registry(registry_path=driver.registry_path, project_root=driver.tmp_path)
+    ath = reg["athletes"][slug]
+    assert ath.get("morning_briefing_enabled") is False or ath.get("briefing_enabled") is False
+
+
+@then(parsers.parse('the athlete "{slug}" has evening briefing enabled in the registry'))
+def then_evening_enabled(driver: TelegramBotDriver, slug: str):
+    reg = load_registry(registry_path=driver.registry_path, project_root=driver.tmp_path)
+    assert reg["athletes"][slug].get("evening_briefing_enabled") is True
+
+
+@then(parsers.parse('the last Telegram message sent to "{chat_id}" includes settings keyboard buttons'))
+def then_settings_keyboard(driver: TelegramBotDriver, chat_id: str):
+    msgs = [m for m in MockCombinedAPIHandler.sent_telegram_messages if str(m.get("chat_id")) == chat_id]
+    assert len(msgs) > 0
+    markup = msgs[-1].get("reply_markup") or {}
+    assert "inline_keyboard" in markup
+    assert len(markup["inline_keyboard"]) >= 2
+    callbacks = [btn.get("callback_data", "") for row in markup["inline_keyboard"] for btn in row]
+    assert any("toggle:morning" in cb for cb in callbacks)
 
