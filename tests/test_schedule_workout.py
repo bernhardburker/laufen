@@ -377,6 +377,16 @@ def step_check_scheduled_tomorrow(driver: WorkoutScheduleDriver):
     assert len(scheduled) > 0, f"Expected scheduled event for tomorrow ({tomorrow_iso}). Received: {MockIntervalsEventHandler.received_requests}"
 
 
+@then("one scheduled event has date for day after tomorrow")
+def step_check_scheduled_day_after_tomorrow(driver: WorkoutScheduleDriver):
+    target_iso = (driver.test_ref_date + datetime.timedelta(days=2)).isoformat()
+    scheduled = [
+        r["payload"] for r in MockIntervalsEventHandler.received_requests
+        if r.get("method") == "POST" and str(r.get("payload", {}).get("start_date_local", "")).startswith(target_iso)
+    ]
+    assert len(scheduled) > 0, f"Expected scheduled event for day after tomorrow ({target_iso}). Received: {MockIntervalsEventHandler.received_requests}"
+
+
 @given("a rest day note exists in calendar for today")
 def step_rest_day_note_today(driver: WorkoutScheduleDriver):
     today_iso = driver.test_ref_date.isoformat()

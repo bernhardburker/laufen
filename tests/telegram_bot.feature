@@ -78,6 +78,15 @@ Feature: Bidirectional Telegram Coach Bot and Daily Briefing
     Then the last Telegram message sent to "987654321" contains "Abend"
     And the last Telegram message sent to "987654321" contains "Vorschau auf morgen"
 
+  Scenario: Scheduled evening preview announces rest day when athlete completed run today
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has evening briefing enabled with time "20:30"
+    And the athlete "berni" last ran 0 days ago before "2026-10-26"
+    When the scheduled evening preview check runs at "2026-10-26T20:35:00"
+    Then the last Telegram message sent to "987654321" contains "Abend"
+    And the last Telegram message sent to "987654321" contains "Ruhetag"
+    And the last Telegram message sent to "987654321" includes rest day keyboard buttons
+
   Scenario: Post-run coach review focuses on coach assessment and future plan implications
     Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
     And the athlete "berni" has completed a run "act_100" with name "Lockerer Abendlauf" on "2026-10-26"

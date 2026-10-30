@@ -39,6 +39,7 @@ scenarios("telegram_bot.feature")
 class MockCombinedAPIHandler(http.server.BaseHTTPRequestHandler):
     sent_telegram_messages: List[Dict[str, Any]] = []
     intervals_events: List[Dict[str, Any]] = []
+    intervals_activities: List[Dict[str, Any]] = []
     deleted_event_ids: List[str] = []
     updated_activities: Dict[str, Dict[str, Any]] = {}
     next_event_id: int = 100
@@ -49,6 +50,11 @@ class MockCombinedAPIHandler(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps(self.intervals_events).encode("utf-8"))
+        elif "/athlete/" in self.path and "/activities" in self.path:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(self.intervals_activities).encode("utf-8"))
         else:
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -147,6 +153,7 @@ class TelegramBotDriver:
 
         MockCombinedAPIHandler.sent_telegram_messages = []
         MockCombinedAPIHandler.intervals_events = []
+        MockCombinedAPIHandler.intervals_activities = []
         MockCombinedAPIHandler.deleted_event_ids = []
         MockCombinedAPIHandler.updated_activities = {}
         MockCombinedAPIHandler.next_event_id = 100
@@ -260,6 +267,7 @@ class TelegramBotDriver:
         }
         activities.append(act)
         ctx.activities_path.write_text(json.dumps(activities), encoding="utf-8")
+        MockCombinedAPIHandler.intervals_activities = list(activities)
 
     def set_last_run_days_ago(self, slug: str, days_ago: int, ref_date_str: str) -> None:
         ctx = resolve_athlete_context(slug, project_root=self.tmp_path, registry_path=self.registry_path)
@@ -280,6 +288,7 @@ class TelegramBotDriver:
             }
         ]
         ctx.activities_path.write_text(json.dumps(activities), encoding="utf-8")
+        MockCombinedAPIHandler.intervals_activities = list(activities)
 
     def seed_active_proposal(self, slug: str, date_str: str) -> None:
         ctx = resolve_athlete_context(slug, project_root=self.tmp_path, registry_path=self.registry_path)

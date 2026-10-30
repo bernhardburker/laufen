@@ -86,11 +86,11 @@ Feature: Schedule structured workouts to Intervals.icu
     Then the process exits with code 0
     And no workout event is scheduled for today
 
-  Scenario: Paired completed workout for today treats today as rest day and plans next for tomorrow
+  Scenario: Paired completed workout for today treats today as completed run and plans next for day after tomorrow
     Given a mock Intervals.icu event server is running
     And INTERVALS_API_KEY is configured
     And a paired completed workout exists in calendar for today
     When the workout schedule script is executed with adaptive planning arguments and events-file
     Then the process exits with code 0
-    And one scheduled event has date for tomorrow
+    And one scheduled event has date for day after tomorrow
     And the calendar events file contains the today paired workout

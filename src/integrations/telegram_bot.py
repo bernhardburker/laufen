@@ -593,6 +593,35 @@ def send_evening_preview_for_athlete(
     if not ctx.telegram_chat_id:
         raise ValueError(f"Athlete '{ctx.slug}' does not have a linked telegram_chat_id.")
 
+    # 0. Sync fresh activities and events before previewing tomorrow's plan
+    if not dry_run and intervals_api_key:
+        try:
+            fresh_acts = fetch_intervals_activities(
+                api_key=intervals_api_key,
+                athlete_id=ctx.intervals_id,
+                api_base_url=intervals_api_base,
+                raise_on_error=True,
+            )
+            if fresh_acts and isinstance(fresh_acts, list):
+                ctx.activities_path.parent.mkdir(parents=True, exist_ok=True)
+                ctx.activities_path.write_text(json.dumps(fresh_acts, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            pass
+
+        try:
+            fresh_events = fetch_intervals_events(
+                api_key=intervals_api_key,
+                athlete_id=ctx.intervals_id,
+                api_base_url=intervals_api_base,
+                raise_on_error=True,
+            )
+            if fresh_events and isinstance(fresh_events, list):
+                ev_path = ctx.calendar_events_path or (ctx.base_dir / "calendar_events.json")
+                ev_path.parent.mkdir(parents=True, exist_ok=True)
+                ev_path.write_text(json.dumps(fresh_events, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            pass
+
     profile_data = {}
     if ctx.athlete_config_path.is_file():
         try:
@@ -600,6 +629,7 @@ def send_evening_preview_for_athlete(
         except Exception:
             profile_data = {}
 
+    events_path = ctx.calendar_events_path or (ctx.base_dir / "calendar_events.json")
     sync_res = sync_adaptive_plan(
         api_key=intervals_api_key,
         athlete_id=ctx.intervals_id,
@@ -608,14 +638,21 @@ def send_evening_preview_for_athlete(
         dry_run=dry_run,
         api_base_url=intervals_api_base,
         project_root=root,
-        clean_past=False,
+        clean_past=True,
         activities_file=ctx.activities_path,
+        events_file=events_path,
     )
 
     is_rest_day = bool(sync_res.get("is_rest_day", False))
-    scheduled = sync_res.get("scheduled") or []
-    skipped = sync_res.get("skipped") or []
-    tomorrow_workout = scheduled[0] if scheduled else (skipped[0] if skipped else None)
+    if is_rest_day:
+        tomorrow_workout = None
+    else:
+        scheduled = sync_res.get("scheduled") or []
+        skipped = sync_res.get("skipped") or []
+        workouts = [w for w in (scheduled + skipped) if str(w.get("start_date_local") or "")[:10] == tomorrow_iso]
+        tomorrow_workout = workouts[0] if workouts else None
+        if not tomorrow_workout and (scheduled or skipped):
+            tomorrow_workout = scheduled[0] if scheduled else skipped[0]
 
     msg_text = format_evening_preview_message(
         athlete_name=ctx.display_name,
@@ -641,6 +678,14 @@ def send_evening_preview_for_athlete(
             "description": tomorrow_workout.get("description", ""),
             "event_id": tomorrow_workout.get("id"),
             "is_rest_day_today": is_rest_day,
+        }
+    else:
+        state["current_proposal"] = {
+            "target_date": tomorrow_iso,
+            "name": "Ruhetag",
+            "description": "Erholung & Regeneration",
+            "event_id": None,
+            "is_rest_day_today": True,
         }
     save_telegram_state(state_path, state)
 
