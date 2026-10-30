@@ -98,6 +98,7 @@ class WorkoutScheduleDriver:
         self.mock_server_thread: threading.Thread | None = None
         self.mock_server_port: int | None = None
         self.env["DOTENV_PATH"] = str(tmp_path / ".env")
+        self.events_file = tmp_path / "calendar_events.json"
         self.test_ref_date = datetime.date(2026, 10, 22)
         MockIntervalsEventHandler.received_requests.clear()
         MockIntervalsEventHandler.events_db.clear()
@@ -181,7 +182,7 @@ class WorkoutScheduleDriver:
         act_path = self.tmp_path / "activities.json"
         act_path.write_text(json.dumps(activities), encoding="utf-8")
 
-    def run_adaptive_plan(self) -> None:
+    def run_adaptive_plan(self, with_events_file: bool = False) -> None:
         act_path = self.tmp_path / "activities.json"
         args = [
             "--adaptive-plan",
@@ -189,6 +190,8 @@ class WorkoutScheduleDriver:
         ]
         if act_path.is_file():
             args.extend(["--activities-file", str(act_path)])
+        if with_events_file:
+            args.extend(["--events-file", str(self.events_file)])
         self.run_schedule(args, use_mock_api=True)
 
     def get_last_received_payload(self) -> dict:
@@ -407,4 +410,30 @@ def step_no_workout_today(driver: WorkoutScheduleDriver):
         and str(r.get("payload", {}).get("start_date_local", "")).startswith(today_iso)
     ]
     assert len(scheduled) == 0, f"Expected no workout scheduled for today, found {len(scheduled)}"
+
+
+@given("a paired completed workout exists in calendar for today")
+def step_paired_workout_today(driver: WorkoutScheduleDriver):
+    today_iso = driver.test_ref_date.isoformat()
+    MockIntervalsEventHandler.events_db.append({
+        "id": 149850038,
+        "category": "WORKOUT",
+        "name": "Kontrollierter Schwellenlauf (3x 8m Z4)",
+        "start_date_local": f"{today_iso}T07:00:00",
+        "paired_activity_id": "i203449631",
+    })
+
+
+@when("the workout schedule script is executed with adaptive planning arguments and events-file")
+def step_run_adaptive_with_events_file(driver: WorkoutScheduleDriver):
+    driver.run_adaptive_plan(with_events_file=True)
+
+
+@then("the calendar events file contains the today paired workout")
+def step_events_file_has_paired_workout(driver: WorkoutScheduleDriver):
+    assert driver.events_file.is_file()
+    with open(driver.events_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    assert any(e.get("paired_activity_id") == "i203449631" for e in data)
+
 

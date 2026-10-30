@@ -120,6 +120,18 @@ def parse_arguments() -> argparse.Namespace:
         default=PROJECT_ROOT / "data" / "run_reviews.json",
         help="Path to per-run reviews JSON cache (default: data/run_reviews.json)",
     )
+    default_events = Path(
+        os.getenv(
+            "CALENDAR_EVENTS_PATH",
+            str(PROJECT_ROOT / "data" / "calendar_events.json"),
+        )
+    )
+    parser.add_argument(
+        "--events",
+        type=Path,
+        default=default_events if default_events.is_file() else None,
+        help="Path to calendar events JSON file (default: data/calendar_events.json or CALENDAR_EVENTS_PATH)",
+    )
     return parser.parse_args()
 
 
@@ -696,6 +708,7 @@ def generate_dashboard(
     athlete_file: Optional[Path] = None,
     coach_history_file: Optional[Path] = None,
     run_reviews_file: Optional[Path] = None,
+    calendar_events_file: Optional[Path] = None,
 ) -> None:
     if not input_file.exists():
         raise FileNotFoundError(f"Input file not found: {input_file}")
@@ -890,12 +903,26 @@ def generate_dashboard(
             else {}
         )
 
+        target_events_file = (
+            calendar_events_file
+            if calendar_events_file is not None
+            else (Path(os.getenv("CALENDAR_EVENTS_PATH", "")) if os.getenv("CALENDAR_EVENTS_PATH") else None)
+        )
+        calendar_events = None
+        if target_events_file and target_events_file.is_file():
+            try:
+                with open(target_events_file, "r", encoding="utf-8") as f:
+                    calendar_events = json.load(f)
+            except Exception:
+                calendar_events = None
+
         table_rows = build_table_rows(processed_runs, run_reviews=run_reviews)
         daily_rec = generate_daily_recommendation(
             runs=processed_runs,
             athlete_profile=athlete_profile,
             coach_history=coach_history,
             form_data=form_data,
+            calendar_events=calendar_events,
         )
         summary_html = build_summary_html(
             summary_data,
@@ -968,6 +995,7 @@ def main() -> int:
             athlete_file=args.athlete,
             coach_history_file=args.coach_history,
             run_reviews_file=args.run_reviews,
+            calendar_events_file=args.events,
         )
         return 0
     except FileNotFoundError as e:

@@ -723,6 +723,7 @@ def sync_adaptive_plan(
     project_root: Path | None = None,
     clean_past: bool = True,
     activities_file: Path | None = None,
+    events_file: Path | None = None,
 ) -> dict:
     """Dynamically plans next workout, cleans up past uncompleted events, and respects rest days."""
     root = project_root or Path(__file__).resolve().parent.parent.parent
@@ -816,14 +817,25 @@ def sync_adaptive_plan(
         )
         for ev in remaining_events
     )
+    today_workout_paired = any(
+        (str(ev.get("start_date_local") or "")[:10] == today_iso)
+        and ev.get("category") == "WORKOUT"
+        and bool(ev.get("paired_activity_id"))
+        for ev in remaining_events
+    )
 
-    # If athlete ran yesterday (or today) or calendar has an explicit rest day note -> rest day!
-    is_rest_day = (days_since_last_run <= 1) or today_has_rest_note
+    # If athlete ran yesterday (or today) or calendar has an explicit rest day note or today's workout is completed -> rest day!
+    is_rest_day = (days_since_last_run <= 1) or today_has_rest_note or today_workout_paired
     results["is_rest_day"] = is_rest_day
 
     if is_rest_day:
         target_date = today + datetime.timedelta(days=1)
-        reason = "Ruhetag-Notiz im Kalender" if today_has_rest_note else f"Letzter Lauf vor {days_since_last_run} Tag(en)"
+        if today_workout_paired:
+            reason = "Heutiges Workout bereits absolviert (paired)"
+        elif today_has_rest_note:
+            reason = "Ruhetag-Notiz im Kalender"
+        else:
+            reason = f"Letzter Lauf vor {days_since_last_run} Tag(en)"
         print(f"[STATUS] {reason}.")
         print(f"[STATUS] Heute ({today_iso}) ist Ruhetag. Nächstes Training wird für MORGEN ({target_date.isoformat()}) geplant.")
         # If today has an uncompleted planned workout, remove it as today is a rest day
@@ -851,11 +863,20 @@ def sync_adaptive_plan(
         ev for ev in remaining_events
         if str(ev.get("start_date_local") or "")[:10] == target_date_iso and ev.get("category") == "WORKOUT"
     ]
+    unpaired_on_target = [
+        ev for ev in existing_on_target
+        if not ev.get("paired_activity_id")
+    ]
 
-    if existing_on_target:
-        ev_name = existing_on_target[0].get("name", "Workout")
+    if unpaired_on_target:
+        ev_name = unpaired_on_target[0].get("name", "Workout")
         print(f"[BEREITS GEPLANT] Für {target_date_iso} existiert bereits ein Workout: {ev_name}")
-        results["skipped"].append(existing_on_target[0])
+        results["skipped"].append(unpaired_on_target[0])
+        if events_file:
+            events_path = Path(events_file)
+            events_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(events_path, "w", encoding="utf-8") as f:
+                json.dump(remaining_events, f, indent=2, ensure_ascii=False)
         print("=" * 60)
         return results
 
@@ -898,6 +919,13 @@ def sync_adaptive_plan(
         except Exception as e:
             print(f"[FEHLER] Konnte adaptives Workout nicht anlegen: {e}")
             results.setdefault("errors", []).append({"payload": payload, "error": str(e)})
+
+    if events_file:
+        all_final_events = list(remaining_events) + results.get("scheduled", [])
+        events_path = Path(events_file)
+        events_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(events_path, "w", encoding="utf-8") as f:
+            json.dump(all_final_events, f, indent=2, ensure_ascii=False)
 
     print("=" * 60)
     return results
@@ -1096,6 +1124,10 @@ def main() -> None:
         help="Path to JSON file containing activities (defaults to data/intervals_activities.json)",
     )
     parser.add_argument(
+        "--events-file",
+        help="Path to JSON file to load/save calendar events (defaults to data/calendar_events.json)",
+    )
+    parser.add_argument(
         "--no-clean-past",
         action="store_true",
         help="Disable automatic deletion of uncompleted past workouts",
@@ -1181,6 +1213,7 @@ def main() -> None:
             project_root=project_root,
             clean_past=not args.no_clean_past,
             activities_file=Path(args.activities_file) if args.activities_file else None,
+            events_file=Path(args.events_file) if args.events_file else None,
         )
         return
 

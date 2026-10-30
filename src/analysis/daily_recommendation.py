@@ -661,6 +661,7 @@ def generate_daily_recommendation(
     coach_history: Optional[List[Dict[str, Any]]] = None,
     reference_date: Optional[date] = None,
     form_data: Optional[Dict[str, Any]] = None,
+    calendar_events: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Evaluates the athlete's current state and produces today's targeted training advice."""
     profile = athlete_profile or {}
@@ -690,6 +691,131 @@ def generate_daily_recommendation(
         rec.setdefault("stimulus_context", stimulus)
         return rec
 
+    days_since = calculate_days_since_last_run(runs, ref_date) if runs else 999
+    sorted_runs = sorted(
+        runs,
+        key=lambda r: str(r.get("start_date_local") or r.get("date") or ""),
+        reverse=True,
+    ) if runs else []
+    last_run = sorted_runs[0] if sorted_runs else {}
+    last_load = float(last_run.get("training_load") or last_run.get("icu_training_load") or 0.0)
+    last_name = str(last_run.get("name") or "Lauf")
+
+    # Calendar Events Priority (if calendar events are provided)
+    if calendar_events is not None:
+        today_iso = ref_date.isoformat()
+        events_today = [
+            e for e in calendar_events
+            if str(e.get("start_date_local") or e.get("date") or "")[:10] == today_iso
+        ]
+        rest_note = next(
+            (
+                e for e in events_today
+                if (e.get("category") == "NOTE" and "ruhetag" in str(e.get("name") or "").lower())
+                or e.get("category") == "HOLIDAY"
+            ),
+            None,
+        )
+        completed_workout = next(
+            (
+                e for e in events_today
+                if e.get("category") == "WORKOUT" and e.get("paired_activity_id")
+            ),
+            None,
+        )
+        planned_workout = next(
+            (
+                e for e in events_today
+                if e.get("category") == "WORKOUT" and not e.get("paired_activity_id")
+            ),
+            None,
+        )
+
+        # 1. Workout completed today or already paired in calendar
+        if completed_workout or days_since == 0:
+            c_name = completed_workout.get("name") if completed_workout else last_name
+            return _finalize({
+                "date": ref_date.isoformat(),
+                "date_display": ref_date_str,
+                "days_since_last_run": 0,
+                "action_type": "rest_day",
+                "headline": f"Heute: Training absolviert ({c_name})",
+                "badge": "Absolviert",
+                "badge_class": "tag-cyan",
+                "icon": "🛌",
+                "details": (
+                    f"Du hast heute bereits eine Einheit absolviert ({c_name}). "
+                    f"Dein Körper verarbeitet den Trainingsreiz (Form TSB: {tsb:+.1f}). "
+                    "Für heute stehen Erholung und Regeneration im Vordergrund."
+                ),
+                "suggested_duration_min": 0,
+                "suggested_target_hr": 0,
+                "tsb": tsb,
+                "is_calendar_override": True,
+            })
+
+        # 2. Open scheduled workout exists in calendar
+        if planned_workout:
+            w_name = planned_workout.get("name", "Geplantes Workout")
+            w_desc = str(planned_workout.get("description") or "").strip()
+            coach_advisory = ""
+            if tsb < -5.0 or (tsb < 0.0 and "schwellen" in w_name.lower()):
+                coach_advisory = (
+                    f" ⚠️ Coach-Hinweis: Deine aktuelle Form ist mit TSB {tsb:+.1f} im negativen Bereich. "
+                    "Höre genau auf deinen Körper – falls sich die Beine schwer anfühlen, drossle die Intensität oder wechsle auf lockeres Z2."
+                )
+
+            details_text = f"Im Kalender geplant: {w_name}."
+            if w_desc:
+                details_text += f"\n\n{w_desc}"
+            if coach_advisory:
+                details_text += f"\n\n{coach_advisory}"
+
+            duration_match = planned_workout.get("moving_time") or 45
+            if isinstance(duration_match, (int, float)) and duration_match > 300:
+                suggested_min = int(duration_match // 60)
+            else:
+                suggested_min = 45
+
+            return _finalize({
+                "date": ref_date.isoformat(),
+                "date_display": ref_date_str,
+                "days_since_last_run": days_since,
+                "action_type": "workout_day",
+                "workout_type": "calendar_planned",
+                "headline": f"Heute: {w_name}",
+                "badge": "Kalender: Geplant",
+                "badge_class": "tag-green",
+                "icon": "🏃",
+                "details": details_text,
+                "suggested_duration_min": suggested_min,
+                "suggested_target_hr": target_hr,
+                "tsb": tsb,
+                "is_calendar_override": True,
+            })
+
+        # 3. Calendar rest day note OR no workout scheduled today
+        reason_label = "Ruhetag-Notiz im Kalender" if rest_note else "Kein Lauf im Kalender eingetragen"
+        return _finalize({
+            "date": ref_date.isoformat(),
+            "date_display": ref_date_str,
+            "days_since_last_run": days_since,
+            "action_type": "rest_day",
+            "headline": "Heute: Ruhetag (Laut Kalender)",
+            "badge": "Ruhetag",
+            "badge_class": "tag-cyan",
+            "icon": "🛋️",
+            "details": (
+                f"{reason_label}. "
+                "Für heute ist kein Training vorgesehen. "
+                "Nutze den Tag zur aktiven Erholung, Schlaf und Regeneration."
+            ),
+            "suggested_duration_min": 0,
+            "suggested_target_hr": 0,
+            "tsb": tsb,
+            "is_calendar_override": True,
+        })
+
     if not runs:
         return _finalize({
             "date": ref_date.isoformat(),
@@ -705,16 +831,6 @@ def generate_daily_recommendation(
             "suggested_target_hr": target_hr,
             "tsb": tsb,
         })
-
-    days_since = calculate_days_since_last_run(runs, ref_date)
-    sorted_runs = sorted(
-        runs,
-        key=lambda r: str(r.get("start_date_local") or r.get("date") or ""),
-        reverse=True,
-    )
-    last_run = sorted_runs[0]
-    last_load = float(last_run.get("training_load") or last_run.get("icu_training_load") or 0.0)
-    last_name = str(last_run.get("name") or "Lauf")
 
     # Case 0: Run was completed today
     if days_since == 0:
@@ -951,6 +1067,12 @@ def main() -> int:
         help="Path to coach history JSON",
     )
     parser.add_argument(
+        "--events",
+        type=Path,
+        default=Path(os.getenv("CALENDAR_EVENTS_PATH", "")) if os.getenv("CALENDAR_EVENTS_PATH") else None,
+        help="Path to calendar events JSON file",
+    )
+    parser.add_argument(
         "--date",
         type=str,
         help="Reference date for evaluation (YYYY-MM-DD, defaults to today)",
@@ -968,12 +1090,20 @@ def main() -> int:
     runs = filter_runs(activities)
     profile = load_athlete_profile(args.athlete)
     history = load_coach_history(args.history) if args.history.is_file() else []
+    events_data = None
+    if args.events and args.events.is_file():
+        try:
+            with open(args.events, "r", encoding="utf-8") as f:
+                events_data = json.load(f)
+        except Exception:
+            events_data = None
 
     rec = generate_daily_recommendation(
         runs=runs,
         athlete_profile=profile,
         coach_history=history,
         reference_date=ref_d,
+        calendar_events=events_data,
     )
 
     if args.json:

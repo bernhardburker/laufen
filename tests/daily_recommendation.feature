@@ -145,6 +145,24 @@ Feature: Daily adaptive training recommendation
     And the recommended workout type is "easy_run"
     And the recommendation headline contains "Coach-Empfehlung"
 
+  Scenario: Prioritize scheduled calendar workout when calendar events are provided
+    Given a runner with an open scheduled workout in the calendar for today
+    When the daily training recommendation is calculated with calendar events
+    Then the recommendation matches the planned calendar workout
+
+  Scenario: Recognize calendar rest day note as rest day
+    Given the calendar has a rest day note for today
+    When the daily training recommendation is calculated with calendar events
+    Then the recommendation type is "rest_day"
+    And the recommendation headline indicates a calendar rest day
+
+  Scenario: Recognize completed paired workout in calendar as completed training
+    Given the calendar has a paired completed workout for today
+    When the daily training recommendation is calculated with calendar events
+    Then the recommendation type is "rest_day"
+    And the recommendation headline indicates completed training
+
+
 
 
 

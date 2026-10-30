@@ -57,6 +57,7 @@ class DailyRecommendationDriver:
         self.recommendation: Dict[str, Any] = {}
         self.dashboard_html: str = ""
         self.form_tsb: float = 2.5
+        self.calendar_events: Optional[List[Dict[str, Any]]] = None
 
         # Paths for dashboard test
         self.activities_file = tmp_path / "activities.json"
@@ -120,6 +121,7 @@ class DailyRecommendationDriver:
             coach_history=self.coach_history,
             reference_date=self.reference_date,
             form_data={"current_tsb": self.form_tsb, "latest_ctl": 15.0, "latest_atl": 12.5},
+            calendar_events=self.calendar_events,
         )
 
     def set_form_tsb(self, tsb: float) -> None:
@@ -720,3 +722,69 @@ def given_coach_history_easy_run(driver: DailyRecommendationDriver) -> None:
 def then_headline_contains(driver: DailyRecommendationDriver, snippet: str) -> None:
     headline = driver.recommendation.get("headline", "")
     assert snippet in headline, f"Expected '{snippet}' in headline '{headline}'"
+
+
+@given("a runner with an open scheduled workout in the calendar for today")
+def given_runner_open_workout_calendar(driver: DailyRecommendationDriver) -> None:
+    today_iso = driver.reference_date.isoformat()
+    driver.calendar_events = [
+        {
+            "id": 201,
+            "start_date_local": f"{today_iso}T07:00:00",
+            "category": "WORKOUT",
+            "name": "Kontrollierter Schwellenlauf (3x 8m Z4)",
+            "description": "Warmup\n- 10m Z1 HR\n3x\n- 8m Z4 HR\nCooldown\n- 10m Z1 HR",
+            "paired_activity_id": None,
+        }
+    ]
+
+
+@given("the calendar has a rest day note for today")
+def given_calendar_rest_note(driver: DailyRecommendationDriver) -> None:
+    today_iso = driver.reference_date.isoformat()
+    driver.calendar_events = [
+        {
+            "id": 202,
+            "start_date_local": f"{today_iso}T00:00:00",
+            "category": "NOTE",
+            "name": "🛋️ Ruhetag (Coach)",
+            "paired_activity_id": None,
+        }
+    ]
+
+
+@given("the calendar has a paired completed workout for today")
+def given_calendar_paired_workout(driver: DailyRecommendationDriver) -> None:
+    today_iso = driver.reference_date.isoformat()
+    driver.calendar_events = [
+        {
+            "id": 203,
+            "start_date_local": f"{today_iso}T07:30:00",
+            "category": "WORKOUT",
+            "name": "Kontrollierter Schwellenlauf (3x 8m Z4)",
+            "paired_activity_id": "act-12345",
+        }
+    ]
+
+
+@when("the daily training recommendation is calculated with calendar events")
+def when_calc_with_calendar(driver: DailyRecommendationDriver) -> None:
+    driver.compute_daily_recommendation()
+
+
+@then("the recommendation matches the planned calendar workout")
+def then_matches_calendar_workout(driver: DailyRecommendationDriver) -> None:
+    assert driver.recommendation.get("action_type") == "workout_day"
+    assert "Kontrollierter Schwellenlauf" in driver.recommendation.get("headline", "")
+    assert "Kalender: Geplant" in driver.recommendation.get("badge", "")
+
+
+@then("the recommendation headline indicates a calendar rest day")
+def then_headline_indicates_rest_day(driver: DailyRecommendationDriver) -> None:
+    assert "Ruhetag (Laut Kalender)" in driver.recommendation.get("headline", "")
+
+
+@then("the recommendation headline indicates completed training")
+def then_headline_indicates_completed(driver: DailyRecommendationDriver) -> None:
+    assert "Training absolviert" in driver.recommendation.get("headline", "")
+

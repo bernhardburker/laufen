@@ -184,7 +184,11 @@ case "$COMMAND" in
   sync)
     "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_intervals.py" --output "$ACTIVITIES_PATH" --athlete-id "$INTERVALS_ATHLETE_ID" "${REMAINING_ARGS[@]}"
     "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_wellness.py" --output "$WELLNESS_PATH" --athlete-id "$INTERVALS_ATHLETE_ID" "${REMAINING_ARGS[@]}" || true
-    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/planner/schedule_workout.py" --adaptive-plan --athlete-id "$INTERVALS_ATHLETE_ID" --activities-file "$ACTIVITIES_PATH" "${REMAINING_ARGS[@]}" || true
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_events.py" --output "$CALENDAR_EVENTS_PATH" --athlete-id "$INTERVALS_ATHLETE_ID" "${REMAINING_ARGS[@]}" || true
+    "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/planner/schedule_workout.py" --adaptive-plan --athlete-id "$INTERVALS_ATHLETE_ID" --activities-file "$ACTIVITIES_PATH" --events-file "$CALENDAR_EVENTS_PATH" "${REMAINING_ARGS[@]}" || true
+    ;;
+  events|sync-events)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_events.py" --output "$CALENDAR_EVENTS_PATH" --athlete-id "$INTERVALS_ATHLETE_ID" "${REMAINING_ARGS[@]}"
     ;;
   wellness|sync-wellness)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/download_wellness.py" --output "$WELLNESS_PATH" --athlete-id "$INTERVALS_ATHLETE_ID" "${REMAINING_ARGS[@]}"
@@ -213,7 +217,7 @@ case "$COMMAND" in
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/coach_history.py" --history "$COACH_HISTORY_PATH" "${REMAINING_ARGS[@]}"
     ;;
   today|daily)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/daily_recommendation.py" --input "$ACTIVITIES_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" "${REMAINING_ARGS[@]}"
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/daily_recommendation.py" --input "$ACTIVITIES_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" --events "$CALENDAR_EVENTS_PATH" "${REMAINING_ARGS[@]}"
     ;;
   coach|ai-coach)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/ai_coach.py" --execute --input "$ACTIVITIES_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" --reviews "$RUN_REVIEWS_PATH" --output-json "$AI_SUMMARY_PATH" --output-md "$AI_COMMENTARY_PATH" "${REMAINING_ARGS[@]}"
@@ -239,6 +243,7 @@ case "$COMMAND" in
       --ai-summary "$AI_SUMMARY_PATH" \
       --coach-history "$COACH_HISTORY_PATH" \
       --run-reviews "$RUN_REVIEWS_PATH" \
+      --events "$CALENDAR_EVENTS_PATH" \
       --title "Lauf- & Leistungs-Dashboard (${ATHLETE_DISPLAY_NAME})" \
       "${REMAINING_ARGS[@]}"
     if [[ "$ATHLETE_IS_DEFAULT" == "true" ]]; then
@@ -256,6 +261,7 @@ case "$COMMAND" in
       --ai-summary "$AI_SUMMARY_PATH" \
       --coach-history "$COACH_HISTORY_PATH" \
       --run-reviews "$RUN_REVIEWS_PATH" \
+      --events "$CALENDAR_EVENTS_PATH" \
       --title "Lauf- & Leistungs-Dashboard (${ATHLETE_DISPLAY_NAME})"
     if [[ "$ATHLETE_IS_DEFAULT" == "true" ]]; then
       cp -f "$DASHBOARD_OUTPUT_DIR/index.html" "$WORKSPACE_ROOT/dist/index.html"

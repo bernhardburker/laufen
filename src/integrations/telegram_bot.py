@@ -50,6 +50,7 @@ from src.athletes import (
 )
 from src.integrations.download_intervals import fetch_intervals_activities
 from src.integrations.download_wellness import fetch_intervals_wellness
+from src.integrations.download_events import fetch_intervals_events
 from src.integrations.manage_note import attach_note_to_run
 from src.llm import LLMClient, get_llm_client
 from src.planner.extract_markers import extract_planning_markers
@@ -400,7 +401,7 @@ def format_daily_briefing_message(
             }
         lines.append("")
         lines.append("Falls du heute trotzdem locker laufen oder den morgigen Plan anpassen möchtest, antworte mir einfach kurz!")
-    elif active_workout:
+    elif active_workout and not active_workout.get("paired_activity_id"):
         w_name = active_workout.get("name", "Training")
         w_desc = str(active_workout.get("description") or "").strip()
         date_label = "heute" if target_date_iso == ref_date_iso else f"morgen ({target_date_iso})"
@@ -418,6 +419,17 @@ def format_daily_briefing_message(
             "description": w_desc,
             "event_id": active_workout.get("id"),
             "is_rest_day_today": False,
+        }
+    elif active_workout and active_workout.get("paired_activity_id"):
+        w_name = active_workout.get("name", "Training")
+        lines.append(f"🏆 Heutiges Training bereits absolviert: {w_name}")
+        lines.append("Für den restlichen Tag steht Erholung und Regeneration im Vordergrund.")
+        proposal_dict = {
+            "target_date": target_date_iso,
+            "name": w_name,
+            "description": active_workout.get("description", ""),
+            "event_id": active_workout.get("id"),
+            "is_rest_day_today": True,
         }
     else:
         lines.append("🏃 Für heute ist aktuell kein Lauf geplant.")
@@ -474,6 +486,20 @@ def send_daily_briefing_for_athlete(
         except Exception:
             pass
 
+        try:
+            fresh_events = fetch_intervals_events(
+                api_key=intervals_api_key,
+                athlete_id=ctx.intervals_id,
+                api_base_url=intervals_api_base,
+                raise_on_error=True,
+            )
+            if fresh_events and isinstance(fresh_events, list):
+                ev_path = ctx.calendar_events_path or (ctx.base_dir / "calendar_events.json")
+                ev_path.parent.mkdir(parents=True, exist_ok=True)
+                ev_path.write_text(json.dumps(fresh_events, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            pass
+
     # 1. Auto-sync adaptive workout to Intervals.icu (Option B)
     profile_data = {}
     if ctx.athlete_config_path.is_file():
@@ -482,6 +508,7 @@ def send_daily_briefing_for_athlete(
         except Exception:
             profile_data = {}
 
+    events_path = ctx.calendar_events_path or (ctx.base_dir / "calendar_events.json")
     sync_res = sync_adaptive_plan(
         api_key=intervals_api_key,
         athlete_id=ctx.intervals_id,
@@ -492,6 +519,7 @@ def send_daily_briefing_for_athlete(
         project_root=root,
         clean_past=True,
         activities_file=ctx.activities_path,
+        events_file=events_path,
     )
 
     target_date_str = sync_res.get("target_date") or today_iso
@@ -1470,7 +1498,7 @@ def check_and_send_due_briefings(
         state = load_telegram_state(state_path)
         if state.get("last_briefing_date") == today_iso:
             continue
-        if current_hm >= ctx.briefing_time:
+        if ctx.briefing_time <= current_hm <= "11:30":
             try:
                 res = send_daily_briefing_for_athlete(
                     ctx=ctx,

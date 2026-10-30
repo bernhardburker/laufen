@@ -40,6 +40,7 @@ class AthleteContext:
     evening_briefing_enabled: bool = True
     post_run_summary_enabled: bool = True
     telegram_state_path: Optional[Path] = None
+    calendar_events_path: Optional[Path] = None
 
     def ensure_dirs(self) -> None:
         """Creates necessary athlete directory trees if they do not exist."""
@@ -187,6 +188,7 @@ def resolve_athlete_context(
                 evening_briefing_enabled=True,
                 post_run_summary_enabled=True,
                 telegram_state_path=root / "data" / "telegram_state.json",
+                calendar_events_path=root / "data" / "calendar_events.json",
             )
         else:
             raise KeyError(f"Athlete '{target_slug}' not found in registry and fallback disabled.")
@@ -214,6 +216,7 @@ def resolve_athlete_context(
         evening_briefing_enabled=evening_briefing_enabled,
         post_run_summary_enabled=post_run_summary_enabled,
         telegram_state_path=base_dir / "telegram_state.json",
+        calendar_events_path=base_dir / "calendar_events.json",
     )
 
 
@@ -331,6 +334,7 @@ def print_shell_env(ctx: AthleteContext, is_default: bool = False) -> None:
     print(f'export BRIEFING_TIME="{ctx.briefing_time}"')
     print(f'export BRIEFING_ENABLED="{"true" if ctx.briefing_enabled else "false"}"')
     print(f'export TELEGRAM_STATE_PATH="{ctx.telegram_state_path or (ctx.base_dir / "telegram_state.json")}"')
+    print(f'export CALENDAR_EVENTS_PATH="{ctx.calendar_events_path or (ctx.base_dir / "calendar_events.json")}"')
 
 
 def main() -> None:

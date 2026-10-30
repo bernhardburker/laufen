@@ -99,6 +99,9 @@ jobs:
           TARGET_DIR="$HOME/dockerContainer/laufen"
           cd "$TARGET_DIR"
 
+          echo "📅 Synchronisiere Kalender-Events..."
+          ./run events --all || echo "::warning ::Kalender-Event-Sync meldete Warnungen"
+
           echo "📊 Generiere lokales Dashboard..."
           ./run dashboard --all || echo "::warning ::Dashboard Generierung meldete Warnungen"
 
