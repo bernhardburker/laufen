@@ -109,6 +109,19 @@
     "recommendation": "Slot 2 (Mi–Fr) für einen dosierten Schwellenreiz nutzen, sofern keine Restmüdigkeit vorliegt: 40–45 Minuten Gesamtdauer mit ca. 15–20 Minuten im Bereich 168–174 bpm. Bei schweren Beinen stattdessen rein Z2 (< 158 bpm).",
     "target_type": "tempo_run",
     "target_hr_max": 174,
+    "status": "erfüllt",
+    "actual": "In Slot 2 wurde am 30.10. die ruhige Option gewählt: 5,68 km in 39 Min bei Ø 152 bpm. 79,9 % der Zeit lagen in Z1/Z2, mit ca. 8 Minuten Drift in Z3/Z4 gegen Ende.",
+    "effect": "Der aerobe Fokus blieb gewahrt, der Schwellenreiz entfiel. Die Beine blieben frisch, die Ermüdung (ATL 18,4, TSB -4,5) bleibt voll im grünen Bereich.",
+    "evaluated_run_ids": [
+      "i203449631"
+    ]
+  },
+  {
+    "id": "cycle-010",
+    "date": "2026-10-30",
+    "recommendation": "Slot 3 am Wochenende für einen ruhigen Long Run (55–65 Min) nutzen. Puls strikt unter 158 bpm halten, Pace vollständig ignorieren.",
+    "target_type": "easy_run",
+    "target_hr_max": 158,
     "status": "offen",
     "actual": "Ausstehend (wird nach den nächsten Läufen analysiert)",
     "effect": "-"
