@@ -191,6 +191,8 @@ def extract_deep_run_metrics(
         "id": str(run.get("id")),
         "date": str(run.get("start_date_local") or "")[:19],
         "name": str(run.get("name") or "Lauf"),
+        "description": run.get("description") or run.get("notes") or "",
+        "athlete_note": run.get("athlete_note") or run.get("description") or run.get("notes") or "",
         "distance_km": distance_km,
         "moving_time_s": moving_time_s,
         "moving_time_str": format_duration(moving_time_s),
@@ -679,10 +681,48 @@ def evaluate_run_deep(
     }
 
     # Stage 2: Compliance
-    stage2 = intent
+    stage2 = dict(intent)
+
+    # Check for subjective athlete notes (cramps, muscle tightness, early termination)
+    athlete_note = str(
+        metrics.get("athlete_note")
+        or (run_raw.get("athlete_note") if run_raw else "")
+        or (run_raw.get("description") if run_raw else "")
+        or ""
+    ).strip()
+
+    cramp_keywords = (
+        "krampf", "krämpfe", "krampfen", "gekrampft", "wade", "waden",
+        "zerrung", "schmerz", "beschwerde", "verhärtung", "verspannt",
+        "cramp", "calf", "spasm", "tightness"
+    )
+    has_cramps = any(k in athlete_note.lower() for k in cramp_keywords)
+
+    if has_cramps:
+        stage2["compliance_notes"] = (
+            f"Einheit kontrolliert angepasst/abgemildert wegen muskulärer Beschwerden ('{athlete_note}'). "
+            "Vernünftige Schutzreaktion zum Verletzungsschutz."
+        )
+        stage2["target_comparison"] = (
+            f"Wegen Wadenkrämpfen angepasst ('{athlete_note}'). "
+            "Verletzungsschutz hatte Vorrang vor Intervallen."
+        )
+        if stage2.get("status") in ("verfehlt", "teilweise"):
+            stage2["status_label"] = "Angepasst (Wadenbeschwerden)"
 
     # Stage 3: Optimizations
     stage3 = generate_actionable_optimizations(metrics, intent)
+    if has_cramps:
+        stage3.insert(0, {
+            "category": "recovery",
+            "title": "Wadenschonung, Dehnen & Elektrolyte",
+            "text": (
+                f"Aufgetretene Wadenkrämpfe beachten ('{athlete_note}'): "
+                "Gezielte Wadendehnung, Faszientraining, Magnesium-/Elektrolytausgleich. "
+                "Mindestens 48 Stunden keine harten Schwellen- oder Intervallläufe."
+            ),
+            "actionable_advice": "Waden gezielt dehnen, Magnesium zuführen und 48h auf harte Intervalle verzichten.",
+        })
 
     # Stage 4: Next run
     stage4 = determine_post_run_recovery(
@@ -691,6 +731,14 @@ def evaluate_run_deep(
         intent=intent,
         optimizations=stage3,
     )
+    if has_cramps:
+        stage4["recovery_hours"] = max(int(stage4.get("recovery_hours") or 24), 48)
+        stage4["next_workout_type"] = "recovery_run"
+        stage4["optimization_focus"] = "Wadenschonung & passive/aktive Erholung"
+        stage4["directive"] = (
+            f"Aufgrund aufgetretener Wadenkrämpfe ('{athlete_note}') stehen die nächsten 48h im Zeichen der Erholung. "
+            "Kein Schwellentempo, Fokus auf Dehnen, Faszien und maximal lockeren Z1/Z2-Lauf."
+        )
 
     # Derive top-level legacy fields
     intensity_class = metrics["intensity_class"]
@@ -757,6 +805,7 @@ def evaluate_run_deep(
         "summary": summary,
         "coach_tip": tip,
         "cadence_feedback": cadence_note,
+        "athlete_note": athlete_note if athlete_note else None,
         "zone_distribution_text": f"Z1: {z1_str} | Z2: {z2_str} | Z3: {z3_str} | Z4: {z4_str}",
         "stages": {
             "stage1_physiology": stage1,
@@ -866,6 +915,7 @@ def review_runs(
             "zone_breakdown": metrics["zone_breakdown"],
             "intervals": metrics["intervals"],
             "intensity_class": metrics["intensity_class"],
+            "athlete_note": evaluation.get("athlete_note") or metrics.get("athlete_note") or None,
             "review": evaluation,
             "analyzed_at": now_iso,
         }

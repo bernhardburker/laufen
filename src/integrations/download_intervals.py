@@ -105,6 +105,58 @@ def fetch_intervals_activities(
         sys.exit(f"Network error while connecting to Intervals.icu: {e.reason}")
 
 
+def update_intervals_activity(
+    activity_id: str,
+    api_key: str,
+    description: str | None = None,
+    feel: int | None = None,
+    perceived_exertion: int | None = None,
+    api_base_url: str = "https://intervals.icu/api/v1",
+    raise_on_error: bool = False,
+) -> dict:
+    """Updates activity metadata (description/notes, feel, RPE) on Intervals.icu via PUT /api/v1/activity/{id}."""
+    clean_id = str(activity_id).strip()
+    url = f"{api_base_url.rstrip('/')}/activity/{clean_id}"
+
+    payload: dict = {}
+    if description is not None:
+        payload["description"] = description
+    if feel is not None:
+        payload["feel"] = int(feel)
+    if perceived_exertion is not None:
+        payload["perceived_exertion"] = int(perceived_exertion)
+
+    auth_string = f"API_KEY:{api_key}"
+    auth_header = "Basic " + base64.b64encode(auth_string.encode("utf-8")).decode("ascii")
+
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=data,
+        headers={
+            "Authorization": auth_header,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "Mozilla/5.0 (compatible; LaufenSync/1.0)",
+        },
+        method="PUT",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            raw = resp.read().decode("utf-8")
+            return json.loads(raw) if raw else {"ok": True, "id": clean_id, **payload}
+    except urllib.error.HTTPError as e:
+        if raise_on_error:
+            raise
+        error_msg = e.read().decode("utf-8", errors="replace")
+        return {"error": f"HTTP {e.code}: {error_msg}", "status": e.code}
+    except urllib.error.URLError as e:
+        if raise_on_error:
+            raise
+        return {"error": f"Network error: {e.reason}"}
+
+
 def main() -> None:
     project_root = Path(__file__).resolve().parent.parent.parent
     dotenv_path = os.getenv("DOTENV_PATH")

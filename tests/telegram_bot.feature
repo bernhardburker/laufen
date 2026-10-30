@@ -106,3 +106,20 @@ Feature: Bidirectional Telegram Coach Bot and Daily Briefing
     And the Telegram bot has allowed user ids "123456"
     When the Telegram bot receives callback query "rest:2026-10-26" from user id "999999" in chat id "987654321"
     Then the planned workout on "2026-10-26" is not modified on Intervals.icu
+
+  Scenario: Athlete submits subjective run feedback and bot asks for confirmation with matched run
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has completed a run "act_200" with name "3x8m Schwellenintervalle" on "2026-10-30"
+    When the Telegram bot receives message "heute haben nach dem 1. intervall meine waden begonnen zu krampfen, habe gedehnt und bin langsam ausgelaufen" from chat id "987654321"
+    Then the last Telegram message sent to "987654321" contains "Ich habe folgenden Lauf gefunden"
+    And the last Telegram message sent to "987654321" contains "3x8m Schwellenintervalle"
+    And the last Telegram message sent to "987654321" includes note confirmation keyboard buttons
+
+  Scenario: Athlete confirms matched run note via inline button click
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has completed a run "act_200" with name "3x8m Schwellenintervalle" on "2026-10-30"
+    And the athlete "berni" has a pending run note for "act_200" with text "Wadenkrämpfe nach 1. Intervall"
+    When the Telegram bot receives callback query "note_confirm:act_200" from chat id "987654321"
+    Then the activity "act_200" is updated on Intervals.icu with description "Wadenkrämpfe nach 1. Intervall"
+    And the last Telegram message sent to "987654321" contains "Notiz erfolgreich"
+    And the last Telegram message sent to "987654321" contains "Coach-Update"

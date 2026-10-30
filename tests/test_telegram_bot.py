@@ -24,6 +24,7 @@ from src.integrations.telegram_bot import (
     check_and_send_due_evening_previews,
     check_and_send_due_post_run_reviews,
     handle_telegram_update,
+    load_telegram_state,
     save_telegram_state,
     send_daily_briefing_for_athlete,
     send_evening_preview_for_athlete,
@@ -39,6 +40,7 @@ class MockCombinedAPIHandler(http.server.BaseHTTPRequestHandler):
     sent_telegram_messages: List[Dict[str, Any]] = []
     intervals_events: List[Dict[str, Any]] = []
     deleted_event_ids: List[str] = []
+    updated_activities: Dict[str, Dict[str, Any]] = {}
     next_event_id: int = 100
 
     def do_GET(self):
@@ -96,6 +98,23 @@ class MockCombinedAPIHandler(http.server.BaseHTTPRequestHandler):
         self.send_response(404)
         self.end_headers()
 
+    def do_PUT(self):
+        length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
+        payload = json.loads(body) if body else {}
+
+        if "/activity/" in self.path:
+            act_id = self.path.rstrip("/").split("/")[-1]
+            MockCombinedAPIHandler.updated_activities[act_id] = payload
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"id": act_id, **payload}).encode("utf-8"))
+            return
+
+        self.send_response(404)
+        self.end_headers()
+
     def do_DELETE(self):
         if "/athlete/" in self.path and "/events/" in self.path:
             ev_id = self.path.rstrip("/").split("/")[-1]
@@ -129,6 +148,7 @@ class TelegramBotDriver:
         MockCombinedAPIHandler.sent_telegram_messages = []
         MockCombinedAPIHandler.intervals_events = []
         MockCombinedAPIHandler.deleted_event_ids = []
+        MockCombinedAPIHandler.updated_activities = {}
         MockCombinedAPIHandler.next_event_id = 100
 
         self.server = http.server.HTTPServer(("127.0.0.1", 0), MockCombinedAPIHandler)
@@ -286,6 +306,18 @@ class TelegramBotDriver:
                 },
             },
         )
+
+    def setup_pending_run_note(self, slug: str, act_id: str, note_text: str) -> None:
+        ctx = resolve_athlete_context(slug, project_root=self.tmp_path, registry_path=self.registry_path)
+        state_path = ctx.telegram_state_path or (ctx.base_dir / "telegram_state.json")
+        state = load_telegram_state(state_path)
+        state["pending_run_note"] = {
+            "activity_id": act_id,
+            "activity_name": "3x8m Schwellenintervalle",
+            "date": "2026-10-30 08:00",
+            "note_text": note_text,
+        }
+        save_telegram_state(state_path, state)
 
     def send_incoming_text(
         self,
@@ -587,5 +619,29 @@ def then_verify_not_linked_chat_id(driver: TelegramBotDriver, slug: str, chat_id
 @then(parsers.parse('the planned workout on "{date_str}" is not modified on Intervals.icu'))
 def then_verify_workout_not_modified(driver: TelegramBotDriver, date_str: str):
     assert "ev_initial" not in MockCombinedAPIHandler.deleted_event_ids
+
+
+@given(parsers.parse('the athlete "{slug}" has a pending run note for "{act_id}" with text "{note_text}"'))
+def given_athlete_pending_run_note(driver: TelegramBotDriver, slug: str, act_id: str, note_text: str):
+    driver.setup_pending_run_note(slug=slug, act_id=act_id, note_text=note_text)
+
+
+@then(parsers.parse('the last Telegram message sent to "{chat_id}" includes note confirmation keyboard buttons'))
+def then_note_confirmation_keyboard(driver: TelegramBotDriver, chat_id: str):
+    msgs = [m for m in MockCombinedAPIHandler.sent_telegram_messages if str(m.get("chat_id")) == chat_id]
+    assert len(msgs) > 0
+    markup = msgs[-1].get("reply_markup") or {}
+    assert "inline_keyboard" in markup
+    callbacks = [btn.get("callback_data", "") for row in markup["inline_keyboard"] for btn in row]
+    assert any("note_confirm:" in cb for cb in callbacks)
+    assert any("note_pick_other" in cb for cb in callbacks)
+    assert any("note_cancel" in cb for cb in callbacks)
+
+
+@then(parsers.parse('the activity "{act_id}" is updated on Intervals.icu with description "{expected_desc}"'))
+def then_activity_updated_on_intervals(driver: TelegramBotDriver, act_id: str, expected_desc: str):
+    assert act_id in MockCombinedAPIHandler.updated_activities
+    assert MockCombinedAPIHandler.updated_activities[act_id].get("description") == expected_desc
+
 
 

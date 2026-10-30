@@ -243,6 +243,14 @@ def build_table_rows(
             else:
                 inner_content = f'<div class="run-review-text">{r_summary}</div>{tip_html}'
 
+            athlete_note = html.escape(str(rev_info.get("athlete_note") or r_eval.get("athlete_note") or run.get("description") or "").strip())
+            note_html = (
+                f'<div class="run-athlete-note" style="margin-bottom: 8px; padding: 6px 10px; background: rgba(56, 189, 248, 0.08); border-left: 3px solid var(--cyan); border-radius: 4px; font-size: 0.82rem; color: var(--text);">'
+                f'📝 <strong>Athleten-Notiz:</strong> {athlete_note}</div>'
+                if athlete_note
+                else ""
+            )
+
             review_html = (
                 f'<details class="run-review-details">'
                 f'<summary class="run-review-summary">'
@@ -250,6 +258,7 @@ def build_table_rows(
                 f'<span class="review-toggle-hint">Analyse anzeigen <span class="chevron">▼</span></span>'
                 f'</summary>'
                 f'<div class="run-review-content">'
+                f'{note_html}'
                 f'{inner_content}'
                 f'</div>'
                 f'</details>'

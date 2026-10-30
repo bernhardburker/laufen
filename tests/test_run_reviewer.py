@@ -387,3 +387,26 @@ def then_stage4_includes_cadence_economy(driver: RunReviewerDriver) -> None:
     stage4 = driver.deep_review.get("stages", {}).get("stage4_next_run", {})
     assert "Kadenz" in stage4.get("directive", "")
     assert "Kadenz" in stage4.get("optimization_focus", "")
+
+
+@given(parsers.parse('an activity with athlete note "{note}"'))
+def given_activity_with_note(driver: RunReviewerDriver, note: str) -> None:
+    driver.setup_sample_activity()
+    driver.sample_run["description"] = note
+    driver.sample_run["athlete_note"] = note
+
+
+@then("stage 2 compliance reflects muscle protection for calf cramps")
+def then_stage2_reflects_muscle_protection(driver: RunReviewerDriver) -> None:
+    stage2 = driver.deep_review.get("stages", {}).get("stage2_compliance", {})
+    comp = stage2.get("compliance_notes") or stage2.get("target_comparison") or ""
+    assert "Wadenkrämpfe" in comp or "Waden" in comp
+    assert "Schutz" in comp or "angepasst" in comp or "abgemildert" in comp
+
+
+@then("stage 4 specifies at least 48 hours recovery for calf recovery")
+def then_stage4_specifies_calf_recovery(driver: RunReviewerDriver) -> None:
+    stage4 = driver.deep_review.get("stages", {}).get("stage4_next_run", {})
+    assert stage4.get("recovery_hours", 0) >= 48
+    assert "Waden" in stage4.get("directive", "")
+

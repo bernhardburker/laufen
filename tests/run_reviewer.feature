@@ -50,3 +50,9 @@ Feature: Incremental per-run deep analysis and persistent review cache
     Given an activity with heart rate zone times, cadence, elevation, and intervals
     When deep run metrics and review are evaluated
     Then stage 4 includes cadence economy in the next run directive
+
+  Scenario: Subjective athlete note regarding calf cramps adapts compliance and recovery directive
+    Given an activity with athlete note "Nach 1. Schwellenintervall begannen Waden zu krampfen, langsam beendet"
+    When deep run metrics and review are evaluated
+    Then stage 2 compliance reflects muscle protection for calf cramps
+    And stage 4 specifies at least 48 hours recovery for calf recovery

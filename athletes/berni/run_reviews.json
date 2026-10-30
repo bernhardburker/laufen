@@ -9564,5 +9564,234 @@
       }
     },
     "analyzed_at": "2026-10-28T08:09:14.839429"
+  },
+  "i203449631": {
+    "id": "i203449631",
+    "date": "2026-10-30T07:53:52",
+    "name": "Gerasdorf bei Wien - Kontrollierter Schwellenlauf (3x",
+    "distance_km": 5.68,
+    "moving_time_s": 2340,
+    "moving_time_str": "39m",
+    "pace_str": "6:52 /km",
+    "avg_hr": 152.0,
+    "max_hr": 171,
+    "cadence_spm": 151.9,
+    "elevation_gain_m": 21.1,
+    "training_load": 39.0,
+    "icu_ctl": 13.871056,
+    "icu_atl": 18.360575,
+    "tsb_at_run": -4.5,
+    "aerobic_ef": 0.959,
+    "z1_z2_pct": 79.9,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 918,
+        "time_str": "15m 18s",
+        "pct": 39.0
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 960,
+        "time_str": "16m",
+        "pct": 40.8
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo)",
+        "seconds": 362,
+        "time_str": "6m 02s",
+        "pct": 15.4
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 111,
+        "time_str": "1m 51s",
+        "pct": 4.7
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z6": {
+        "name": "Zone 6 (Anaerobic)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z7": {
+        "name": "Zone 7 (Neuromuscular)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "3x 7m2s 149bpm",
+      "1x 2m55s 150bpm",
+      "1x 5m22s 164bpm",
+      "1x 2m38s 168bpm",
+      "1x 8m29s 136bpm",
+      "1x 34s 126bpm",
+      "1x 2s 134bpm",
+      "1x 22s 134bpm",
+      "2x 2m3s 144bpm",
+      "1x 74s 151bpm",
+      "1x 11s 148bpm",
+      "1x 15s 154bpm"
+    ],
+    "intensity_class": "ueberwiegend_aerob",
+    "athlete_note": "Nach dem ersten der 3 Schwellenteile haben die Waden begonnen zu krampfen (kein richtiger Krampf). Nach ein paar Minuten Dehnen langsam beendet.",
+    "review": {
+      "schema_version": 2,
+      "rating": "solide",
+      "rating_label": "Überwiegend aerob mit Z3-Drift",
+      "summary": "Solider Grundlagenschwerpunkt (79.9% in Z1/Z2), jedoch 6m 02s in Zone 3 abgedriftet. Ø Puls lag mit 152 bpm im Soll (< 158 bpm), jedoch kletterte der Maximalpuls auf 171 bpm.",
+      "coach_tip": "An Steigungen oder in der zweiten Hälfte früher Tempo herausnehmen, um nicht in Zone 3 abzudriften.",
+      "cadence_feedback": "Ø 152 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "athlete_note": "Nach dem ersten der 3 Schwellenteile haben die Waden begonnen zu krampfen (kein richtiger Krampf). Nach ein paar Minuten Dehnen langsam beendet.",
+      "zone_distribution_text": "Z1: 15m 18s | Z2: 16m | Z3: 6m 02s | Z4: 1m 51s",
+      "stages": {
+        "stage1_physiology": {
+          "headline": "Ueberwiegend Aerob: 5.68 km in 39m",
+          "summary": "Herzfrequenz lag bei Ø 152 bpm (Max: 171 bpm). Zonenverteilung: Z1/Z2 79.9%, Z3 6m 02s, Z4 1m 51s. Training Load: 39.",
+          "ef": 0.959,
+          "tsb_at_run": -4.5,
+          "parsed_intervals": [
+            {
+              "raw": "3x 7m2s 149bpm",
+              "reps": 3,
+              "duration_s": 422,
+              "duration_str": "7m 02s",
+              "avg_hr": 149,
+              "role": "recovery"
+            },
+            {
+              "raw": "1x 2m55s 150bpm",
+              "reps": 1,
+              "duration_s": 175,
+              "duration_str": "2m 55s",
+              "avg_hr": 150,
+              "role": "recovery"
+            },
+            {
+              "raw": "1x 5m22s 164bpm",
+              "reps": 1,
+              "duration_s": 322,
+              "duration_str": "5m 22s",
+              "avg_hr": 164,
+              "role": "steady"
+            },
+            {
+              "raw": "1x 2m38s 168bpm",
+              "reps": 1,
+              "duration_s": 158,
+              "duration_str": "2m 38s",
+              "avg_hr": 168,
+              "role": "work"
+            },
+            {
+              "raw": "1x 8m29s 136bpm",
+              "reps": 1,
+              "duration_s": 509,
+              "duration_str": "8m 29s",
+              "avg_hr": 136,
+              "role": "recovery"
+            },
+            {
+              "raw": "1x 34s 126bpm",
+              "reps": 1,
+              "duration_s": 34,
+              "duration_str": "34s",
+              "avg_hr": 126,
+              "role": "recovery"
+            },
+            {
+              "raw": "1x 2s 134bpm",
+              "reps": 1,
+              "duration_s": 2,
+              "duration_str": "2s",
+              "avg_hr": 134,
+              "role": "recovery"
+            },
+            {
+              "raw": "1x 22s 134bpm",
+              "reps": 1,
+              "duration_s": 22,
+              "duration_str": "22s",
+              "avg_hr": 134,
+              "role": "recovery"
+            },
+            {
+              "raw": "2x 2m3s 144bpm",
+              "reps": 2,
+              "duration_s": 123,
+              "duration_str": "2m 03s",
+              "avg_hr": 144,
+              "role": "recovery"
+            },
+            {
+              "raw": "1x 74s 151bpm",
+              "reps": 1,
+              "duration_s": 74,
+              "duration_str": "1m 14s",
+              "avg_hr": 151,
+              "role": "recovery"
+            },
+            {
+              "raw": "1x 11s 148bpm",
+              "reps": 1,
+              "duration_s": 11,
+              "duration_str": "11s",
+              "avg_hr": 148,
+              "role": "recovery"
+            },
+            {
+              "raw": "1x 15s 154bpm",
+              "reps": 1,
+              "duration_s": 15,
+              "duration_str": "15s",
+              "avg_hr": 154,
+              "role": "steady"
+            }
+          ]
+        },
+        "stage2_compliance": {
+          "planned_slot": "Slot 2 (Qualitätsreiz)",
+          "intent_source": "name",
+          "intended_type": "threshold",
+          "status": "abweichend",
+          "status_label": "Abweichend",
+          "intervals_icu_compliance": 72.22222,
+          "target_comparison": "Wegen Wadenkrämpfen angepasst ('Nach dem ersten der 3 Schwellenteile haben die Waden begonnen zu krampfen (kein richtiger Krampf). Nach ein paar Minuten Dehnen langsam beendet.'). Verletzungsschutz hatte Vorrang vor Intervallen.",
+          "compliance_notes": "Einheit kontrolliert angepasst/abgemildert wegen muskulärer Beschwerden ('Nach dem ersten der 3 Schwellenteile haben die Waden begonnen zu krampfen (kein richtiger Krampf). Nach ein paar Minuten Dehnen langsam beendet.'). Vernünftige Schutzreaktion zum Verletzungsschutz."
+        },
+        "stage3_optimizations": [
+          {
+            "category": "recovery",
+            "title": "Wadenschonung, Dehnen & Elektrolyte",
+            "text": "Aufgetretene Wadenkrämpfe beachten ('Nach dem ersten der 3 Schwellenteile haben die Waden begonnen zu krampfen (kein richtiger Krampf). Nach ein paar Minuten Dehnen langsam beendet.'): Gezielte Wadendehnung, Faszientraining, Magnesium-/Elektrolytausgleich. Mindestens 48 Stunden keine harten Schwellen- oder Intervallläufe.",
+            "actionable_advice": "Waden gezielt dehnen, Magnesium zuführen und 48h auf harte Intervalle verzichten."
+          },
+          {
+            "category": "maintenance",
+            "title": "Saubere Reizausführung",
+            "text": "Keine akuten physiologischen Fehlbelastungen festgestellt. Die Reizdosierung war harmonisch."
+          }
+        ],
+        "stage4_next_run": {
+          "recovery_hours": 48,
+          "tsb_context": "TSB -4.5 (CTL 13.9 / ATL 18.4)",
+          "next_slot": "Slot 3 (Wochenende)",
+          "next_workout_type": "recovery_run",
+          "target_hr_max": 158,
+          "duration_min": 50,
+          "directive": "Aufgrund aufgetretener Wadenkrämpfe ('Nach dem ersten der 3 Schwellenteile haben die Waden begonnen zu krampfen (kein richtiger Krampf). Nach ein paar Minuten Dehnen langsam beendet.') stehen die nächsten 48h im Zeichen der Erholung. Kein Schwellentempo, Fokus auf Dehnen, Faszien und maximal lockeren Z1/Z2-Lauf.",
+          "optimization_focus": "Wadenschonung & passive/aktive Erholung"
+        }
+      }
+    },
+    "analyzed_at": "2026-10-30T09:47:29.146255"
   }
 }

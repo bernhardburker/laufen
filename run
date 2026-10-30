@@ -56,6 +56,7 @@ Commands:
   today             Display daily evaluated training recommendation
   coach [ARGS...]   Execute AI Running Coach pipeline with LLM integration
   review [ARGS...]  Incrementally review unanalyzed runs and cache results
+  note [TEXT]       Attach subjective note/RPE to run and sync to Intervals.icu
   dashboard         Generate HTML dashboard (dist/<dashboard_slug>/index.html)
   preview [PORT]    Build dashboard and launch local webserver (default: 8080)
   plan [ARGS...]    Create or schedule structured workouts to Intervals.icu
@@ -219,6 +220,15 @@ case "$COMMAND" in
     ;;
   review|reviews)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/run_reviewer.py" --input "$ACTIVITIES_PATH" --reviews "$RUN_REVIEWS_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" "${REMAINING_ARGS[@]}"
+    ;;
+  note|notiz)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/integrations/manage_note.py" \
+      --activities-file "$ACTIVITIES_PATH" \
+      --reviews-file "$RUN_REVIEWS_PATH" \
+      --athlete-config "$ATHLETE_CONFIG_PATH" \
+      --coach-history "$COACH_HISTORY_PATH" \
+      --athlete-slug "${TARGET_ATHLETE:-$ATHLETE_SLUG}" \
+      "${REMAINING_ARGS[@]}"
     ;;
   dashboard)
     mkdir -p "$DASHBOARD_OUTPUT_DIR"

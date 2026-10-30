@@ -50,6 +50,7 @@ from src.athletes import (
 )
 from src.integrations.download_intervals import fetch_intervals_activities
 from src.integrations.download_wellness import fetch_intervals_wellness
+from src.integrations.manage_note import attach_note_to_run
 from src.llm import LLMClient, get_llm_client
 from src.planner.extract_markers import extract_planning_markers
 from src.planner.schedule_workout import (
@@ -670,9 +671,16 @@ def send_post_run_review_for_athlete(
         athlete_name=ctx.display_name,
     )
 
+    review_markup = {
+        "inline_keyboard": [
+            [{"text": "📝 Notiz hinzufügen", "callback_data": f"note_prompt:{act_id}"}]
+        ]
+    }
+
     send_res = bot_client.send_message(
         chat_id=ctx.telegram_chat_id,
         text=msg_text,
+        reply_markup=review_markup,
     )
 
     state_path = ctx.telegram_state_path or (ctx.base_dir / "telegram_state.json")
@@ -689,6 +697,44 @@ def send_post_run_review_for_athlete(
         "activity_id": act_id,
         "telegram_response": send_res,
     }
+
+
+def is_run_feedback_text(text: str) -> bool:
+    """Detects whether an incoming user message refers to a completed run, sensations, or subjective notes."""
+    tl = text.lower().strip()
+    if tl.startswith(("/notiz", "/note", "notiz:", "feedback:", "lauf-notiz:", "lauf-feedback:")):
+        return True
+
+    strong_phrases = (
+        "gerade gelaufen",
+        "eben gelaufen",
+        "war laufen",
+        "bin gelaufen",
+        "heute gelaufen",
+        "beim laufen",
+        "beim lauf",
+        "nach dem lauf",
+        "meine waden",
+        "waden begonnen",
+        "wadenkrampf",
+        "wadenkrämpfe",
+        "waden begonnen zu krampfen",
+        "lauf beendet",
+        "training beendet",
+        "ausgelaufen",
+        "nach der ersten",
+        "nach dem 1.",
+        "nach dem ersten",
+        "schwellenteil",
+        "schwellenteile",
+        "schwellenintervall",
+    )
+    if any(p in tl for p in strong_phrases):
+        return True
+
+    keywords = ("gelaufen", "lauf", "training", "intervall", "schwellen", "wade", "waden", "krampf", "krämpfe", "dehnen")
+    matches = sum(1 for k in keywords if k in tl)
+    return matches >= 2 and any(v in tl for v in ("gelaufen", "lauf", "training", "wade", "waden", "krampf"))
 
 
 def handle_telegram_update(
@@ -749,6 +795,84 @@ def handle_telegram_update(
         state = load_telegram_state(state_path)
         proposal = state.get("current_proposal") or {}
         target_date_iso = date_part or proposal.get("target_date") or today.isoformat()
+
+        if action_key == "note_prompt":
+            state["awaiting_run_note_for_id"] = date_part
+            save_telegram_state(state_path, state)
+            reply = (
+                "📝 Schreib mir einfach dein Feedback oder deine Notiz zu diesem Lauf "
+                "(z.B. Gefühl, Wadenkrämpfe, Belastung). Ich verknüpfe es direkt mit dem Lauf!"
+            )
+            bot_client.send_message(chat_id=chat_id, text=reply)
+            return {"status": "note_prompted", "athlete": ctx.slug, "activity_id": date_part}
+
+        if action_key == "note_confirm":
+            pending = state.get("pending_run_note") or {}
+            target_act_id = date_part or pending.get("activity_id")
+            note_text = pending.get("note_text") or ""
+            if not target_act_id or not note_text:
+                bot_client.send_message(chat_id=chat_id, text="⚠️ Keine ausstehende Notiz gefunden.")
+                return {"status": "no_pending_note", "athlete": ctx.slug}
+
+            res = attach_note_to_run(
+                note_text=note_text,
+                activities_path=ctx.activities_path,
+                reviews_path=ctx.run_reviews_path,
+                activity_id=target_act_id,
+                api_key=intervals_api_key,
+                api_base_url=intervals_api_base,
+                athlete_profile_path=ctx.athlete_config_path,
+                coach_history_path=ctx.coach_history_path,
+                dry_run=dry_run,
+            )
+
+            eval_data = res.get("evaluation") or {}
+            st4 = (eval_data.get("stages") or {}).get("stage4_next_run") or {}
+            directive = st4.get("directive") or ""
+            act_name = res.get("activity_name") or pending.get("activity_name") or "Lauf"
+
+            msg_reply = (
+                f"✅ Notiz erfolgreich für deinen Lauf **{act_name}** gespeichert und auf Intervals.icu hinterlegt!\n\n"
+                f"📝 _„{note_text}“_"
+            )
+            if directive:
+                msg_reply += f"\n\n🧠 **Coach-Update:**\n• {directive}"
+
+            bot_client.send_message(chat_id=chat_id, text=msg_reply)
+            state["pending_run_note"] = None
+            state["awaiting_run_note_for_id"] = None
+            save_telegram_state(state_path, state)
+            return {"status": "note_confirmed", "athlete": ctx.slug, "activity_id": target_act_id}
+
+        if action_key == "note_pick_other":
+            all_acts = load_activities(ctx.activities_path) if ctx.activities_path.is_file() else []
+            runs = filter_runs(all_acts)
+            sorted_runs = sorted(runs, key=lambda r: str(r.get("start_date_local") or ""), reverse=True)[:4]
+            if not sorted_runs:
+                bot_client.send_message(chat_id=chat_id, text="Keine weiteren Läufe gefunden.")
+                return {"status": "no_runs", "athlete": ctx.slug}
+
+            keyboard_buttons = []
+            for r in sorted_runs:
+                r_id = str(r.get("id"))
+                r_date = str(r.get("start_date_local") or "")[:10]
+                r_name = str(r.get("name") or "Lauf")[:20]
+                keyboard_buttons.append([{"text": f"🏃 {r_date} - {r_name}", "callback_data": f"note_confirm:{r_id}"}])
+            keyboard_buttons.append([{"text": "❌ Abbrechen", "callback_data": "note_cancel"}])
+
+            bot_client.send_message(
+                chat_id=chat_id,
+                text="Welchem Lauf möchtest du die Notiz zuordnen?",
+                reply_markup={"inline_keyboard": keyboard_buttons},
+            )
+            return {"status": "note_pick_other_shown", "athlete": ctx.slug}
+
+        if action_key == "note_cancel":
+            state["pending_run_note"] = None
+            state["awaiting_run_note_for_id"] = None
+            save_telegram_state(state_path, state)
+            bot_client.send_message(chat_id=chat_id, text="❌ Notiz wurde verworfen.")
+            return {"status": "note_cancelled", "athlete": ctx.slug}
 
         if action_key == "refresh_sleep":
             if intervals_api_key and not dry_run:
@@ -1122,6 +1246,83 @@ def handle_telegram_update(
                 text=f"⏰ Deine tägliche Briefing-Uhrzeit wurde auf {new_time} Uhr geändert.",
             )
             return {"status": "time_updated", "athlete": ctx.slug, "briefing_time": new_time}
+
+    # Subjective run note / post-run feedback detection & mapping
+    state_path = ctx.telegram_state_path or (ctx.base_dir / "telegram_state.json")
+    state = load_telegram_state(state_path)
+    awaiting_run_id = state.get("awaiting_run_note_for_id")
+
+    if awaiting_run_id or is_run_feedback_text(text):
+        if text.lower().startswith(("/notiz ", "/note ")):
+            clean_note = text.split(maxsplit=1)[1].strip()
+        elif text.lower().startswith(("/notiz", "/note")):
+            clean_note = ""
+        else:
+            clean_note = text.strip()
+
+        if not clean_note:
+            bot_client.send_message(
+                chat_id=chat_id,
+                text="📝 Bitte gib deinen Notiztext an, z.B.: `/notiz Wadenkrämpfe nach 1. Intervall`",
+            )
+            return {"status": "note_empty", "athlete": ctx.slug}
+
+        all_acts = load_activities(ctx.activities_path) if ctx.activities_path.is_file() else []
+        runs = filter_runs(all_acts)
+        candidate: Optional[Dict[str, Any]] = None
+
+        if awaiting_run_id:
+            for r in runs:
+                if str(r.get("id")) == str(awaiting_run_id):
+                    candidate = r
+                    break
+
+        if not candidate and runs:
+            sorted_runs = sorted(runs, key=lambda r: str(r.get("start_date_local") or ""), reverse=True)
+            candidate = sorted_runs[0]
+
+        if not candidate:
+            bot_client.send_message(
+                chat_id=chat_id,
+                text=(
+                    "⚠️ Ich konnte für heute noch keinen Lauf auf Intervals.icu finden.\n"
+                    "Hat deine Garmin-Uhr schon synchronisiert? Sobald die Aktivität vorliegt, "
+                    "sende mir deine Notiz einfach erneut!"
+                ),
+            )
+            return {"status": "no_run_found_for_note", "athlete": ctx.slug}
+
+        candidate_id = str(candidate.get("id"))
+        candidate_name = str(candidate.get("name") or "Lauf")
+        candidate_date = str(candidate.get("start_date_local") or "")[:16].replace("T", " ")
+        dist_km = round(float(candidate.get("distance") or 0) / 1000.0, 2)
+        moving_s = int(candidate.get("moving_time") or candidate.get("elapsed_time") or 0)
+        dur_str = f" · ⏱️ {moving_s // 60}m" if moving_s > 0 else ""
+
+        state["pending_run_note"] = {
+            "activity_id": candidate_id,
+            "activity_name": candidate_name,
+            "date": candidate_date,
+            "note_text": clean_note,
+        }
+        save_telegram_state(state_path, state)
+
+        prompt_text = (
+            "Ich habe folgenden Lauf gefunden:\n"
+            f"🏃 **{candidate_name}**\n"
+            f"📅 {candidate_date} · 📏 {dist_km} km{dur_str}\n\n"
+            f"Möchtest du diese Notiz zuordnen?\n"
+            f"📝 „{clean_note}“"
+        )
+        reply_markup = {
+            "inline_keyboard": [
+                [{"text": "✅ Ja, genau der", "callback_data": f"note_confirm:{candidate_id}"}],
+                [{"text": "🔄 Anderen Lauf wählen", "callback_data": "note_pick_other"}],
+                [{"text": "❌ Abbrechen", "callback_data": "note_cancel"}],
+            ]
+        }
+        bot_client.send_message(chat_id=chat_id, text=prompt_text, reply_markup=reply_markup)
+        return {"status": "note_proposed", "athlete": ctx.slug, "activity_id": candidate_id}
 
     # Natural language feedback -> Coach Intent evaluation & Intervals.icu override
     return _process_athlete_feedback_text(
