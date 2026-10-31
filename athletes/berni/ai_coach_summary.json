@@ -1,49 +1,55 @@
 {
-  "status_title": "Solider Grundlagenaufbau mit stabiler Reiztrennung",
-  "status_badge": "Basis stabil",
-  "status_level": "info",
-  "coach_commentary": "### Status quo & Wochenend-Fokus\n\nDie Daten der letzten Wochen zeigen ein klares Bild: Die aerobe Basis stabilisiert sich bei rund 80–90 % Z1/Z2-Anteil in den jüngsten Einheiten, während das Gesamtpensum bei durchschnittlich 13,5 Kilometern liegt. Mit einem TSB von -4,5 (CTL 13,9, ATL 18,4) bist du leicht ermüdet, aber voll im belastbaren Bereich.\n\nDer Lauf vom Freitag (5,68 km bei Ø 152 bpm) hatte einen soliden Grundlagenschwerpunkt, wies am Ende aber rund 8 Minuten in Zone 3/4 auf. Das zeigt, dass das Tempo gegen Ende leicht angezogen hat – die Beine haben das gut weggesteckt, aber es war kein rein regenerativer Lauf. Für dieses Wochenende (Slot 3) steht noch der ruhige Long Run aus.\n\n### Ausblick & Wochenaufgabe\n\nFür die kommende Woche liegt der Fokus auf der Verlässlichkeit von drei Einheiten:\n\n- **Slot 1 (Mo/Di):** Tempo- oder Schwellenreiz (z. B. 3–4 × 1 km an der Schwelle 168–174 bpm) oder alternativ ein zügiger Dauerlauf in Z3/Z4.\n- **Slot 2 (Mi–Fr):** Ruhiger Grundlagenlauf (40–45 Min) strikt in Zone 2 (< 158 bpm).\n- **Slot 3 (Sa/So):** Long Run (55–65 Min) ausschließlich über Herzfrequenz gesteuert.\n\n**Wochenaufgabe:** Halte am Wochenende und in den Z2-Einheiten den Puls konsequent unter 158 bpm und nimm an Steigungen ohne Zögern Gehpausen, um die Zone nicht nach oben zu verlassen.",
+  "status_title": "Regeneration vorziehen: HRV-Warnung beachten",
+  "status_badge": "Erholung priorisieren",
+  "status_level": "warning",
+  "coach_commentary": "### Lagebild & Vitalwerte\nServus Berni. Schauen wir nüchtern auf die Daten von heute: Dein Ruhepuls ist mit 48 bpm zwar stabil, aber deine HRV ist über die letzten drei Tage kontinuierlich von 82 ms über 67 ms auf aktuell 59 ms abgesackt. Zusammen mit dem mäßigen Schlafscore (61) signalisiert dein vegetatives Nervensystem klare Ermüdung. Der gestrige morgendliche Lauf (5,7 km bei Ø 152 bpm) steckte trotz überwiegendem Grundlagenfokus mit knapp 8 Minuten in Zone 3 und 4 spürbar in den Knochen.\n\n### Taktische Anpassung fürs Wochenende\nDie ursprüngliche Empfehlung für das Wochenende war ein ruhiger Long Run in Slot 3. Angesichts des deutlichen HRV-Abfalls streichen wir diesen Reiz für heute komplett. Ein langer Lauf würde das Nervensystem jetzt unnötig vertiefen und die Regeneration ausbremsen. Gönn deinen Beinen heute einen vollständigen Ruhetag. Morgen früh werfen wir einen neuen Blick auf die Morgenwerte: Erst wenn sich die HRV wieder stabilisiert, ist ein lockerer Grundlagenlauf sinnvoll.\n\n### Wochenaufgabe für nächste Woche\nDie ersten beiden Slots der neuen Woche konsequent auf die Z2-Basis ausrichten. Wir halten den Puls strikt unter 158 bpm und steuern das Tempo ausschließlich über den Puls – an Steigungen wird ohne falsche Scheu gegangen.",
   "history_evaluation": {
     "compliance_status": "teilweise",
-    "actual_summary": "Seit der Vorgabe vom 30.10. ist noch kein neuer Lauf registriert. Der Wochenendlauf (Slot 3) steht für Samstag oder Sonntag noch aus. Die Einheit am 30.10. (5,68 km, Ø 152 bpm) deckte Slot 2 mit 79,9 % Z1/Z2 und leichtem Z3-Drift ab.",
-    "effect_analysis": "Die jüngsten Grundlagenläufe lagen stabil bei Ø 151–152 bpm. Der TSB von -4,5 signalisiert eine kontrollierte, leichte Ermüdung bei stabiler CTL (13,9). Die aerobe Entkopplung bleibt bei gleichmäßigem Tempo gering.",
-    "next_recommendation": "Absolviere Slot 3 am Wochenende als ruhigen Long Run über 55–60 Minuten. Puls strikt unter 158 bpm halten, Pace völlig ignorieren und Anstiege bei Bedarf gehen.",
-    "next_workout_type": "easy_run",
-    "next_target_hr": 158,
-    "next_duration_min": 60
+    "actual_summary": "Seit der gestrigen Empfehlung für Slot 3 (Long Run) wurde noch keine neue Laufeinheit absolviert.",
+    "effect_analysis": "Die HRV fiel im 3-Tage-Trend von 82 ms über 67 ms auf 59 ms ab (Schnitt: 69,7 ms). TSB liegt bei -4.5 (CTL 13.9, ATL 18.4). Das vegetative Nervensystem fordert nach dem Lauf vom 30.10. Erholung ein.",
+    "next_recommendation": "Heute vollständiger Ruhetag zur Stabilisierung des vegetativen Nervensystems. Belastung erst nach Normalisierung der HRV wieder aufnehmen.",
+    "next_workout_type": "rest_day",
+    "next_target_hr": 0,
+    "next_duration_min": 0
   },
   "insights": [
     {
-      "title": "Aerobe Zonendisziplin & Entkopplung",
-      "type": "info",
-      "badge": "79.9% Z1/Z2 zuletzt",
-      "text": "Die letzten Grundlagenläufe zeigen mit Ø 151–152 bpm eine verlässliche Basis. Im Lauf am 30.10. traten rund 6 Minuten in Zone 3 und knapp 2 Minuten in Zone 4 auf (Maximalpuls 171 bpm). Über den Gesamtzeitraum liegt der Z1/Z2-Anteil bei 57,7 %, die jüngste Tendenz zeigt aber mit 80–97 % eine deutlich sauberere aerobe Steuerung."
+      "title": "Vegetatives Nervensystem & HRV-Abfall",
+      "type": "warning",
+      "badge": "HRV 59.0 ms (-15%)",
+      "text": "Die nächtliche HRV ist von 82 ms über 67 ms auf 59 ms gefallen und liegt spürbar unter deinem 14-Tage-Schnitt von 69,7 ms. Das signalisiert eine akute vegetative Ermüdung, die Vorrang vor weiteren Trainingsreizen hat."
     },
     {
-      "title": "Volumen & Slot-Rhythmus",
+      "title": "Aerobe Basis & Zonendisziplin",
       "type": "info",
-      "badge": "Ø 13.5 km / Wo.",
-      "text": "Mit aktuell 2,1 Läufen und 13,5 km pro Woche befindet sich das Training im soliden Basisaufbau. Nach 20,9 km in KW 43 stehen in KW 44 bisher 10,5 km zu Buche. Mit dem ausstehenden Wochenendlauf (Slot 3) wird die Woche bei rund 17–19 km und drei absolvierten Einheiten landen."
+      "badge": "57.7% Z1/Z2 gesamt",
+      "text": "Im Gesamtschnitt liegt der Z1/Z2-Anteil bei 57,7 %, stabilisierte sich in den letzten Wochen jedoch verlässlich über 80 % (W44: 88,2 %). Der Lauf vom 30.10. wies 79,9 % in Z1/Z2 auf, driftete jedoch 6m in Zone 3 und knapp 2m in Zone 4 ab (Maximalpuls 171 bpm)."
+    },
+    {
+      "title": "Trainingsvolumen & Formkurve",
+      "type": "info",
+      "badge": "TSB -4.5 | CTL 13.9",
+      "text": "Mit aktuell 10,5 km in W44 und einem TSB von -4,5 (CTL 13,9, ATL 18,4) bewegt sich die Belastung im geplanten Rahmen. Das durchschnittliche Pensum von 13,5 km / Woche bildet eine solide Grundlage für den weiteren Basisaufbau."
     }
   ],
   "recommendations": [
     {
-      "title": "Grundlagenläufe strikt nach Herzfrequenz steuern",
-      "tag": "Priorität 1: Aerobe Basis",
+      "title": "Akute Erholung priorisieren (Ruhetag)",
+      "tag": "Priorität 1: Vitalwerte",
       "tag_class": "tag-amber",
-      "text": "Halte die Herzfrequenz bei allen Z2-Läufen konsequent unter 158 bpm. Die Pace ist ein reines Resultat der Tagesform und Witterung. An Steigungen das Tempo drosseln oder gehen, sobald der Puls an die 158 bpm herankommt."
+      "text": "Aufgrund der unterdrückten HRV (59 ms) heute zwingend pausieren. Kein Lauftraining, Fokus auf Erholung, ausreichend Schlaf und Entlastung des Nervensystems."
     },
     {
-      "title": "Gezielte Reiztrennung im Flexi-Modell",
-      "tag": "Trainingsstruktur",
+      "title": "Grundlagenläufe strikt über Puls steuern",
+      "tag": "Aerobe Basis",
       "tag_class": "tag-cyan",
-      "text": "Nutze Slot 1 (Mo/Di) für gezielte Schwellenreize (168–174 bpm) oder Z3/Z4-Dauerläufe, um die 15–20 % Qualitätsanteil sinnvoll zu füllen. Wenn die Beine müde sind, wird der Slot schlicht durch einen lockeren Z2-Lauf ersetzt."
+      "text": "Für die nächste Grundlageneinheit gilt: Herzfrequenz strikt unter 158 bpm halten. Die Pace ist vollkommen zweitrangig. An Anstiegen konsequent gehen, um die Z2-Grenze nicht zu überschreiten."
     },
     {
-      "title": "Wochenumfang über 3 Einheiten stabilisieren",
+      "title": "Behutsamer Wochenumfang im Basisbereich",
       "tag": "Umfangsaufbau",
       "tag_class": "tag-green",
-      "text": "Als Hobbyläufer im Basisaufbau ist die Regelmäßigkeit von 3 Läufen pro Woche der wirksamste Hebel. Ziel für die kommenden Wochen ist es, den dritten Slot verlässlich zu etablieren, um konstant 16–20 km pro Woche zu sichern."
+      "text": "Für die kommende Woche ein Wochenvolumen von ca. 14–16 km über 2 bis 3 Einheiten anpeilen, davon mindestens 80% im aeroben Fundament (Z1/Z2), um die aerobe Kapazität ohne Überlastung auszubauen."
     }
   ],
   "athlete": {
