@@ -87,6 +87,17 @@ Feature: Bidirectional Telegram Coach Bot and Daily Briefing
     And the last Telegram message sent to "987654321" contains "Ruhetag"
     And the last Telegram message sent to "987654321" includes rest day keyboard buttons
 
+  Scenario: Evening preview preserves uncompleted workout of today and schedules tomorrow
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has evening briefing enabled with time "20:30"
+    And the athlete "berni" last ran 2 days ago before "2026-10-26"
+    And an uncompleted workout exists on Intervals.icu for "2026-10-26"
+    When the scheduled evening preview check runs at "2026-10-26T20:35:00"
+    Then the planned workout on "2026-10-26" is not deleted from Intervals.icu
+    And a workout is scheduled on Intervals.icu for "2026-10-27"
+    And the last Telegram message sent to "987654321" contains "Vorschau auf morgen"
+    And the last Telegram message sent to "987654321" contains "Geplantes Training"
+
   Scenario: Post-run coach review focuses on coach assessment and future plan implications
     Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
     And the athlete "berni" has completed a run "act_100" with name "Lockerer Abendlauf" on "2026-10-26"

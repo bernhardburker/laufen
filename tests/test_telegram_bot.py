@@ -351,6 +351,21 @@ class TelegramBotDriver:
             },
         )
 
+    def seed_uncompleted_workout(self, slug: str, date_str: str) -> None:
+        ctx = resolve_athlete_context(slug, project_root=self.tmp_path, registry_path=self.registry_path)
+        ev = {
+            "id": f"ev_{date_str}",
+            "category": "WORKOUT",
+            "start_date_local": f"{date_str}T07:00:00",
+            "type": "Run",
+            "name": "Geplantes Workout",
+            "description": "- 45m Z2 HR",
+        }
+        MockCombinedAPIHandler.intervals_events.append(ev)
+        ev_path = ctx.calendar_events_path or (ctx.base_dir / "calendar_events.json")
+        ev_path.parent.mkdir(parents=True, exist_ok=True)
+        ev_path.write_text(json.dumps([ev]), encoding="utf-8")
+
     def setup_pending_run_note(self, slug: str, act_id: str, note_text: str) -> None:
         ctx = resolve_athlete_context(slug, project_root=self.tmp_path, registry_path=self.registry_path)
         state_path = ctx.telegram_state_path or (ctx.base_dir / "telegram_state.json")
@@ -576,6 +591,23 @@ def then_verify_workout_deleted(driver: TelegramBotDriver, date_str: str):
         and e.get("category") == "WORKOUT"
     ]
     assert len(workouts) == 0
+
+
+@given(parsers.parse('an uncompleted workout exists on Intervals.icu for "{date_str}"'))
+def given_uncompleted_workout_on_date(driver: TelegramBotDriver, date_str: str):
+    driver.seed_uncompleted_workout("berni", date_str)
+
+
+@then(parsers.parse('the planned workout on "{date_str}" is not deleted from Intervals.icu'))
+def then_verify_workout_not_deleted(driver: TelegramBotDriver, date_str: str):
+    workouts = [
+        e for e in MockCombinedAPIHandler.intervals_events
+        if str(e.get("start_date_local") or "").startswith(date_str)
+        and e.get("category") == "WORKOUT"
+    ]
+    assert len(workouts) >= 1
+    deleted = [d for d in MockCombinedAPIHandler.deleted_event_ids if str(d).startswith(f"ev_{date_str}")]
+    assert len(deleted) == 0
 
 
 @then(parsers.re(r'exactly (?P<count>\d+) Telegram messages? (?:was|were) sent to "(?P<chat_id>[^"]+)"'))

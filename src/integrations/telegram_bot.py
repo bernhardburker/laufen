@@ -675,16 +675,17 @@ def send_evening_preview_for_athlete(
         api_key=intervals_api_key,
         athlete_id=ctx.intervals_id,
         athlete_profile=profile_data,
-        ref_date=tomorrow,
+        ref_date=today,
         dry_run=dry_run,
         api_base_url=intervals_api_base,
         project_root=root,
         clean_past=True,
         activities_file=ctx.activities_path,
         events_file=events_path,
+        evening_preview=True,
     )
 
-    is_rest_day = bool(sync_res.get("is_rest_day", False))
+    is_rest_day = bool(sync_res.get("is_rest_day_tomorrow", False))
     if is_rest_day:
         tomorrow_workout = None
     else:
@@ -692,8 +693,21 @@ def send_evening_preview_for_athlete(
         skipped = sync_res.get("skipped") or []
         workouts = [w for w in (scheduled + skipped) if str(w.get("start_date_local") or "")[:10] == tomorrow_iso]
         tomorrow_workout = workouts[0] if workouts else None
+        if not tomorrow_workout and events_path.is_file():
+            try:
+                ev_list = json.loads(events_path.read_text(encoding="utf-8"))
+                on_tomorrow = [
+                    e for e in ev_list
+                    if str(e.get("start_date_local") or "")[:10] == tomorrow_iso
+                    and e.get("category") == "WORKOUT"
+                ]
+                if on_tomorrow:
+                    tomorrow_workout = on_tomorrow[0]
+            except Exception:
+                pass
         if not tomorrow_workout and (scheduled or skipped):
-            tomorrow_workout = scheduled[0] if scheduled else skipped[0]
+            if sync_res.get("target_date") == tomorrow_iso:
+                tomorrow_workout = scheduled[0] if scheduled else skipped[0]
 
     msg_text = format_evening_preview_message(
         athlete_name=ctx.display_name,

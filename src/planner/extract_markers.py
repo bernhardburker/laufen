@@ -134,6 +134,7 @@ def get_readiness_markers(
 def get_run_history_markers(
     activities: List[Dict[str, Any]],
     ref_date: datetime.date,
+    target_date: Optional[datetime.date] = None,
 ) -> Dict[str, Any]:
     """Computes history of recent runs, quality stimulus spacing, and weekly volume."""
     runs = [
@@ -145,7 +146,9 @@ def get_run_history_markers(
     if not runs:
         return {
             "days_since_last_run": 999,
+            "target_days_since_last_run": 999,
             "days_since_last_quality": 999,
+            "target_days_since_last_quality": 999,
             "last_run": None,
             "last_quality_run": None,
             "weekly_runs_completed": 0,
@@ -159,6 +162,7 @@ def get_run_history_markers(
     latest_date_str = str(latest.get("start_date_local") or latest.get("date") or "")[:10]
     latest_date = datetime.date.fromisoformat(latest_date_str) if latest_date_str else ref_date
     days_since_last_run = max(0, (ref_date - latest_date).days)
+    target_days_since_last_run = max(0, (target_date - latest_date).days) if (target_date and latest_date_str) else days_since_last_run
 
     moving_time_s = float(latest.get("moving_time") or latest.get("elapsed_time") or 0.0)
     distance_m = float(latest.get("distance") or 0.0)
@@ -181,12 +185,14 @@ def get_run_history_markers(
     # Last quality run
     last_quality_summary = None
     days_since_last_quality = 999
+    target_days_since_last_quality = 999
     for r in runs:
         if is_quality_run(r):
             q_date_str = str(r.get("start_date_local") or r.get("date") or "")[:10]
             if q_date_str:
                 q_date = datetime.date.fromisoformat(q_date_str)
                 days_since_last_quality = max(0, (ref_date - q_date).days)
+                target_days_since_last_quality = max(0, (target_date - q_date).days) if target_date else days_since_last_quality
                 q_z_times = r.get("icu_hr_zone_times") or []
                 z4_min = round((q_z_times[3] if len(q_z_times) > 3 else 0) / 60.0, 1)
                 z5_min = round(sum(q_z_times[4:]) / 60.0, 1) if len(q_z_times) > 4 else 0.0
@@ -239,7 +245,9 @@ def get_run_history_markers(
 
     return {
         "days_since_last_run": days_since_last_run,
+        "target_days_since_last_run": target_days_since_last_run,
         "days_since_last_quality": days_since_last_quality,
+        "target_days_since_last_quality": target_days_since_last_quality,
         "last_run": last_run_summary,
         "last_quality_run": last_quality_summary,
         "weekly_runs_completed": runs_this_week,
@@ -373,7 +381,7 @@ def extract_planning_markers(
     }
 
     readiness = get_readiness_markers(wellness, activities, today)
-    history = get_run_history_markers(activities, today)
+    history = get_run_history_markers(activities, today, planned_target)
     periodization = get_periodization_markers(planned_target, profile)
     guardrails = calculate_guardrails(readiness, history, periodization)
 

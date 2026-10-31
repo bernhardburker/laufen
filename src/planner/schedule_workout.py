@@ -724,6 +724,7 @@ def sync_adaptive_plan(
     clean_past: bool = True,
     activities_file: Path | None = None,
     events_file: Path | None = None,
+    evening_preview: bool = False,
 ) -> dict:
     """Dynamically plans next workout, cleans up past uncompleted events, and respects rest days."""
     root = project_root or Path(__file__).resolve().parent.parent.parent
@@ -785,6 +786,8 @@ def sync_adaptive_plan(
         "skipped": [],
         "target_date": "",
         "is_rest_day": False,
+        "is_rest_day_tomorrow": False,
+        "ran_today": False,
     }
 
     print("\n" + "=" * 60)
@@ -808,6 +811,9 @@ def sync_adaptive_plan(
             remaining_events.append(ev)
 
     # Step 2: Determine rest day vs training day
+    tomorrow = today + datetime.timedelta(days=1)
+    tomorrow_iso = tomorrow.isoformat()
+
     # Check if a rest day note already exists in calendar for today
     today_has_rest_note = any(
         (str(ev.get("start_date_local") or "")[:10] == today_iso)
@@ -824,16 +830,40 @@ def sync_adaptive_plan(
         for ev in remaining_events
     )
 
+    tomorrow_has_rest_note = any(
+        (str(ev.get("start_date_local") or "")[:10] == tomorrow_iso)
+        and (
+            (ev.get("category") == "NOTE" and "ruhetag" in str(ev.get("name") or "").lower())
+            or (ev.get("category") == "HOLIDAY")
+        )
+        for ev in remaining_events
+    )
+
     ran_today = (days_since_last_run == 0) or today_workout_paired
     ran_yesterday = (days_since_last_run == 1)
 
     # Today is a rest day (or completed training day) if athlete ran today, yesterday, or has a rest note
     is_rest_day = ran_today or ran_yesterday or today_has_rest_note
+    # Tomorrow is a rest day if athlete ran today or an explicit rest note exists for tomorrow
+    is_rest_day_tomorrow = ran_today or tomorrow_has_rest_note
+
     results["is_rest_day"] = is_rest_day
+    results["is_rest_day_tomorrow"] = is_rest_day_tomorrow
     results["ran_today"] = ran_today
 
-    if is_rest_day:
-        tomorrow_iso = (today + datetime.timedelta(days=1)).isoformat()
+    if evening_preview:
+        if is_rest_day_tomorrow:
+            # Athlete ran today (or tomorrow has rest note): tomorrow is rest day, next workout is day after tomorrow
+            target_date = today + datetime.timedelta(days=2)
+            reason = "Heute gelaufen" if ran_today else "Ruhetag-Notiz für morgen"
+            print(f"[STATUS] {reason}.")
+            print(f"[STATUS] Abend-Vorschau: Morgen ({tomorrow_iso}) ist Ruhetag. Nächstes Training wird für ÜBERMORGEN ({target_date.isoformat()}) geplant.")
+        else:
+            # Athlete did NOT run today: tomorrow is a training day!
+            target_date = tomorrow
+            print(f"[STATUS] Heute nicht gelaufen.")
+            print(f"[STATUS] Abend-Vorschau: Morgen ({tomorrow_iso}) ist Trainingstag! Nächstes Training wird für MORGEN ({target_date.isoformat()}) geplant.")
+    elif is_rest_day:
         if ran_today:
             # Athlete ran TODAY: tomorrow is a rest day, next training scheduled in 2 days (day after tomorrow)
             target_date = today + datetime.timedelta(days=2)
@@ -850,28 +880,25 @@ def sync_adaptive_plan(
             reason = f"Letzter Lauf vor {days_since_last_run} Tag(en) (gestern)"
             print(f"[STATUS] {reason}.")
             print(f"[STATUS] Heute ({today_iso}) ist Ruhetag. Nächstes Training wird für MORGEN ({target_date.isoformat()}) geplant.")
-
-        # Clean up uncompleted planned workouts on rest days
-        final_remaining = []
-        for ev in remaining_events:
-            ev_date = str(ev.get("start_date_local") or "")[:10]
-            if clean_past and ev_date == today_iso and ev.get("category") == "WORKOUT" and not ev.get("paired_activity_id"):
-                if not dry_run and api_key and ev.get("id"):
-                    delete_workout_event(ev["id"], api_key, athlete_id, api_base_url)
-                print(f"[AUFGERÄUMT] Heutiges Workout entfernt (da Ruhetag/bereits absolviert): {ev.get('name')}")
-                results["cleaned"].append(ev)
-            elif clean_past and ran_today and ev_date == tomorrow_iso and ev.get("category") == "WORKOUT" and not ev.get("paired_activity_id"):
-                if not dry_run and api_key and ev.get("id"):
-                    delete_workout_event(ev["id"], api_key, athlete_id, api_base_url)
-                print(f"[AUFGERÄUMT] Morgiges Workout entfernt (da morgen Ruhetag nach heutigem Lauf): {ev.get('name')}")
-                results["cleaned"].append(ev)
-            else:
-                final_remaining.append(ev)
-        remaining_events = final_remaining
     else:
         target_date = today
         print(f"[STATUS] Letzter Lauf: {last_run_date} ({days_since_last_run} Tag(e) her).")
         print(f"[STATUS] Heute ({today_iso}) ist Trainingstag!")
+
+    # Clean up uncompleted planned workouts on rest days:
+    # Strictly never delete today's workout on today (only clean past workouts before today_iso in Step 1).
+    # If tomorrow is a rest day, clean up any uncompleted workout on tomorrow.
+    final_remaining = []
+    for ev in remaining_events:
+        ev_date = str(ev.get("start_date_local") or "")[:10]
+        if clean_past and is_rest_day_tomorrow and ev_date == tomorrow_iso and ev.get("category") == "WORKOUT" and not ev.get("paired_activity_id"):
+            if not dry_run and api_key and ev.get("id"):
+                delete_workout_event(ev["id"], api_key, athlete_id, api_base_url)
+            print(f"[AUFGERÄUMT] Morgiges Workout entfernt (da morgen Ruhetag): {ev.get('name')}")
+            results["cleaned"].append(ev)
+        else:
+            final_remaining.append(ev)
+    remaining_events = final_remaining
 
     results["target_date"] = target_date.isoformat()
     target_date_iso = target_date.isoformat()
