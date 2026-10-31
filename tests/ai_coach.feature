@@ -65,3 +65,23 @@ Feature: Agentic AI Running Coach with Abstracted LLM Pipeline
     And the structured summary JSON file is created and contains status title "Regeneration & Ruhetag"
     And the extracted commentary Markdown file is created and contains "Aktive Erholung"
     And the open cycle in coach history remains open
+
+  Scenario: Generate coach prompt incorporating wellness metrics and acute injury alert
+    Given an activities dataset with multiple running activities
+    And an athlete profile for "Berni"
+    And a wellness dataset containing sleep, elevated resting HR, and an acute injury "Knie links"
+    When the AI coach prompt is generated
+    Then the prompt contains "Erholungs- & Wellness-Status"
+    And the prompt contains "Knie links"
+    And the prompt requires rest or recovery prioritization when injury is present
+
+  Scenario: AI coach executes with wellness file and updates recommendations
+    Given an activities dataset with multiple running activities
+    And an athlete profile for "Berni"
+    And an active coach memory with an open recommendation from "2026-10-01"
+    And a wellness dataset containing sleep, elevated resting HR, and an acute injury "Achillessehne"
+    And a mock LLM client providing a rest day coaching response for injury
+    When the AI coach engine is executed with wellness telemetry
+    Then the execution status is "success"
+    And the structured summary JSON file is created and contains status title "Verletzungspause & Regeneration"
+    And the coach history is updated with the new cycle recommendation

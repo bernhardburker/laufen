@@ -223,7 +223,7 @@ case "$COMMAND" in
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/daily_recommendation.py" --input "$ACTIVITIES_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" --events "$CALENDAR_EVENTS_PATH" "${REMAINING_ARGS[@]}"
     ;;
   coach|ai-coach)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/ai_coach.py" --execute --input "$ACTIVITIES_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" --reviews "$RUN_REVIEWS_PATH" --output-json "$AI_SUMMARY_PATH" --output-md "$AI_COMMENTARY_PATH" "${REMAINING_ARGS[@]}"
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/ai_coach.py" --execute --input "$ACTIVITIES_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" --reviews "$RUN_REVIEWS_PATH" --wellness "$WELLNESS_PATH" --output-json "$AI_SUMMARY_PATH" --output-md "$AI_COMMENTARY_PATH" "${REMAINING_ARGS[@]}"
     ;;
   review|reviews)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/run_reviewer.py" --input "$ACTIVITIES_PATH" --reviews "$RUN_REVIEWS_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" "${REMAINING_ARGS[@]}"

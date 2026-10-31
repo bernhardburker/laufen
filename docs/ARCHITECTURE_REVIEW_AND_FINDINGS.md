@@ -82,10 +82,14 @@
 
 ---
 
-### 1.8 [OPEN] Integrate Wellness, Illness & Injury Metrics into Macro AI Coach Prompt (`ai_coach.py`)
-- **Location:** [`src/analysis/ai_coach.py`](../src/analysis/ai_coach.py#L143-L330) and [`.github/scripts/run-ai-coach.sh`](../.github/scripts/run-ai-coach.sh)
-- **Symptom:** While [`src/planner/extract_markers.py`](../src/planner/extract_markers.py) parses wellness data (sleep, HRV, resting HR, soreness, fatigue, illness, injury), `ai_coach.py` does not receive or parse `intervals_wellness.json`. As a result, the Macro AI Coach prompt is blind to whether an athlete is injured, sick, poorly rested, or recovering.
-- **Requirement:** Pass `--wellness` (or resolve `athletes/<slug>/intervals_wellness.json`) into `ai_coach.py` and `build_coach_prompt()`. Format recent wellness trends, resting HR delta, HRV status, and explicitly highlight `injury` and `sickness` flags so the Coach can adapt directives (e.g. prescribe rest or reduce load upon illness/injury).
+### 1.8 [RESOLVED - BUG] Integrate Wellness, Illness & Injury Metrics into Macro AI Coach Prompt (`ai_coach.py`)
+- **Location:** [`src/analysis/ai_coach.py`](../src/analysis/ai_coach.py#L143-L410), [`run`](../run#L226), and [`.github/scripts/run-ai-coach.sh`](../.github/scripts/run-ai-coach.sh)
+- **Resolution:**
+  1. **Lean Physiological Wellness Extraction:** Implemented `extract_coach_wellness_context()` and `format_coach_wellness_section()` in [`ai_coach.py`](../src/analysis/ai_coach.py) to extract high-signal recovery telemetry (sleep duration/score, resting HR and 30-day baseline delta, HRV, subjective soreness/fatigue/stress 1-5, and 3-day trend) while filtering out verbose irrelevant vendor keys (e.g. `bloodGlucose`, `abdomen`).
+  2. **Acute Injury & Illness Detection:** Automatically identifies active injury descriptions (`injury`) and illness symptoms (`comments`), triggering immediate vital warnings in the coaching prompt.
+  3. **Strict Health & Rest Guardrails:** Integrated explicit instructions into prompt tone guidance requiring the AI Coach to prioritize health and enforce rest / recovery days (`"rest_day"` or `"recovery_run"`) whenever injury, elevated RHR (>= +4 bpm), or illness is detected, forbidding intensity increases.
+  4. **CLI & Automation Integration:** Added `--wellness` flag to `ai_coach.py`, passed `$WELLNESS_PATH` in `./run coach`, and wired `$WELLNESS_FILE` into [`.github/scripts/run-ai-coach.sh`](../.github/scripts/run-ai-coach.sh).
+  5. **Automated BDD Tests:** Added 2 BDD scenarios in [`tests/ai_coach.feature`](../tests/ai_coach.feature) and step definitions in [`tests/test_ai_coach.py`](../tests/test_ai_coach.py) verifying wellness/injury prompt formatting and execution of rest prescriptions. All 153 tests pass.
 
 ---
 
@@ -129,7 +133,7 @@ Despite [`src/core/config.py`](../src/core/config.py) existing to centralize con
 | **[`agent/tools/*.py`](../agent/tools/)** | Zero tests for `get_activities.py` (15-min cache TTL), `get_trends.py`, or `get_upcoming_workouts.py`. | `[OPEN]` |
 | **Interactive Note Picker & Cancel Callbacks ([`telegram_bot.py`](../src/integrations/telegram_bot.py#L1217-L1308))** | Missing tests for `note_pick_other`, `note_select:<id>`, `note_cancel`, `/evening`, and `/review` commands. | `[OPEN]` |
 | **CI Pipeline Script ([`.github/scripts/run-ai-coach.sh`](../.github/scripts/run-ai-coach.sh))** | Verified with BDD scenario `Successfully execute AI coach pipeline on rest day with no pending runs` in [`tests/ai_coach.feature`](../tests/ai_coach.feature). | `[RESOLVED]` |
-| **Wellness & Injury Context in AI Coach ([`src/analysis/ai_coach.py`](../src/analysis/ai_coach.py))** | Needs BDD scenario verifying `--wellness` parsing, illness/injury detection, and rest prescription prompt generation. | `[OPEN]` |
+| **Wellness & Injury Context in AI Coach ([`src/analysis/ai_coach.py`](../src/analysis/ai_coach.py))** | Verified with BDD scenarios in [`tests/ai_coach.feature`](../tests/ai_coach.feature) verifying `--wellness` parsing, illness/injury detection, and rest prescription prompt generation. | `[RESOLVED]` |
 
 ---
 

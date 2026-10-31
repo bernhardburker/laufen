@@ -48,6 +48,7 @@ TIMEOUT="${AGY_TIMEOUT:-3m}"
 JSON_OUTPUT="${4:-$OUTPUT_DIR/ai_coach_summary.json}"
 HISTORY_FILE="${5:-$OUTPUT_DIR/coach_history.json}"
 REVIEWS_FILE="${6:-$OUTPUT_DIR/run_reviews.json}"
+WELLNESS_FILE="${7:-$OUTPUT_DIR/intervals_wellness.json}"
 
 # Legacy fallback if tenant history/reviews don't exist yet
 if [ ! -f "$HISTORY_FILE" ] && [ -f "$REPO_ROOT/data/coach_history.json" ]; then
@@ -55,6 +56,9 @@ if [ ! -f "$HISTORY_FILE" ] && [ -f "$REPO_ROOT/data/coach_history.json" ]; then
 fi
 if [ ! -f "$REVIEWS_FILE" ] && [ -f "$REPO_ROOT/data/run_reviews.json" ]; then
   cp -n "$REPO_ROOT/data/run_reviews.json" "$REVIEWS_FILE" || true
+fi
+if [ ! -f "$WELLNESS_FILE" ] && [ -f "$REPO_ROOT/data/intervals_wellness.json" ]; then
+  cp -n "$REPO_ROOT/data/intervals_wellness.json" "$WELLNESS_FILE" || true
 fi
 
 export AGY_BIN="$agy_bin"
@@ -68,6 +72,7 @@ if "$PYTHON_EXEC" "$REPO_ROOT/src/analysis/ai_coach.py" \
   --athlete "$ATHLETE_FILE" \
   --history "$HISTORY_FILE" \
   --reviews "$REVIEWS_FILE" \
+  --wellness "$WELLNESS_FILE" \
   --output-json "$JSON_OUTPUT" \
   --output-md "$OUTPUT_FILE" \
   --model "$MODEL" \

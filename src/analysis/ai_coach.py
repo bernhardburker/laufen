@@ -140,12 +140,279 @@ def save_athlete_classification(
         pass
 
 
+def load_wellness(wellness_file: Optional[Path]) -> List[Dict[str, Any]]:
+    """Load wellness records from JSON file safely."""
+    if not wellness_file or not wellness_file.is_file():
+        return []
+    try:
+        with open(wellness_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, list) else []
+    except Exception as e:
+        print(f"Warning: Failed to load wellness records from {wellness_file}: {e}", file=sys.stderr)
+        return []
+
+
+def extract_coach_wellness_context(
+    wellness_records: Optional[List[Dict[str, Any]]],
+    ref_date: Optional[date] = None,
+) -> Optional[Dict[str, Any]]:
+    """Extract lean, high-signal physiological wellness indicators for AI Coach.
+
+    Filters out noisy raw vendor keys (e.g. bloodGlucose, abdomen, etc.)
+    and returns a compact summary of:
+    - Sleep duration & score
+    - Resting HR and 30-day baseline delta
+    - HRV and baseline status
+    - Subjective soreness, fatigue, and stress (1-5 scale)
+    - Injury and illness/symptoms indicators
+    - Recent 3-day recovery trend
+    """
+    records = wellness_records or []
+    if not records:
+        return None
+
+    ref_d = ref_date or datetime.now().date()
+    ref_iso = ref_d.isoformat()
+
+    dated_records: List[Dict[str, Any]] = []
+    for w in records:
+        w_id = str(w.get("id") or w.get("date") or "")[:10]
+        if w_id and w_id <= ref_iso:
+            dated_records.append(w)
+
+    if not dated_records:
+        return None
+
+    dated_records.sort(
+        key=lambda x: str(x.get("id") or x.get("date") or "")[:10],
+        reverse=True,
+    )
+    latest = dated_records[0]
+    latest_date = str(latest.get("id") or latest.get("date") or "")[:10]
+
+    # Sleep metrics
+    sleep_secs = latest.get("sleepSecs")
+    sleep_hours = (
+        round(float(sleep_secs) / 3600.0, 1) if sleep_secs is not None else None
+    )
+    sleep_score = latest.get("sleepScore")
+    sleep_quality = latest.get("sleepQuality")
+
+    # Resting HR and 30-day baseline
+    latest_rhr = (
+        int(latest["restingHR"]) if latest.get("restingHR") is not None else None
+    )
+    recent_rhrs = [
+        float(w["restingHR"])
+        for w in dated_records[:30]
+        if w.get("restingHR") is not None
+    ]
+    rhr_baseline = (
+        round(sum(recent_rhrs) / len(recent_rhrs), 1) if recent_rhrs else None
+    )
+    rhr_delta = (
+        round(latest_rhr - rhr_baseline, 1)
+        if (latest_rhr is not None and rhr_baseline is not None)
+        else None
+    )
+
+    # HRV and 14-day average
+    latest_hrv = (
+        round(float(latest["hrv"]), 1) if latest.get("hrv") is not None else None
+    )
+    recent_hrvs = [
+        float(w["hrv"]) for w in dated_records[:14] if w.get("hrv") is not None
+    ]
+    hrv_baseline = (
+        round(sum(recent_hrvs) / len(recent_hrvs), 1) if recent_hrvs else None
+    )
+
+    # Subjective metrics (1-5 scale)
+    soreness = latest.get("soreness")
+    fatigue = latest.get("fatigue")
+    stress = latest.get("stress")
+    mood = latest.get("mood")
+
+    # Injury & sickness alerts (inspect latest + last 3 days)
+    injury_desc = None
+    illness_desc = None
+    comments = latest.get("comments")
+
+    illness_keywords = (
+        "krank",
+        "infekt",
+        "erkält",
+        "fieber",
+        "husten",
+        "hals",
+        "corona",
+        "covid",
+        "sick",
+        "ill",
+        "flu",
+    )
+
+    for rec in dated_records[:3]:
+        raw_injury = rec.get("injury")
+        if (
+            raw_injury
+            and str(raw_injury).strip().lower() not in ("none", "null", "0", "false")
+            and not injury_desc
+        ):
+            injury_desc = str(raw_injury).strip()
+        comm = str(rec.get("comments") or "").strip()
+        if comm and any(kw in comm.lower() for kw in illness_keywords) and not illness_desc:
+            illness_desc = comm
+
+    has_injury = bool(injury_desc)
+    has_illness = bool(illness_desc)
+    elevated_rhr = bool(rhr_delta is not None and rhr_delta >= 4.0)
+    high_soreness = bool(soreness is not None and int(soreness) >= 4)
+    suppressed_hrv = bool(
+        latest_hrv is not None
+        and hrv_baseline is not None
+        and latest_hrv <= (hrv_baseline * 0.85)
+    )
+
+    # 3-day history summary
+    trend_history: List[Dict[str, Any]] = []
+    for rec in dated_records[:3]:
+        r_id = str(rec.get("id") or rec.get("date") or "")[:10]
+        r_secs = rec.get("sleepSecs")
+        trend_history.append(
+            {
+                "date": r_id,
+                "sleep_hours": round(float(r_secs) / 3600.0, 1)
+                if r_secs is not None
+                else None,
+                "resting_hr": rec.get("restingHR"),
+                "hrv": rec.get("hrv"),
+                "soreness": rec.get("soreness"),
+                "injury": rec.get("injury"),
+            }
+        )
+
+    return {
+        "latest_date": latest_date,
+        "sleep_hours": sleep_hours,
+        "sleep_score": sleep_score,
+        "sleep_quality": sleep_quality,
+        "latest_rhr": latest_rhr,
+        "rhr_baseline": rhr_baseline,
+        "rhr_delta": rhr_delta,
+        "latest_hrv": latest_hrv,
+        "hrv_baseline": hrv_baseline,
+        "soreness": soreness,
+        "fatigue": fatigue,
+        "stress": stress,
+        "mood": mood,
+        "injury": injury_desc,
+        "comments": comments,
+        "has_injury": has_injury,
+        "has_illness": has_illness,
+        "elevated_rhr": elevated_rhr,
+        "high_soreness": high_soreness,
+        "suppressed_hrv": suppressed_hrv,
+        "trend_history": trend_history,
+    }
+
+
+def format_coach_wellness_section(context: Dict[str, Any]) -> str:
+    """Formats structured wellness indicators into a concise markdown section."""
+    lines = [f"### Erholungs- & Wellness-Status (Stand: {context['latest_date']}):"]
+
+    # Sleep
+    sleep_parts = []
+    if context.get("sleep_hours") is not None:
+        sleep_parts.append(f"{context['sleep_hours']} h")
+    if context.get("sleep_score") is not None:
+        sleep_parts.append(f"Score {context['sleep_score']}/100")
+    elif context.get("sleep_quality") is not None:
+        sleep_parts.append(f"Qualität {context['sleep_quality']}/5")
+    sleep_str = ", ".join(sleep_parts) if sleep_parts else "Keine Schlafdaten"
+    lines.append(f"- Schlaf: {sleep_str}")
+
+    # Resting HR
+    if context.get("latest_rhr") is not None:
+        base_str = (
+            f" (Baseline: {context['rhr_baseline']} bpm, Delta: {context['rhr_delta']:+.1f} bpm)"
+            if context.get("rhr_baseline") is not None
+            else ""
+        )
+        lines.append(f"- Ruhepuls: {context['latest_rhr']} bpm{base_str}")
+
+    # HRV
+    if context.get("latest_hrv") is not None:
+        hrv_base_str = (
+            f" (14-Tage-Schnitt: {context['hrv_baseline']} ms)"
+            if context.get("hrv_baseline") is not None
+            else ""
+        )
+        lines.append(f"- HRV: {context['latest_hrv']} ms{hrv_base_str}")
+
+    # Subjective
+    subj = []
+    if context.get("soreness") is not None:
+        subj.append(f"Muskelkater/Soreness: {context['soreness']}/5")
+    if context.get("fatigue") is not None:
+        subj.append(f"Ermüdung/Fatigue: {context['fatigue']}/5")
+    if context.get("stress") is not None:
+        subj.append(f"Stress: {context['stress']}/5")
+    if subj:
+        lines.append(f"- Subjektives Befinden: {', '.join(subj)}")
+
+    # Injury & Illness
+    if context.get("has_injury"):
+        lines.append(f"- ⚠️ VERLETZUNG GEMELDET: {context['injury']}")
+    else:
+        lines.append("- Verletzungen: Keine gemeldet")
+
+    if context.get("comments"):
+        lines.append(f"- Athleten-Notizen: \"{context['comments']}\"")
+
+    # Alerts & Guardrails
+    alerts = []
+    if context.get("has_injury"):
+        alerts.append(f"Akute Verletzung ({context['injury']})")
+    if context.get("has_illness"):
+        alerts.append("Krankheitssymptome in Notizen")
+    if context.get("elevated_rhr"):
+        alerts.append(f"Erhöhter Ruhepuls ({context['rhr_delta']:+.1f} bpm über Baseline)")
+    if context.get("high_soreness"):
+        alerts.append(f"Hohe Muskelerschöpfung (Soreness {context['soreness']}/5)")
+    if context.get("suppressed_hrv"):
+        alerts.append("Deutlich unterdrückte HRV")
+
+    if alerts:
+        lines.append(
+            f"- 🚨 VITAL-WARNUNG: {', '.join(alerts)} -> Unbedingt Erholung / Ruhetag ('rest_day') priorisieren!"
+        )
+
+    # 3-day trend table / compact bullets
+    if len(context.get("trend_history", [])) > 1:
+        trend_items = []
+        for t in context["trend_history"]:
+            t_date = t["date"]
+            t_rhr = f"RHR {t['resting_hr']}" if t.get("resting_hr") is not None else ""
+            t_hrv = f"HRV {t['hrv']}" if t.get("hrv") is not None else ""
+            t_slp = f"{t['sleep_hours']}h Schlaf" if t.get("sleep_hours") is not None else ""
+            t_str = " | ".join(filter(None, [t_date, t_slp, t_rhr, t_hrv]))
+            trend_items.append(t_str)
+        lines.append(f"- Verlauf (letzte 3 Tage): {'; '.join(trend_items)}")
+
+    return "\n".join(lines)
+
+
 def build_coach_prompt(
     activities_file: Path,
     athlete_file: Optional[Path] = None,
     history_file: Optional[Path] = None,
     reviews_file: Optional[Path] = None,
+    wellness_file: Optional[Path] = None,
+    wellness_records: Optional[List[Dict[str, Any]]] = None,
     save_classification: bool = True,
+    ref_date: Optional[date] = None,
 ) -> str:
     """Prepare a detailed, context-rich prompt for Antigravity AI Coach."""
     activities = load_activities(activities_file)
@@ -158,6 +425,24 @@ def build_coach_prompt(
     # Load persistent run reviews cache if available
     rev_path = reviews_file or (PROJECT_ROOT / "data" / "run_reviews.json")
     reviews_cache = load_run_reviews(rev_path) if rev_path and rev_path.is_file() else {}
+
+    # Load wellness records if available
+    w_records = wellness_records
+    if w_records is None:
+        target_w = wellness_file
+        if not target_w and athlete_file and athlete_file.is_file():
+            cand = athlete_file.parent / "intervals_wellness.json"
+            if cand.is_file():
+                target_w = cand
+        if not target_w:
+            cand = PROJECT_ROOT / "data" / "intervals_wellness.json"
+            if cand.is_file():
+                target_w = cand
+        w_records = load_wellness(target_w) if target_w else []
+
+    ref_d = ref_date or datetime.now().date()
+    wellness_ctx = extract_coach_wellness_context(w_records, ref_date=ref_d)
+    wellness_section = format_coach_wellness_section(wellness_ctx) if wellness_ctx else ""
 
     if not runs:
         return (
@@ -313,7 +598,6 @@ Analysiere ehrlich und nüchtern den Abgleich zwischen der letzten Vorgabe und d
 3. Physiologischer Effekt: Was lässt sich aus den Daten über die aerobe Entwicklung, Pace/Puls-Verhältnis und Ermüdung (TSB) ablesen?
 """
 
-    ref_d = datetime.now().date()
     day_name_de = {
         "Monday": "Montag",
         "Tuesday": "Dienstag",
@@ -351,6 +635,9 @@ Analysiere die aktuellen Trainingsdaten des Athleten ({athlete_name}) und erstel
   - Schwellen- und Tempoläufe in Z3/Z4 sind im Flexi-Modell vollkommen gewollt (15–20%). Niemals als "Grauzone" oder Fehler abstempeln.
 - **Keine Übertreibungen, kein Hype, keine Schmeicheleien**: Verzichte komplett auf Schmeicheleien, künstlichen Cheerleader-Ton und Floskeln. Bleibe bodenständig, realistisch und unaufgeregt.
 - **Herzfrequenz-Steuerung bei Grundlageneinheiten**: Für Zone-2-Läufe NIEMALS eine feste Ziel-Pace vorgeben! Grundlagenläufe werden ausschließlich über die Herzfrequenz (< {z2_max} bpm) gesteuert. Die Pace ist ein reines Resultat und zweitrangig (Gehpausen an Anstiegen sind normal und erwünscht).
+- **Wellness-, Verletzungs- & Krankheitssteuerung (Absolute Priorität)**:
+  Liegen akute Krankheitssymptome, eine gemeldete Verletzung, ein deutlich erhöhter Ruhepuls (>= +4 bpm über Baseline) oder extremer Muskelkater (Soreness >= 4) vor, hat die Gesundheit und Regeneration absoluten Vorrang.
+  Verordne in diesem Fall zwingend Pause / Ruhetag ("rest_day") oder allenfalls eine kurze, sehr lockere regenerative Einheit ("recovery_run"). Fordere unter keinen Umständen Tempo-, Schwellen- oder Umfangssteigerungen!
 
 ### Athleten-Profil & Reiz-Benchmark:
 - Aktuelles Datum (Heute): {ref_d.isoformat()} ({day_name_de})
@@ -365,6 +652,8 @@ Analysiere die aktuellen Trainingsdaten des Athleten ({athlete_name}) und erstel
 - Aktuelle Form (TSB): {form_data['current_tsb']:+.1f} (Fitness CTL: {form_data['latest_ctl']}, Ermüdung ATL: {form_data['latest_atl']})
 - Aktuelles Pensum: Ø {avg_weekly_km:.1f} km / Woche bei Ø {avg_runs_per_week:.1f} Läufen
 {history_section}
+{wellness_section}
+
 ### Letzte Aktivitäten:
 {chr(10).join(runs_lines)}
 
@@ -390,7 +679,7 @@ Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt (kein Markdown-Backticks 
     "actual_summary": "Nüchterne Zusammenfassung der seit der letzten Vorgabe absolvierten Läufe...",
     "effect_analysis": "Messbarer physiologischer Effekt (Pace/Puls-Verhältnis, Ermüdung, Zonen)...",
     "next_recommendation": "Konkrete nächste Aufgabe / Trainingsanweisung...",
-    "next_workout_type": "easy_run" oder "intervals" oder "tempo_run" oder "recovery_run",
+    "next_workout_type": "easy_run" oder "intervals" oder "tempo_run" oder "recovery_run" oder "rest_day",
     "next_target_hr": {z2_max},
     "next_duration_min": 45
   }},
@@ -469,6 +758,8 @@ def run_ai_coach(
     athlete_file: Optional[Path] = None,
     history_file: Optional[Path] = None,
     reviews_file: Optional[Path] = None,
+    wellness_file: Optional[Path] = None,
+    wellness_records: Optional[List[Dict[str, Any]]] = None,
     output_json: Optional[Path] = None,
     output_md: Optional[Path] = None,
     llm_client: Optional[LLMClient] = None,
@@ -476,6 +767,7 @@ def run_ai_coach(
     update_reviews_first: bool = True,
     dry_run: bool = False,
     force: bool = False,
+    ref_date: Optional[date] = None,
 ) -> Dict[str, Any]:
     """Execute end-to-end AI coach pipeline using an abstracted LLM client.
 
@@ -512,7 +804,10 @@ def run_ai_coach(
         athlete_file=athlete_path,
         history_file=hist_path,
         reviews_file=rev_path,
+        wellness_file=wellness_file,
+        wellness_records=wellness_records,
         save_classification=not dry_run,
+        ref_date=ref_date,
     )
 
     # Step 3: Invoke LLM client
@@ -711,6 +1006,13 @@ def main() -> int:
         help="Path to per-run reviews JSON cache",
     )
     parser.add_argument(
+        "--wellness",
+        "-w",
+        type=Path,
+        default=None,
+        help="Path to intervals_wellness.json (default: auto-detected from athlete or data/)",
+    )
+    parser.add_argument(
         "--output-prompt",
         type=Path,
         help="Write generated prompt directly to file",
@@ -737,6 +1039,7 @@ def main() -> int:
                 args.athlete,
                 history_file=args.history,
                 reviews_file=args.reviews,
+                wellness_file=args.wellness,
             )
             if args.output_prompt:
                 args.output_prompt.parent.mkdir(parents=True, exist_ok=True)
@@ -819,6 +1122,7 @@ def main() -> int:
             athlete_file=args.athlete,
             history_file=args.history,
             reviews_file=args.reviews,
+            wellness_file=args.wellness,
             output_json=args.output_json,
             output_md=args.output_md,
             llm_client=client,
@@ -847,6 +1151,7 @@ def main() -> int:
             args.athlete,
             history_file=args.history,
             reviews_file=args.reviews,
+            wellness_file=args.wellness,
         )
         if args.output_prompt:
             args.output_prompt.parent.mkdir(parents=True, exist_ok=True)
