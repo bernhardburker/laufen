@@ -121,7 +121,7 @@ sequenceDiagram
     Cron->>ICU: 06:45 Sync profile, wellness, activities, calendar events
     Cron->>Repo: Run 4-stage review (./run review) & Macro AI Coach (./run coach)
     Cron->>Repo: Build & deploy dashboards (GitHub Pages + Burkerserver)
-    Daemon->>ICU: 07:00 Morning Briefing (sync latest sleep/HRV & adaptive plan)
+    Daemon->>ICU: Morning Briefing (sync latest sleep/HRV & adaptive plan)
     Daemon->>User: Send Morning Briefing + Inline Action Keyboard
     User-->>Daemon: Optional callback ("📉 Lockerer", "⏱️ 35 Min", "🛋️ Ruhetag") or free-text
     Daemon->>ICU: Update/override today's calendar workout -> pushes to Garmin Watch
@@ -130,22 +130,17 @@ sequenceDiagram
     Daemon->>User: Send 4-Stage Post-Run Review (for runs completed today / <= 6h old)
     User-->>Daemon: Optional subjective feedback (e.g., "Wadenkrämpfe ab km 4")
     Daemon->>ICU: Attach note via manage_note.py & re-evaluate 4-stage review
-    Daemon->>User: 20:30 Evening Preview for tomorrow's planned session
+    Daemon->>User: Evening Preview for tomorrow's planned session
 ```
 
 ### Key Lifecycle Invariants
-1. **Single Authority for Morning Briefing (`07:00`)**:
-   - Only the Burkerserver systemd daemon ([`deploy/laufen-telegram-bot.service`](../deploy/laufen-telegram-bot.service) running `./run bot --scheduler`) triggers daily morning briefings.
-   - `send_daily_briefing_for_athlete()` enforces idempotency via `state["last_briefing_date"] == today_iso` (overridable only via `--force`).
-2. **Immediate Post-Run Reviews via 10-Minute Polling**:
-   - The daemon polls Intervals.icu every 10 minutes for newly uploaded runs.
-   - Cold-start and age guard: Only notifies for runs where `run_date == today` or `age <= 6 hours`, initializing `notified_activity_ids` on first boot to prevent historical notification bursts.
-3. **Evening Preview & Tomorrow Planning (`20:30`)**:
-   - The daemon triggers the evening preview for tomorrow at `20:30` (or configured `evening_briefing_time`).
-   - Evaluates tomorrow relative to today's completed state:
-     - If athlete ran today (`ran_today == True`): Tomorrow is scheduled as a rest day, lingering uncompleted workouts on tomorrow are cleared, and the next training session is scheduled for the day after tomorrow (`today + 2`).
-     - If athlete did not run today (`ran_today == False`): Tomorrow is treated as a training day, and the adaptive workout is scheduled for tomorrow (`today + 1`).
-   - Invariant: Workouts on `today` are never deleted during the evening preview. Uncompleted workouts from today remain in place until the morning cleanup sweep (`ev_date < today_iso`) at `07:00`.
+1. **Morning Briefing (`briefing_time`)**:
+   - Sent by the Telegram bot daemon (`--scheduler`) once per day with idempotency protection (`state["last_briefing_date"] == today_iso`).
+2. **Immediate Post-Run Reviews**:
+   - Polled every 10 minutes for runs completed today ($\le 6\text{ hours}$ old) with cold-start deduplication.
+3. **Evening Preview (`evening_briefing_time`)**:
+   - Previews tomorrow: rest day if the athlete ran today, otherwise training day.
+   - Workouts for today are never deleted in the evening.
 
 ---
 
