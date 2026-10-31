@@ -1,9 +1,9 @@
-### Rückblick auf die Woche
+### Aktueller Stand & Blick auf die Woche
 
-Hallo Berni, schauen wir nüchtern auf die Zahlen. Am Freitag hast du dich in Slot 2 für einen lockeren Lauf entschieden (5,68 km in knapp 39 Minuten). Der gezielte Schwellenreiz entfiel damit, was die muskuläre Ermüdung gering gehalten hat. Mit einem Durchschnittspuls von 152 bpm und knapp 80 % in Zone 1 und 2 war der Schwerpunkt klar aerob. Die rund 8 Minuten in Zone 3 und 4 zeigen ein etwas flotteres Anziehen gegen Ende (Maximalpuls 171 bpm), haben den Erholungscharakter aber nicht wesentlich beeinträchtigt.
+Hallo Berni. Die laufende Woche steht aktuell bei 10,5 Kilometern verteilt auf zwei Einheiten. Am Freitag bist du 5,7 km mit einem durchschnittlichen Puls von 152 bpm gelaufen. Dabei gab es rund 8 Minuten in Zone 3 und 4, insgesamt lagen aber knapp 80 % der Zeit sauber im Grundlagenbereich. Zusammen mit dem sehr sauberen Lauf vom Dienstag (97 % Z1/Z2) haben die Beine bisher wenig Ermüdung angehäuft. Dein TSB von -4,5 spiegelt eine völlig ausgeglichene Belastung wider.
 
-### Stand der Form und nächste Aufgabe
+### Ausblick & Wochenaufgabe
 
-Mit einer CTL von 13,9 und einer ATL von 18,4 liegt dein TSB bei -4,5. Das ist eine völlig normale, leichte Ermüdung im regulären Trainingsrhythmus. Die Beine sind nicht überlastet.
+Für dieses Wochenende (Slot 3) steht noch der geplante ruhige Dauerlauf aus. Nutze Samstag oder Sonntag für 55 bis 65 Minuten entspanntes Laufen. Halte den Puls konsequent unter 158 bpm und nimm an Steigungen ohne Zögern Gehschritte ein, damit der Kreislauf ruhig bleibt. Die Pace ist dabei völlig nebensächlich.
 
-Für das Wochenende steht Slot 3 an: ein ruhiger Grundlagenlauf (Long Run) über 55 bis 65 Minuten. Steuere die Einheit ausnahmslos über die Herzfrequenz (< 158 bpm). Wenn der Puls an Steigungen steigt, nimm konsequent Tempo raus oder gehe kurz. Die Pace ist Nebensache.
+Für nächste Woche peilen wir wieder drei Einheiten an: Starte in Slot 1 mit einem kurzen Temporeiz (z. B. Fahrtspiel oder Schwellenintervalle), halte Slot 2 flexibel für aktive Erholung und schließe die Woche mit einem soliden Z2-Dauerlauf ab.
