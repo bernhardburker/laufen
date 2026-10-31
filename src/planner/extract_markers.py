@@ -344,6 +344,17 @@ def calculate_guardrails(
     }
 
 
+def find_heart_rate_zone(zones: Dict[str, Any], zone_num: int) -> Optional[Dict[str, Any]]:
+    """Finds a heart rate zone definition by zone number or prefix matching."""
+    if not isinstance(zones, dict):
+        return None
+    for key, z_data in zones.items():
+        if isinstance(z_data, dict):
+            if z_data.get("zone") == zone_num or key.startswith(f"z{zone_num}_") or key == f"z{zone_num}":
+                return z_data
+    return None
+
+
 def extract_planning_markers(
     activities_file: Optional[Path] = None,
     wellness_file: Optional[Path] = None,
@@ -369,15 +380,19 @@ def extract_planning_markers(
     wellness = wellness_data if wellness_data is not None else (load_json_file(well_path) or [])
     profile = profile_data if profile_data is not None else (load_json_file(prof_path) or {})
 
+    zones = profile.get("athlete", {}).get("heart_rate", {}).get("zones", {})
+    z2 = find_heart_rate_zone(zones, 2) or {}
+    z4 = find_heart_rate_zone(zones, 4) or {}
+
     athlete_info = {
         "classification": profile.get("athlete", {}).get("classification", "Hobbyläufer"),
         "training_mode": profile.get("athlete", {}).get("training_mode", "flexi_hybrid"),
-        "z2_max_hr": profile.get("athlete", {}).get("heart_rate", {}).get("zones", {}).get("z2_aerobic", {}).get("max", 158),
+        "z2_max_hr": int(z2.get("max", 158)),
         "z4_range": [
-            profile.get("athlete", {}).get("heart_rate", {}).get("zones", {}).get("z4_subthreshold", {}).get("min", 169),
-            profile.get("athlete", {}).get("heart_rate", {}).get("zones", {}).get("z4_subthreshold", {}).get("max", 177),
+            int(z4.get("min", 169)),
+            int(z4.get("max", 177)),
         ],
-        "lthr": profile.get("athlete", {}).get("heart_rate", {}).get("lthr", 178),
+        "lthr": int(profile.get("athlete", {}).get("heart_rate", {}).get("lthr", 178)),
     }
 
     readiness = get_readiness_markers(wellness, activities, today)

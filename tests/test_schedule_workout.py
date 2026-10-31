@@ -182,17 +182,56 @@ class WorkoutScheduleDriver:
         act_path = self.tmp_path / "activities.json"
         act_path.write_text(json.dumps(activities), encoding="utf-8")
 
-    def run_adaptive_plan(self, with_events_file: bool = False) -> None:
+    def run_adaptive_plan(self, with_events_file: bool = False, dry_run: bool = False) -> None:
         act_path = self.tmp_path / "activities.json"
         args = [
             "--adaptive-plan",
             "--ref-date", self.test_ref_date.isoformat(),
         ]
+        if dry_run:
+            args.append("--dry-run")
         if act_path.is_file():
             args.extend(["--activities-file", str(act_path)])
         if with_events_file:
             args.extend(["--events-file", str(self.events_file)])
         self.run_schedule(args, use_mock_api=True)
+
+    def setup_future_event_10_days(self) -> None:
+        date_10 = (self.test_ref_date + datetime.timedelta(days=10)).isoformat()
+        ev = {
+            "id": 880010,
+            "category": "WORKOUT",
+            "name": "Slot 3: Long Run (10d)",
+            "start_date_local": f"{date_10}T07:00:00",
+            "paired_activity_id": None,
+        }
+        MockIntervalsEventHandler.events_db.append(ev)
+        existing = []
+        if self.events_file.is_file():
+            try:
+                existing = json.loads(self.events_file.read_text(encoding="utf-8"))
+            except Exception:
+                existing = []
+        existing.append(ev)
+        self.events_file.write_text(json.dumps(existing), encoding="utf-8")
+
+    def setup_future_event_20_days(self) -> None:
+        date_20 = (self.test_ref_date + datetime.timedelta(days=20)).isoformat()
+        ev = {
+            "id": 880020,
+            "category": "WORKOUT",
+            "name": "Slot 1: Race Day (20d)",
+            "start_date_local": f"{date_20}T07:00:00",
+            "paired_activity_id": None,
+        }
+        existing = []
+        if self.events_file.is_file():
+            try:
+                existing = json.loads(self.events_file.read_text(encoding="utf-8"))
+            except Exception:
+                existing = []
+        existing.append(ev)
+        self.events_file.write_text(json.dumps(existing), encoding="utf-8")
 
     def get_last_received_payload(self) -> dict:
         assert len(MockIntervalsEventHandler.received_requests) > 0, "No requests received by mock server"
@@ -445,5 +484,37 @@ def step_events_file_has_paired_workout(driver: WorkoutScheduleDriver):
     with open(driver.events_file, "r", encoding="utf-8") as f:
         data = json.load(f)
     assert any(e.get("paired_activity_id") == "i203449631" for e in data)
+
+
+@given("a future event exists in calendar 10 days ahead")
+def step_future_event_10_days(driver: WorkoutScheduleDriver):
+    driver.setup_future_event_10_days()
+
+
+@given("a distant future event exists in calendar 20 days ahead")
+def step_future_event_20_days(driver: WorkoutScheduleDriver):
+    driver.setup_future_event_20_days()
+
+
+@when("the workout schedule script is executed in dry-run mode with adaptive planning arguments and events-file")
+def step_run_adaptive_dry_run_with_events_file(driver: WorkoutScheduleDriver):
+    driver.run_adaptive_plan(with_events_file=True, dry_run=True)
+
+
+@then("the calendar events file contains the 10-day future event")
+def step_events_file_has_10_day_event(driver: WorkoutScheduleDriver):
+    assert driver.events_file.is_file()
+    with open(driver.events_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    assert any(e.get("id") == 880010 for e in data)
+
+
+@then("the calendar events file contains the 20-day distant future event")
+def step_events_file_has_20_day_event(driver: WorkoutScheduleDriver):
+    assert driver.events_file.is_file()
+    with open(driver.events_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    assert any(e.get("id") == 880020 for e in data)
+
 
 

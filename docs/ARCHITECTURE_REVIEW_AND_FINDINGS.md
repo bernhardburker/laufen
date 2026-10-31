@@ -63,18 +63,22 @@
 
 ---
 
-### 1.6 [OPEN - BUG] `sync_adaptive_plan` Truncates or Wipes `calendar_events.json` (`schedule_workout.py`)
-- **Location:** [`sync_adaptive_plan()`](../src/planner/schedule_workout.py#L769-L780) and [lines 893–898, 941–946](../src/planner/schedule_workout.py#L893-L946)
-- **Symptom:**
-  1. In `./run sync`, [`download_events.py`](../src/integrations/download_events.py#L140-L154) downloads calendar events from `-7` days to **`+14` days** into `calendar_events.json`.
-  2. Next, `./run sync` runs `schedule_workout.py --adaptive-plan --events-file "$CALENDAR_EVENTS_PATH"`.
-  3. `sync_adaptive_plan` fetches events only up to **`+7` days** and overwrites `calendar_events.json` with `remaining_events`, discarding all events between `+8` and `+14` days (or wiping `calendar_events.json` to `[]` if run in `dry_run` mode).
+### 1.6 [RESOLVED - BUG] `sync_adaptive_plan` Truncates or Wipes `calendar_events.json` (`schedule_workout.py`)
+- **Location:** [`sync_adaptive_plan()`](../src/planner/schedule_workout.py#L770-L815) and lines [950–960, 995–1010](../src/planner/schedule_workout.py#L950-L1010)
+- **Resolution:**
+  1. **Harmonized 14-Day Horizon:** Extended the API query horizon in `sync_adaptive_plan()` from `+7` to `+14` days (`today + timedelta(days=14)`), matching `download_events.py`.
+  2. **Preservation of Out-of-Window Events:** Added preservation logic in `sync_adaptive_plan()` that reads any events outside the query window from `events_file` (e.g. `> +14` days or `< -7` days) and merges them back in sorted order upon saving.
+  3. **Dry-Run & Offline Cache Protection:** In offline or dry-run mode, `sync_adaptive_plan()` now loads existing events from `events_file` instead of starting with an empty list `[]`. Furthermore, dry-run mode never mutates or overwrites `events_file`.
+  4. **Automated BDD Tests:** Added 2 BDD scenarios in [`tests/schedule_workout.feature`](../tests/schedule_workout.feature) and step definitions in [`tests/test_schedule_workout.py`](../tests/test_schedule_workout.py) verifying preservation of 10-day future events, 20-day distant future events, and non-destructive dry-run execution. All 150 tests pass.
 
 ---
 
-### 1.7 [OPEN - BUG] `extract_planning_markers` Hardcodes `z4_subthreshold` Key Lookup (`extract_markers.py`)
-- **Location:** [`extract_planning_markers()`](../src/planner/extract_markers.py#L221-L227)
-- **Symptom:** `z4_sub = zones.get("z4_subthreshold") or {}` only looks up `"z4_subthreshold"`, falling back to hardcoded `[169, 177]` whenever the key is named `"z4_threshold"` (e.g. standard 5-zone profiles synced via `sync_athlete.py`).
+### 1.7 [RESOLVED - BUG] `extract_planning_markers` Hardcodes `z4_subthreshold` Key Lookup (`extract_markers.py`)
+- **Location:** [`find_heart_rate_zone()`](../src/planner/extract_markers.py#L347-L357) and [`extract_planning_markers()`](../src/planner/extract_markers.py#L384-L398)
+- **Resolution:**
+  1. **Dynamic Zone Resolver (`find_heart_rate_zone`):** Implemented a helper that locates target heart rate zones (Zone 4 and Zone 2) dynamically by numeric zone identifier (`z_data.get("zone") == zone_num`), prefix match (`key.startswith(f"z{zone_num}_")`), or exact key (`f"z{zone_num}"`), eliminating rigid reliance on a hardcoded dictionary key name.
+  2. **Model Agnostic (5-Zone & 7-Zone):** Resolves Zone 4 cleanly whether named `"z4_threshold"`, `"z4_subthreshold"`, or any localized name, and reliably extracts `z2_max_hr` for Zone 2.
+  3. **Automated BDD Tests:** Added scenario `Standard 5-zone athlete profile resolves Z4 threshold range and Z2 max without fallback` in [`tests/marker_planning.feature`](../tests/marker_planning.feature) and step definitions in [`tests/test_marker_planning.py`](../tests/test_marker_planning.py) verifying that 5-zone profiles correctly extract custom threshold bounds without defaulting to hardcoded fallback values. All 151 tests pass.
 
 ---
 

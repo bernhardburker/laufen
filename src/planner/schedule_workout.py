@@ -769,8 +769,25 @@ def sync_adaptive_plan(
 
     # Fetch existing events
     oldest_str = (today - datetime.timedelta(days=7)).isoformat()
-    newest_str = (today + datetime.timedelta(days=7)).isoformat()
+    newest_str = (today + datetime.timedelta(days=14)).isoformat()
     existing_events = []
+    outside_window_events = []
+
+    # Preserve events from events_file that fall outside the query window (e.g. > +14 days or < -7 days)
+    if events_file:
+        try:
+            ev_p = Path(events_file)
+            if ev_p.is_file():
+                with open(ev_p, "r", encoding="utf-8") as f:
+                    file_events = json.load(f)
+                if isinstance(file_events, list):
+                    for ev in file_events:
+                        d_str = str(ev.get("start_date_local") or "")[:10]
+                        if d_str and (d_str < oldest_str or d_str > newest_str):
+                            outside_window_events.append(ev)
+        except Exception:
+            pass
+
     if api_key and not dry_run:
         existing_events = fetch_existing_events(
             api_key=api_key,
@@ -779,6 +796,20 @@ def sync_adaptive_plan(
             newest=newest_str,
             api_base_url=api_base_url,
         )
+    elif events_file:
+        # Offline or dry-run fallback: read existing events from events_file if present
+        try:
+            ev_p = Path(events_file)
+            if ev_p.is_file():
+                with open(ev_p, "r", encoding="utf-8") as f:
+                    file_events = json.load(f)
+                if isinstance(file_events, list):
+                    existing_events = [
+                        ev for ev in file_events
+                        if oldest_str <= str(ev.get("start_date_local") or "")[:10] <= newest_str
+                    ]
+        except Exception:
+            existing_events = []
 
     results: dict = {
         "cleaned": [],
@@ -917,11 +948,13 @@ def sync_adaptive_plan(
         ev_name = unpaired_on_target[0].get("name", "Workout")
         print(f"[BEREITS GEPLANT] Für {target_date_iso} existiert bereits ein Workout: {ev_name}")
         results["skipped"].append(unpaired_on_target[0])
-        if events_file:
+        if events_file and not dry_run:
             events_path = Path(events_file)
             events_path.parent.mkdir(parents=True, exist_ok=True)
+            all_final = list(remaining_events) + outside_window_events
+            all_final.sort(key=lambda x: str(x.get("start_date_local") or ""))
             with open(events_path, "w", encoding="utf-8") as f:
-                json.dump(remaining_events, f, indent=2, ensure_ascii=False)
+                json.dump(all_final, f, indent=2, ensure_ascii=False)
         print("=" * 60)
         return results
 
@@ -965,8 +998,9 @@ def sync_adaptive_plan(
             print(f"[FEHLER] Konnte adaptives Workout nicht anlegen: {e}")
             results.setdefault("errors", []).append({"payload": payload, "error": str(e)})
 
-    if events_file:
-        all_final_events = list(remaining_events) + results.get("scheduled", [])
+    if events_file and not dry_run:
+        all_final_events = list(remaining_events) + results.get("scheduled", []) + outside_window_events
+        all_final_events.sort(key=lambda x: str(x.get("start_date_local") or ""))
         events_path = Path(events_file)
         events_path.parent.mkdir(parents=True, exist_ok=True)
         with open(events_path, "w", encoding="utf-8") as f:

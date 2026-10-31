@@ -35,3 +35,8 @@ Feature: 4-Stage Marker-Based Adaptive Workout Planning
     When the planner CLI is executed with "--markers" and "--json"
     Then the process exits with code 0
     And the stdout is valid JSON containing "guardrails" and "readiness"
+
+  Scenario: Standard 5-zone athlete profile resolves Z4 threshold range and Z2 max without fallback
+    Given an athlete configured with standard 5-zone model with Z2 max 144 bpm and Z4 range 155 to 165 bpm
+    When planning markers are extracted for tomorrow
+    Then the extracted athlete markers have Z2 max 144 bpm and Z4 range 155 to 165 bpm

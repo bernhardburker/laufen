@@ -94,3 +94,21 @@ Feature: Schedule structured workouts to Intervals.icu
     Then the process exits with code 0
     And one scheduled event has date for day after tomorrow
     And the calendar events file contains the today paired workout
+
+  Scenario: Adaptive planner preserves future calendar events up to 14 days and beyond in events-file
+    Given a mock Intervals.icu event server is running
+    And INTERVALS_API_KEY is configured
+    And a future event exists in calendar 10 days ahead
+    And a distant future event exists in calendar 20 days ahead
+    When the workout schedule script is executed with adaptive planning arguments and events-file
+    Then the process exits with code 0
+    And the calendar events file contains the 10-day future event
+    And the calendar events file contains the 20-day distant future event
+
+  Scenario: Dry run does not overwrite or wipe existing events in calendar events file
+    Given a mock Intervals.icu event server is running
+    And INTERVALS_API_KEY is configured
+    And a future event exists in calendar 10 days ahead
+    When the workout schedule script is executed in dry-run mode with adaptive planning arguments and events-file
+    Then the process exits with code 0
+    And the calendar events file contains the 10-day future event

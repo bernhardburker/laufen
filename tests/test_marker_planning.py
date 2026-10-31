@@ -189,6 +189,34 @@ class MarkerPlanningDriver:
             env=env,
         )
 
+    def configure_5zone_athlete(self, z2_max: int, z4_min: int, z4_max: int) -> None:
+        self.athlete_profile = {
+            "athlete": {
+                "name": "Standard Runner",
+                "classification": "Hobbyläufer",
+                "heart_rate": {
+                    "lthr": 162,
+                    "max_hr": 190,
+                    "resting_hr": 52,
+                    "zones": {
+                        "z1_recovery": {"zone": 1, "name": "Recovery", "min": 0, "max": 130},
+                        "z2_aerobic": {"zone": 2, "name": "Aerobic", "min": 131, "max": z2_max},
+                        "z3_tempo": {"zone": 3, "name": "Tempo", "min": z2_max + 1, "max": z4_min - 1},
+                        "z4_threshold": {"zone": 4, "name": "Threshold", "min": z4_min, "max": z4_max},
+                        "z5_anaerobic": {"zone": 5, "name": "Anaerobic", "min": z4_max + 1, "max": 190},
+                    },
+                },
+                "weekly_slots": self.athlete_profile["athlete"]["weekly_slots"],
+            }
+        }
+
+    def assert_athlete_zones(self, expected_z2_max: int, expected_z4_min: int, expected_z4_max: int) -> None:
+        athlete_meta = self.markers_result.get("athlete", {})
+        actual_z2 = athlete_meta.get("z2_max_hr")
+        actual_z4 = athlete_meta.get("z4_range", [])
+        assert actual_z2 == expected_z2_max, f"Expected Z2 max {expected_z2_max}, got {actual_z2}"
+        assert actual_z4 == [expected_z4_min, expected_z4_max], f"Expected Z4 range [{expected_z4_min}, {expected_z4_max}], got {actual_z4}"
+
     def assert_cli_json_valid(self, required_keys: List[str]) -> None:
         assert self.cli_result is not None
         assert self.cli_result.returncode == 0, f"Stderr: {self.cli_result.stderr}"
@@ -310,3 +338,14 @@ def step_process_exits_code(driver: MarkerPlanningDriver, code: int):
 @then(parsers.parse('the stdout is valid JSON containing "{key1}" and "{key2}"'))
 def step_check_cli_json(driver: MarkerPlanningDriver, key1: str, key2: str):
     driver.assert_cli_json_valid([key1, key2])
+
+
+@given(parsers.parse('an athlete configured with standard 5-zone model with Z2 max {z2_max:d} bpm and Z4 range {z4_min:d} to {z4_max:d} bpm'))
+def step_configure_5zone_athlete(driver: MarkerPlanningDriver, z2_max: int, z4_min: int, z4_max: int):
+    driver.configure_5zone_athlete(z2_max=z2_max, z4_min=z4_min, z4_max=z4_max)
+
+
+@then(parsers.parse('the extracted athlete markers have Z2 max {z2_max:d} bpm and Z4 range {z4_min:d} to {z4_max:d} bpm'))
+def step_assert_athlete_zones(driver: MarkerPlanningDriver, z2_max: int, z4_min: int, z4_max: int):
+    driver.assert_athlete_zones(expected_z2_max=z2_max, expected_z4_min=z4_min, expected_z4_max=z4_max)
+
