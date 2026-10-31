@@ -45,8 +45,9 @@ Tenant Execution Options:
   --all             Execute command iteratively across all active athletes
 
 Commands:
-  sync              Download activities & wellness from Intervals.icu
+  sync              Download activities, wellness, events & adaptive plan from Intervals.icu
   wellness          Download wellness & sleep data from Intervals.icu
+  events            Download scheduled calendar events & workouts from Intervals.icu
   upload [ARGS...]  Upload activity files from export directory to Intervals.icu
   sync-profile      Sync athlete profile & HR zones from Intervals.icu
   report            Display combined recent runs & weekly trends
@@ -61,6 +62,8 @@ Commands:
   preview [PORT]    Build dashboard and launch local webserver (default: 8080)
   plan [ARGS...]    Create or schedule structured workouts to Intervals.icu
   briefing [ARGS...] Sync & send daily Telegram workout briefing to athlete
+  evening [ARGS...] Send evening workout logistics preview via Telegram
+  post-run-review   Send 4-stage post-run review for latest run via Telegram
   bot [ARGS...]     Launch bidirectional Telegram Coach Bot daemon (long-polling)
   dispatch [ARGS...] Trigger GitHub Actions dashboard build workflow via dispatch
   test [ARGS...]    Run the automated BDD test suite (100% mocked, offline)
