@@ -1,9 +1,15 @@
-### Aktueller Stand & Blick auf die Woche
+### Status quo & Wochenend-Fokus
 
-Hallo Berni. Die laufende Woche steht aktuell bei 10,5 Kilometern verteilt auf zwei Einheiten. Am Freitag bist du 5,7 km mit einem durchschnittlichen Puls von 152 bpm gelaufen. Dabei gab es rund 8 Minuten in Zone 3 und 4, insgesamt lagen aber knapp 80 % der Zeit sauber im Grundlagenbereich. Zusammen mit dem sehr sauberen Lauf vom Dienstag (97 % Z1/Z2) haben die Beine bisher wenig Ermüdung angehäuft. Dein TSB von -4,5 spiegelt eine völlig ausgeglichene Belastung wider.
+Die Daten der letzten Wochen zeigen ein klares Bild: Die aerobe Basis stabilisiert sich bei rund 80–90 % Z1/Z2-Anteil in den jüngsten Einheiten, während das Gesamtpensum bei durchschnittlich 13,5 Kilometern liegt. Mit einem TSB von -4,5 (CTL 13,9, ATL 18,4) bist du leicht ermüdet, aber voll im belastbaren Bereich.
+
+Der Lauf vom Freitag (5,68 km bei Ø 152 bpm) hatte einen soliden Grundlagenschwerpunkt, wies am Ende aber rund 8 Minuten in Zone 3/4 auf. Das zeigt, dass das Tempo gegen Ende leicht angezogen hat – die Beine haben das gut weggesteckt, aber es war kein rein regenerativer Lauf. Für dieses Wochenende (Slot 3) steht noch der ruhige Long Run aus.
 
 ### Ausblick & Wochenaufgabe
 
-Für dieses Wochenende (Slot 3) steht noch der geplante ruhige Dauerlauf aus. Nutze Samstag oder Sonntag für 55 bis 65 Minuten entspanntes Laufen. Halte den Puls konsequent unter 158 bpm und nimm an Steigungen ohne Zögern Gehschritte ein, damit der Kreislauf ruhig bleibt. Die Pace ist dabei völlig nebensächlich.
+Für die kommende Woche liegt der Fokus auf der Verlässlichkeit von drei Einheiten:
 
-Für nächste Woche peilen wir wieder drei Einheiten an: Starte in Slot 1 mit einem kurzen Temporeiz (z. B. Fahrtspiel oder Schwellenintervalle), halte Slot 2 flexibel für aktive Erholung und schließe die Woche mit einem soliden Z2-Dauerlauf ab.
+- **Slot 1 (Mo/Di):** Tempo- oder Schwellenreiz (z. B. 3–4 × 1 km an der Schwelle 168–174 bpm) oder alternativ ein zügiger Dauerlauf in Z3/Z4.
+- **Slot 2 (Mi–Fr):** Ruhiger Grundlagenlauf (40–45 Min) strikt in Zone 2 (< 158 bpm).
+- **Slot 3 (Sa/So):** Long Run (55–65 Min) ausschließlich über Herzfrequenz gesteuert.
+
+**Wochenaufgabe:** Halte am Wochenende und in den Z2-Einheiten den Puls konsequent unter 158 bpm und nimm an Steigungen ohne Zögern Gehpausen, um die Zone nicht nach oben zu verlassen.
