@@ -1,216 +1,231 @@
-# Lauf- & Trainingsmanagement-Hub
+# 🏃‍♂️ Laufen — Multi-Athlete Running Analytics, Adaptive Planner & AI Coach
 
-Zentrales Repository zur Koordination, Analyse und Erstellung von Lauftrainings unter Anbindung von **Garmin Connect**, **Strava** und **Intervals.icu**.
-
----
-
-## 1. Systemübersicht & Plattform-Rollen
-
-| Plattform | Primäre Rolle | Relevante Schnittstellen / Protokolle |
-| :--- | :--- | :--- |
-| **Garmin Uhr & Garmin Connect** | Hardware-Messung (HR, Pace, GPS, Kadenz, Dynamik) & Workout-Ausführung | `garminconnect` Python API, FIT-File Download/Upload, Connect IQ |
-| **Intervals.icu** | Belastungssteuerung, Trainingsplanung & Kalender (CTL/ATL/TSB) | Intervals.icu REST API, Workout-Textformat ("Warmup 10m 65% HR") |
-| **Strava** | Social Platform, Segmente, Langzeit-Übersicht | Strava v3 REST API (OAuth2) |
+A zero-dependency (Python 3 standard library) endurance training platform that connects **Intervals.icu** (syncing Garmin Connect, Coros, Wahoo, Suunto, and Strava), **Antigravity CLI (`agy`) / LLM providers**, an interactive **Telegram Coach Bot**, and a self-contained **HTML5 Analytics Dashboard**.
 
 ---
 
-## 2. Kernfokus & Ziele (Die Basics)
+## 🧭 System Architecture
 
-- **Herzfrequenz-Steuerung**:
-  - Verständnis der Zonen (insbesondere **Zone 2** für den aeroben Aufbau).
-  - Kontrolle der Belastung: Laufen nach Puls statt Überpacen.
-- **Pace & Tempogefühl**:
-  - Einordnung von Geschwindigkeiten (min/km).
-  - Verhältnis von Herzfrequenz zu Pace beobachten (gleiche Pace bei niedrigerem Puls = Fitnessgewinn).
-- **Trainingskoordination & Wochenstruktur**:
-  - Sinnvolle Aufteilung der Einheiten über die Woche (Lauf- vs. Ruhetage).
-  - Balance zwischen leichten Grundlageneinheiten und gezielten Reizen.
-  - Schrittweise Steigerung des Gesamtvolumens (Faustregel: max. ~10% pro Woche).
-- **Trainings erstellen & auf die Garmin-Uhr übertragen**:
-  - Strukturierte Workouts per Skript/Text definieren (z. B. Einlaufen, Intervalle nach Pace/Puls, Auslaufen).
-  - Sync an Garmin Connect / Intervals.icu, damit die Uhr beim Laufen Orientierung gibt (Puls-/Pace-Alarme).
+```mermaid
+flowchart TD
+    subgraph External["External Platforms & Devices"]
+        Watch["GPS Watch (Garmin / Coros / Wahoo / Suunto)"]
+        Strava["Strava / Garmin Connect"]
+        Intervals["Intervals.icu REST API v1"]
+        TelegramAPI["Telegram Bot API"]
+        LLM["LLM Provider (agy CLI / Gemini / OpenAI)"]
+        Watch <--> Strava <--> Intervals
+    end
 
----
+    subgraph Hub["Laufen Management Hub (./run)"]
+        Resolver["Tenant Resolver (src/athletes.py)\nathletes/registry.json"]
+        
+        subgraph SyncLayer["1. Integrations & Sync (src/integrations/)"]
+            SyncAct["download_intervals.py\n(Activities GET/PUT)"]
+            SyncWell["download_wellness.py\n(Sleep, HRV, RHR, CTL/ATL)"]
+            SyncEv["download_events.py\n(Calendar Events & Notes)"]
+            SyncProf["sync_athlete.py\n(HR Zones & LTHR)"]
+            NoteMgr["manage_note.py\n(Subjective Run Notes)"]
+            Onboard["onboard_athlete.py & seed_athlete.py"]
+        end
 
-## 3. Die Lauf-Grundlagen: Herzfrequenz & Pace
+        subgraph PlanLayer["2. Telemetry & Adaptive Planner (src/planner/)"]
+            Markers["extract_markers.py\n(Readiness & Guardrails)"]
+            Scheduler["schedule_workout.py\n(DSL Builder & Idempotent Sync)"]
+        end
 
-### Herzfrequenz-Zonen
-Die Einteilung erfolgt meist über die maximale Herzfrequenz ($HF_{max}$) oder die Schwellenherzfrequenz ($LTHR$):
+        subgraph AnalysisLayer["3. Coaching & Analysis (src/analysis/)"]
+            Reviewer["run_reviewer.py\n(4-Stage Per-Run Review)"]
+            DailyRec["daily_recommendation.py\n(Day-of-Execution Engine)"]
+            MacroCoach["ai_coach.py & coach_history.py\n(Macro Coach & Cycle Memory)"]
+            TgCoach["telegram_coach.py\n(Interactive Chat & Overrides)"]
+            Forecast["forecast.py, trends.py, recent_runs.py\n(Riegel Forecast, Banister Form, Trends)"]
+        end
 
-| Zone | Bezeichnung | Intensität | Zweck / Gefühl |
-| :--- | :--- | :--- | :--- |
-| **Z1** | Regeneration | $< 65\% HF_{max}$ | Sehr leicht, fördert Durchblutung & Erholung |
-| **Z2** | Grundlagenausdauer 1 | $65\% - 75\% HF_{max}$ | **Das Fundament (60–80% des Trainings)**; lockeres Sprechen problemlos möglich ("Talk Test") |
-| **Z3** | Grundlagenausdauer 2 / Tempo | $75\% - 85\% HF_{max}$ | Zügig; Sprechen nur noch in kurzen Sätzen |
-| **Z4** | Schwellenbereich (Threshold) | $85\% - 92\% HF_{max}$ | "Angenehm hart"; anaerobe Schwelle, fordert mentale Härte |
-| **Z5** | Maximalbereich / VO2max | $> 92\% HF_{max}$ | All-out, kurze Intervalle, Zielsprints |
+        subgraph BotLayer["4. Bidirectional Telegram Daemon"]
+            TgBot["telegram_bot.py\n(Morning/Evening Briefings, Post-Run Review, Callbacks)"]
+        end
 
-### Die wichtigsten Trainingsarten
-- **Lockerer Dauerlauf (Easy Run / Z2)**: Bildet Kapillaren, stärkt Sehnen und den Fettstoffwechsel. Der häufigste Fehler ist, diese Läufe zu schnell zu laufen.
-- **Langer Lauf (Long Run)**: Ein Z2-Lauf mit längerer Dauer, um Ausdauer und Ermüdungswiderstand aufzubauen.
-- **Intervalltraining**: Wechsel aus Belastungsphasen (z. B. 400m bis 1000m in Z4/Z5 oder Ziel-Pace) und Erholungsphasen (Gehen/Traben).
-- **Tempolauf / Schwellenlauf**: Kontinuierlicher Lauf über 15–30 Minuten an der Schwellenintensität (Z3/Z4).
-- **Regenerationslauf (Recovery Run)**: Sehr kurz und langsam (Z1/untere Z2) am Tag nach harten Einheiten.
+        subgraph VisLayer["5. Visualization (src/visualization/)"]
+            DashGen["generate_dashboard.py\n(templates/dashboard.html -> dist/<slug>/index.html)"]
+        end
+    end
 
-### Trainingskoordination & Wochenbeispiel (3 Läufe/Woche)
-- **Dienstag**: Lockerer Grundlagenlauf (Z2, 35–45 min)
-- **Donnerstag**: Intervall- oder Schwellentraining (z. B. 10 min Einlaufen, 4x 3 min zügig / 2 min Trab, 10 min Auslaufen)
-- **Sonntag**: Langer Grundlagenlauf (Z2, 50–70 min)
-- *Montag, Mittwoch, Freitag, Samstag*: Regeneration, Spaziergänge oder leichtes Stabi-/Krafttraining
-
----
-
-## 4. Workouts erstellen & auf die Uhr bringen
-
-### Prinzip der strukturierten Workouts
-Statt "einfach loszulaufen" können Einheiten vorgeplant werden:
-1. **Warmup**: z. B. 10–15 Minuten Zone 1–2
-2. **Hauptteil**:
-   - *Entweder* Dauerlauf mit Zielpuls-Bereich (z. B. 45 min in Z2: 130–145 bpm)
-   - *Oder* Wiederholungsblöcke (z. B. 5x 800m mit Pace 5:15 min/km, dazwischen 2 min Gehen/Traben)
-3. **Cooldown**: 5–10 Minuten lockeres Auslaufen
-
-### Warum das hilft
-- Die **Garmin-Uhr** warnt per Ton/Vibration, wenn man zu schnell/zu langsam ist oder der Puls die Zielzone verlässt.
-- Verhindert das typische "Zu-schnell-Beginnen" bei Grundlagenläufen.
-- Automatische Rundenzeiten für Intervalle ohne manuelles Stoppen.
-
----
-
-## 5. Projektstruktur & Werkzeuge
-
-```text
-laufen/
-├── .github/workflows/        # CI/CD pipelines & GitHub Pages deployment
-│   └── deploy-pages.yml      # Automated sync and GitHub Pages deployment workflow
-├── .env.example              # Vorlage für Zugangsdaten
-├── .gitignore                # Ausschluss von FIT-Dateien, Tokens & Cache
-├── README.md                 # Projektdokumentation
-├── config/                   # Persönliche Werte (MaxHF, Ruhepuls, Zonen)
-│   └── athlete.json          # Zonen, LTHR, HF-Bereiche, Pace-Ziele
-├── templates/                # Visual dashboard templates
-│   └── dashboard.html        # Responsive HTML5 & Chart.js dashboard template
-├── workouts/                 # Strukturierte Trainingsvorlagen
-│   ├── intervals/            # Textbasierte Workouts (Intervals.icu Syntax)
-│   └── garmin/               # JSON-Workouts für Garmin Connect
-└── src/                      # Skripte für Analyse, Sync & Visualisierung
-    ├── integrations/         # Schnittstellen (Garmin, Intervals, Strava)
-    ├── analysis/             # Trends & Zonen-Auswertungen (Pace vs. HF, Z1/Z2)
-    ├── visualization/        # Dynamische HTML-Dashboard-Generierung
-    └── planner/              # Workout-Erstellung & Upload
+    Intervals <--> SyncLayer
+    Intervals <--> Scheduler
+    SyncLayer --> Resolver
+    Resolver --> PlanLayer
+    Resolver --> AnalysisLayer
+    Markers --> Scheduler
+    AnalysisLayer <--> LLM
+    TgCoach <--> LLM
+    TgBot <--> TelegramAPI
+    TgBot --> Scheduler
+    TgBot --> TgCoach
+    TgBot --> NoteMgr
+    AnalysisLayer --> DashGen
 ```
 
 ---
 
-## 6. API-Schnittstellen im Überblick
+## 🏗️ Core Design Principles
 
-### Intervals.icu REST API
-- **Dokumentation**: [Intervals.icu API Docs](https://intervals.icu/api/v1/docs)
-- **Authentifizierung**: HTTP Basic Auth mit Username `API_KEY` und dem persönlichen API-Key aus den Intervals-Einstellungen.
-- **Endpoints**:
-  - `GET /api/v1/athlete/{id}/activities`: Abruf von Trainings inkl. HR, Pace, Zonenverteilung.
-  - `POST /api/v1/athlete/{id}/events`: Hochladen geplanter Workouts direkt in den Kalender.
-
-### Garmin Connect API
-- **Library**: `garminconnect` (Python)
-- **Authentifizierung**: Login via E-Mail/Passwort mit Session-Token-Caching (`garmin_tokens/`).
-- **Funktionen**:
-  - Download von Original-Aktivitäten (`.fit`-Format).
-  - Upload von Trainings (`upload_workout`) direkt auf die Garmin-Uhr.
-
-### Strava API
-- **Dokumentation**: [Strava Developers](https://developers.strava.com/)
-- **Authentifizierung**: OAuth2 mit Refresh-Token-Workflow.
-- **Endpoints**:
-  - `GET /api/v3/athlete/activities`: Abgleich von Segmentzeiten, Social Kudo-Metadaten und Laufschuh-Tracking (Gear).
+1. **Zero External Runtime Dependencies**: All production scripts (`src/`) use exclusively the Python 3 standard library (`urllib.request`, `json`, `datetime`, `pathlib`, `re`, `csv`). Only `pytest` and `pytest-bdd` are installed in `.venv` for automated Behavior-Driven Development (BDD) testing.
+2. **Deterministic Telemetry First, Cognitive Interpretation Second**: Python deterministically computes physiological metrics (7-zone HR distribution, Aerobic Efficiency Factor, CTL/ATL/TSB form, interval splits, and readiness guardrails) before invoking an LLM for qualitative coaching synthesis.
+3. **Multi-Tenant Dual-Mode Operation**:
+   - **Managed Multi-Athlete Mode**: Central `athletes/registry.json` maps athletes to isolated `athletes/<slug>/` directories and unguessable dashboard slugs (`dist/<dashboard_slug>/index.html`). One Intervals.icu API key can manage multiple coached athletes.
+   - **Single-Tenant / Legacy Fallback**: Automatically falls back to `config/athlete.json` and `data/` if `athletes/registry.json` is absent.
+4. **Intervals.icu as Calendar Single Source of Truth**: Structured workouts and rest-day markers (`category: "NOTE"`, `"🛋️ Ruhetag (Coach)"`) are persisted directly to the Intervals.icu calendar, preventing duplicate scheduling across local CLI runs, CI workflows, and Telegram interactions, while syncing automatically to the athlete's watch.
 
 ---
 
-## 7. Setup & Task Runner (`./run`)
+## 📦 Service Catalog
 
-### 1. Repository klonen & System initialisieren
+### 1. Core & Multi-Athlete Context
+| Module | CLI Entrypoint | Responsibilities |
+| :--- | :--- | :--- |
+| [`src/athletes.py`](file:///home/berni/laufen/src/athletes.py) | `python3 src/athletes.py --shell-env` | Resolves [`AthleteContext`](file:///home/berni/laufen/src/athletes.py#L22-L54) from `--athlete <slug>`, `$ATHLETE_SLUG`, `athletes/registry.json`, or legacy `data/` paths. Manages Telegram Chat ID linking and notification flags. |
+| [`src/core/config.py`](file:///home/berni/laufen/src/core/config.py) | Library module | Shared helpers for `.env` parsing (`load_env_file`), JSON I/O, and athlete profile loading (`load_athlete_profile`). |
+| [`src/llm/client.py`](file:///home/berni/laufen/src/llm/client.py) | Library module | Provider-agnostic [`LLMClient`](file:///home/berni/laufen/src/llm/client.py#L43-L250) supporting `agy` (Antigravity CLI), `gemini` (Google Generative Language REST API), `openai` (OpenAI-compatible `/chat/completions`), and `mock` (offline deterministic responses). |
+
+### 2. Platform Integrations (`src/integrations/`)
+| Service Script | Runner Command | Description |
+| :--- | :--- | :--- |
+| [`download_intervals.py`](file:///home/berni/laufen/src/integrations/download_intervals.py) | `./run sync` | Fetches activity summaries and HR zone durations from `GET /api/v1/athlete/{id}/activities` into `intervals_activities.json`. Also provides [`update_intervals_activity()`](file:///home/berni/laufen/src/integrations/download_intervals.py#L106-L154) (`PUT /api/v1/activity/{id}`). |
+| [`download_wellness.py`](file:///home/berni/laufen/src/integrations/download_wellness.py) | `./run wellness` | Downloads daily recovery telemetry (`ctl`, `atl`, `restingHR`, `hrv`, `sleepSecs`, `sleepScore`) from `GET /api/v1/athlete/{id}/wellness` into `intervals_wellness.json`. |
+| [`download_events.py`](file:///home/berni/laufen/src/integrations/download_events.py) | `./run events` | Fetches scheduled calendar events and workouts (`-7` to `+14` days by default) from `GET /api/v1/athlete/{id}/events` into `calendar_events.json`. |
+| [`sync_athlete.py`](file:///home/berni/laufen/src/integrations/sync_athlete.py) | `./run sync-profile` | Pulls sport-specific heart rate settings (`max_hr`, `lthr`, `icu_hr_zones`, `hr_zone_names`) and resting HR from Intervals.icu and updates `athlete.json`. |
+| [`manage_note.py`](file:///home/berni/laufen/src/integrations/manage_note.py) | `./run note "<text>"` | Matches subjective athlete notes (e.g. muscle cramps, RPE, weather) to a specific run by `--id`, `--date`, `--time`, or latest run; updates the description on Intervals.icu and locally, and re-runs the 4-stage run review. |
+| [`onboard_athlete.py`](file:///home/berni/laufen/src/integrations/onboard_athlete.py) | `./run add-athlete` / `./run athletes` | Lists registered athletes or onboards a new athlete slug: verifies Intervals.icu API access, creates `athletes/<slug>/`, generates a privacy dashboard slug, syncs profile, and bootstraps 90d activities + 30d wellness. |
+| [`seed_athlete.py`](file:///home/berni/laufen/src/integrations/seed_athlete.py) | `./run seed --athlete berni-test` | Generates and uploads synthetic wellness and workout scenarios (`balanced`, `fatigued`, `fresh`, or `--clean`) for staging tests. Enforces a hard safety check blocking execution on production athlete `berni`. |
+| [`upload_activities.py`](file:///home/berni/laufen/src/integrations/upload_activities.py) | Direct CLI | Bulk-uploads historical Strava archive exports (`activities.csv` + `.fit`/`.gpx`/`.tcx`) to `POST /api/v1/athlete/{id}/activities` with duplicate detection and rate-limit pauses. |
+
+### 3. Telemetry Extraction & Adaptive Workout Planner (`src/planner/`)
+| Service Script | Runner Command | Description |
+| :--- | :--- | :--- |
+| [`extract_markers.py`](file:///home/berni/laufen/src/planner/extract_markers.py) | `./run plan --markers [--json]` | **Phases 1 & 2 of Adaptive Planning**: Extracts readiness metrics (TSB, ATL, CTL, sleep hours/score, RHR vs. 7d baseline, HRV), training history (days since last run and last quality run, weekly volume/Z1-Z2%), target periodization slot (`Slot 1` Early-Week Quality, `Slot 2` Mid-Week Flexible, `Slot 3` Weekend Base Anchor), and boolean guardrails (`quality_discouraged`, `fatigue_warning`, `rest_day_recommended`, `volume_spike_alert`, `slot_allows_threshold`). |
+| [`schedule_workout.py`](file:///home/berni/laufen/src/planner/schedule_workout.py) | `./run plan [FLAGS]` | **Phases 3 & 4 of Adaptive Planning**: Renders parameterized workout templates from [`workouts/templates/`](file:///home/berni/laufen/workouts/templates/) (`easy_run`, `intervals`, `tempo_run`, `long_run`, `recovery_run`, `fartlek`, `threshold_intervals`, `micro_threshold`, `progressive_threshold`) into Intervals.icu/Garmin DSL. Supports single workout upload, weekly slot sync (`--sync-plan`), idempotent adaptive daily planning (`--adaptive-plan`), and calendar override/rest-day note creation (`override_workout_on_date`). |
+
+### 4. Analysis & Coaching Engines (`src/analysis/`)
+| Service Script | Runner Command | Description |
+| :--- | :--- | :--- |
+| [`recent_runs.py`](file:///home/berni/laufen/src/analysis/recent_runs.py) | `./run report` | Renders a formatted terminal summary table of recent running activities (date, distance, duration, pace, avg/max HR, load). |
+| [`trends.py`](file:///home/berni/laufen/src/analysis/trends.py) | `./run report` | Aggregates ISO-week training metrics (`total_distance_km`, duration-weighted `avg_pace`, `avg_hr`, `z1_z2_pct`, `aerobic_ef`, `total_load`). |
+| [`forecast.py`](file:///home/berni/laufen/src/analysis/forecast.py) | Library (Dashboard) | Computes Riegel race predictions (5K, 10K, Half Marathon, Marathon) with dynamically derived fatigue exponents, Banister impulse-response fitness/fatigue/form (`CTL`, `ATL`, `TSB`), and a 4-week progressive volume forecast (8% weekly build + automatic 4th-week deload). |
+| [`daily_recommendation.py`](file:///home/berni/laufen/src/analysis/daily_recommendation.py) | `./run today` | Day-of-execution recommendation engine. Evaluates calendar events first, then onboarding state, same-day/yesterday run recovery, extended breaks ($\ge 7$ days gentle re-entry), 3:1 build/deload week cycle, and weekly slot resolution (including missed weekend base-anchor catch-up). |
+| [`run_reviewer.py`](file:///home/berni/laufen/src/analysis/run_reviewer.py) | `./run review` | **4-Stage Per-Run Deep Evaluator** (`schema_version: 2`), caching results in `run_reviews.json`:<br>• **Stage 1 (`stage1_physiology`)**: 7-zone breakdown, EF, GAP, cadence, regex interval parser (`parsed_intervals`).<br>• **Stage 2 (`stage2_compliance`)**: Multi-signal intent resolution (keywords, paired event, coach history, flexible slot disambiguation, and subjective cramp/pain note detection).<br>• **Stage 3 (`stage3_optimizations`)**: Data-triggered coaching cues (cardiac-lag initial pacing, walk-break recovery pauses, alternative workout CLI discovery, cadence economy).<br>• **Stage 4 (`stage4_next_run`)**: Immediate post-run recovery window (24–48h) and next chronological slot directive. |
+| [`coach_history.py`](file:///home/berni/laufen/src/analysis/coach_history.py) | Library module | Manages persistent coaching cycles in `coach_history.json` (cold-start initialization, open recommendation lookup, compliance status transitions, and HTML table rendering). |
+| [`ai_coach.py`](file:///home/berni/laufen/src/analysis/ai_coach.py) & [`run-ai-coach.sh`](file:///home/berni/laufen/.github/scripts/run-ai-coach.sh) | `./run coach` | Macro AI Coach pipeline. Builds a comprehensive German coaching prompt from athlete zones, weekly trends, cached run reviews, and open cycle memory; queries `LLMClient`; persists `ai_coach_summary.json`, `ai_coach_commentary.md`, and updated `coach_history.json` (with deterministic fallback if the LLM is unavailable). |
+| [`telegram_coach.py`](file:///home/berni/laufen/src/analysis/telegram_coach.py) | Library (Telegram Bot) | Formats morning briefings (`format_daily_briefing_message`) and interprets natural-language athlete replies (`process_athlete_message`) via LLM or deterministic fallback rules (`modify_workout`, `rest_day`, `keep_workout`, `add_run_note`, `answer_only`). |
+
+### 5. Bidirectional Telegram Coach Bot (`src/integrations/telegram_bot.py`)
+| Mode / Command | Invocation | Capabilities |
+| :--- | :--- | :--- |
+| **Interactive Long-Polling Daemon** | `./run bot --scheduler` | Polls Telegram `getUpdates` continuously and runs an internal scheduler checking every ~30s for due morning briefings, evening previews, and post-run reviews across all active athletes. |
+| **Morning Briefing** | `./run briefing [--all]` | Syncs wellness, activities, and idempotent adaptive plan for today; sends readiness & workout briefing with inline buttons (`✅ Passt so`, `📉 Lockerer (Z2)`, `⏱️ Nur 35 Min`, `🛋️ Ruhetag`, `🔄 Schlaf aktualisieren`, or rest-day keyboard `✅ Ruhetag beibehalten` / `🏃 Heute trotzdem locker laufen (30m)`). |
+| **Evening Preview** | `./run evening [--all]` | Sends evening logistics preview (`20:30` default) for tomorrow's planned session or rest day. |
+| **Post-Run Review** | `./run post-run-review` | Evaluates the latest completed run via `evaluate_run_deep()` and sends a 4-stage coaching summary to Telegram. |
+| **Chat Commands & Subjective Notes** | In Telegram Chat | `/start <slug>` links chat ID; `/settings`, `/morgen [on\|off\|HH:MM]`, `/abend [on\|off\|HH:MM]`, `/review [on\|off]` manage notifications; `/briefing` triggers an on-demand morning check; free-text messages modify today's workout or trigger an interactive confirmation workflow (`note_confirm:<id>`, `note_pick_other`, `note_cancel`) to attach subjective feedback to a run. |
+
+### 6. Visualization & Dashboard (`src/visualization/`)
+| Component | Command | Description |
+| :--- | :--- | :--- |
+| [`generate_dashboard.py`](file:///home/berni/laufen/src/visualization/generate_dashboard.py) & [`templates/dashboard.html`](file:///home/berni/laufen/templates/dashboard.html) | `./run dashboard` / `./run preview [PORT]` | Generates a self-contained, responsive HTML5 dashboard (`dist/<dashboard_slug>/index.html`) featuring KPI cards, Chart.js weekly volume/pace/HR/zone charts, aerobic efficiency toggles (Z2 base runs vs. all runs), Banister CTL/ATL/TSB curves, Riegel race predictions, daily recommendation card, AI coach commentary, coach cycle memory table, and expandable 4-stage run review cards. |
+
+### 7. Standalone Agent Bundle & Skills (`agent/`, `.agents/skills/`)
+| Component | Path | Description |
+| :--- | :--- | :--- |
+| **Personal Assistant Agent Bundle** | [`agent/manifest.yaml`](file:///home/berni/laufen/agent/manifest.yaml), [`agent/system_prompt.md`](file:///home/berni/laufen/agent/system_prompt.md), [`agent/tools/`](file:///home/berni/laufen/agent/tools/) | Standalone agent definition exposing 4 tools (`get_activities`, `get_weekly_trends`, `get_upcoming_workouts`, `schedule_workout`) for deployment to the Burkerserver personal assistant runtime. |
+| **Workout Scheduler Skill** | [`.agents/skills/workout-scheduler/SKILL.md`](file:///home/berni/laufen/.agents/skills/workout-scheduler/SKILL.md) | Agent skill instructing coding assistants (Antigravity, Cursor, Claude Code) how to inspect telemetry markers and schedule structured workouts via `./run plan`. |
+
+---
+
+## 🚀 Quick Start & Configuration
+
+### 1. Initialize Environment
 ```bash
-git clone <repository-url>
-cd laufen
-
-# System prüfen, .venv bereitstellen & Pfade (.paths.env, .paths.json) generieren:
 ./init.sh
-
-# Optional: Pfade in der aktuellen Shell aktivieren:
 source .paths.env
 ```
+`./init.sh` locates Python 3 and `.venv/bin/pytest`, writing environment exports to `.paths.env` and `.paths.json`.
 
-### 2. Der zentrale CLI-Runner (`./run`)
-Alle Kernaufgaben lassen sich direkt über `./run` steuern:
+### 2. Configure `.env`
+Copy `.env.example` to `.env` and configure your credentials:
+```dotenv
+# Required: Intervals.icu API Access (Settings -> Developer Settings)
+INTERVALS_API_KEY=your_api_key_here
+INTERVALS_ATHLETE_ID=i697752
 
-| Befehl | Beschreibung |
-| :--- | :--- |
-| `./run sync-profile` | Athletenprofil & Herzfrequenzzonen von Intervals.icu nach `config/athlete.json` laden |
-| `./run sync` | Aktivitäten von Intervals.icu nach `data/intervals_activities.json` abrufen |
-| `./run report` | Wöchentliche Trends & letzte Läufe im Terminal anzeigen |
-| `./run runs` | Tabelle der letzten Läufe (Distanz, Pace, HF, Z1-Z2-Anteil) |
-| `./run trends` | Wöchentliche Auswertung (Volumen, Z1-Z2-Disziplin, Aerobe Effizienz) |
-| `./run dashboard` | HTML-Dashboard generieren (`dist/index.html`) |
-| `./run preview [PORT]` | Dashboard bauen und lokalen Webserver starten (Standard: Port 8080) |
-| `./run plan [ARGS]` | Strukturiertes Workout planen (Intervals.icu & Garmin) |
-| `./run test` | Automatisierte BDD-Testsuite (`pytest tests/`) ausführen |
-| `./run help` | Hilfe und alle Parameter auflisten |
+# Optional: Telegram Coach Bot
+TELEGRAM_BOT_TOKEN=123456:ABC-DEF...
+TELEGRAM_ALLOWED_USER_IDS=157754568
 
-### 3. Beispiele für den Trainingsalltag
-```bash
-# 1. Zonen und Profil initial synchronisieren
-./run sync-profile
-
-# 2. Neueste Aktivitäten herunterladen
-./run sync
-
-# 3. Schneller Terminal-Report
-./run report
-
-# 4. Lokale Dashboard-Vorschau starten
-./run preview 8080
-
-# 5. Morgen einen 45 min Grundlagenlauf (Z2) einplanen
-./run plan --type easy_run --duration 45m --date tomorrow
-
-# 6. Intervalltraining (4x 1.000m Z4 mit 2 min Trabpause) terminieren
-./run plan --type intervals --reps 4 --work 1km --recovery 2m --target "Z4 HR" --date tomorrow
-
-# 7. Tests prüfen
-./run test
+# Optional: LLM Provider ("agy", "gemini", "openai", "mock")
+LLM_PROVIDER=agy
+AGY_MODEL="Gemini 3.8 Flash (Medium)"
 ```
 
 ---
 
-## 8. Automatischer Sync & GitHub Pages Deployment
+## 🛠️ Central CLI Runner (`./run`)
 
-Das Projekt enthält einen automatisierten GitHub Actions Workflow (`.github/workflows/deploy-pages.yml`):
-- **Manueller Trigger**: Im GitHub Repository unter *Actions* &rarr; *Deploy Dashboard to GitHub Pages* &rarr; *Run workflow* kann der Sync und das Deployment jederzeit manuell ausgelöst werden.
-- **Täglicher Automatismus**: Jeden Morgen um 05:00 UTC wird der Workflow automatisch ausgeführt.
-- **Automatisches Redeployment**: Bei Commits auf `main`, die Template- oder Visualisierungs-Code ändern.
+All commands support `--athlete <slug>` (targets a specific tenant) or `--all` (iterates over all active athletes in `athletes/registry.json` for batch commands):
 
-### Setup für GitHub Pages
-1. **Repository Secret anlegen**:
-   - Gehe zu GitHub &rarr; *Settings* &rarr; *Secrets and variables* &rarr; *Actions*.
-   - Füge `INTERVALS_API_KEY` (und optional `INTERVALS_ATHLETE_ID`) als Repository Secret hinzu.
-2. **GitHub Pages aktivieren**:
-   - Gehe zu GitHub &rarr; *Settings* &rarr; *Pages*.
-   - Wähle unter *Build and deployment* &rarr; *Source*: **GitHub Actions**.
-   - Nach dem ersten Workflow-Lauf ist das Dashboard unter `https://<username>.github.io/<repo>/` erreichbar.
+| Command | Description |
+| :--- | :--- |
+| `./run sync [--athlete <slug> \| --all]` | Sync athlete profile, wellness, activities, calendar events, and adaptive workout plan |
+| `./run sync-profile [--athlete <slug>]` | Fetch calibrated HR zones, LTHR, and resting HR into `athlete.json` |
+| `./run wellness [--athlete <slug> \| --all]` | Fetch daily sleep, HRV, resting HR, and CTL/ATL/TSB metrics |
+| `./run events [--athlete <slug> \| --all]` | Fetch scheduled calendar events and workouts (`-7d` to `+14d`) |
+| `./run note "<text>" [--date YYYY-MM-DD]` | Attach subjective athlete feedback to a run and re-evaluate its 4-stage review |
+| `./run today [--athlete <slug>]` | Print today's adaptive training recommendation in the terminal |
+| `./run review [--athlete <slug> \| --all]` | Run incremental 4-stage physiological & compliance reviews for unanalyzed runs |
+| `./run coach [--athlete <slug> \| --all]` | Execute the full Macro AI Coach pipeline (`run-ai-coach.sh`) |
+| `./run report [--athlete <slug>]` | Display terminal summary tables of recent runs and weekly trends |
+| `./run dashboard [--athlete <slug> \| --all]` | Generate static HTML5 dashboard (`dist/<dashboard_slug>/index.html`) |
+| `./run preview [PORT]` | Build dashboard and serve locally on `http://localhost:8080` |
+| `./run plan [ARGS]` | Schedule workouts or inspect markers (`--markers`, `--adaptive-plan`, `--sync-plan`, `--type ...`) |
+| `./run bot [--scheduler \| --once]` | Start the interactive Telegram Coach Bot daemon |
+| `./run briefing [--athlete <slug> \| --all]` | Send proactive morning briefing via Telegram |
+| `./run evening [--athlete <slug> \| --all]` | Send evening workout logistics preview via Telegram |
+| `./run post-run-review [--athlete <slug> \| --all]` | Send 4-stage post-run review for the latest completed run via Telegram |
+| `./run athletes` | List all registered athletes in `athletes/registry.json` |
+| `./run add-athlete <slug> --intervals-id <id>` | Onboard a new athlete and bootstrap their historical data |
+| `./run seed --athlete berni-test [ARGS]` | Inject or purge (`--clean`) synthetic test data on the staging sandbox |
+| `./run dispatch [--sync-only]` | Trigger the remote GitHub Actions pipeline via `gh` CLI or REST API |
+| `./run test` | Execute the offline BDD test suite (`pytest -m "not e2e"`) |
+| `./run test:e2e` | Execute live Intervals.icu API contract tests against staging tenant `berni-test` |
 
 ---
 
-## 9. Sicherheitshinweise
+## 🧪 Testing Architecture
 
-- Die `.env`-Datei und Token-Verzeichnisse (`garmin_tokens/`, `tokens.json`) dürfen **niemals** im Git-Repository committet werden.
-- Alle sensiblen Keys werden ausschließlich über Umgebungsvariablen geladen.
+The project enforces a two-tier Behavior-Driven Development (BDD) architecture using `pytest-bdd` and the **Test Driver Pattern** (documented in [`tests/README.md`](file:///home/berni/laufen/tests/README.md)):
+
+1. **Tier 1 — Offline Mocked BDD Suite (`./run test`)**:
+   - 22 feature files (`136` scenarios) running 100% offline against in-process mock HTTP servers (`MockIntervalsServer` in [`tests/drivers.py`](file:///home/berni/laufen/tests/drivers.py) and `MockCombinedAPIHandler` in [`tests/test_telegram_bot.py`](file:///home/berni/laufen/tests/test_telegram_bot.py)) and `LLM_PROVIDER=mock`.
+2. **Tier 2 — Live Staging Sandbox E2E (`./run test:e2e`)**:
+   - Tagged with `@e2e` in [`tests/e2e_intervals.feature`](file:///home/berni/laufen/tests/e2e_intervals.feature) and restricted strictly to the staging account `berni-test` (`i771119`) via `LiveIntervalsDriver`.
 
 ---
 
-## 10. Anhang: Erweiterte Metriken (Späterer Ausblick)
+## 🚢 Deployment & CI/CD Pipelines
 
-> [!NOTE]
-> Sobald die Routine und die Grundlagen sitzen, können tiefergehende Modelle hinzugenommen werden:
-> - **CTL / ATL / TSB**: Langfristige Form- und Belastungssteuerung (Chronic Training Load vs. Acute Training Load).
-> - **Aerobe Entkopplung ($Pw:HR$)**: Prüfung, ob bei konstantem Tempo der Puls nach 45+ Minuten wegläuft (kardiovaskulärer Drift).
-> - **VO2max**: Geschätztes maximales Sauerstoffaufnahmevermögen.
+All deployments are automated via GitHub Actions (manual deployments via `rsync` or `systemctl` are prohibited by project policy):
+
+1. **[`.github/workflows/deploy-burkerserver.yml`](file:///home/berni/laufen/.github/workflows/deploy-burkerserver.yml)**:
+   - Triggered on push to `main` (for code/config paths) or `workflow_dispatch`.
+   - Runs Tier 1 offline BDD tests (`./run test`) and Tier 2 live E2E staging tests (`./run test:e2e`).
+   - Synchronizes the application bundle to `~/dockerContainer/laufen` on Burkerserver, creates/updates `.venv`, installs and restarts the user systemd unit [`deploy/laufen-telegram-bot.service`](file:///home/berni/laufen/deploy/laufen-telegram-bot.service), and verifies service health.
+2. **[`.github/workflows/deploy-pages.yml`](file:///home/berni/laufen/.github/workflows/deploy-pages.yml)**:
+   - Runs daily at `05:00 UTC` (`07:00 CET/CEST`), on pushes to `main`, or via `./run dispatch`.
+   - Iterates over all active athletes in `athletes/registry.json`: syncs profile, wellness, activities, calendar events, adaptive workout plan, run reviews, and AI coach summaries; commits updated state back to `main`; deploys multi-tenant dashboards to GitHub Pages (`https://berni-burker.github.io/laufen/`); and mirrors data/dashboards to Burkerserver.
+3. **[`.github/workflows/deploy-agent.yml`](file:///home/berni/laufen/.github/workflows/deploy-agent.yml)**:
+   - Packages and deploys `agent/`, `src/`, `config/`, and `workouts/` to the personal assistant container on Burkerserver when `agent/**` or `src/**` changes.
+
+---
+
+## 📋 Architecture Review & Audit Status
+
+See [`docs/ARCHITECTURE_REVIEW_AND_FINDINGS.md`](file:///home/berni/laufen/docs/ARCHITECTURE_REVIEW_AND_FINDINGS.md) for the current architecture audit, confirmed bug backlog, missing test matrix, agreed design decisions, and open questions.
+

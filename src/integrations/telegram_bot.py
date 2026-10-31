@@ -446,11 +446,26 @@ def send_daily_briefing_for_athlete(
     ref_date: Optional[datetime.date] = None,
     dry_run: bool = False,
     project_root: Optional[Path] = None,
+    force: bool = False,
 ) -> Dict[str, Any]:
     """Runs Option B Auto-Sync for the athlete and sends the interactive Telegram morning briefing."""
     root = project_root or PROJECT_ROOT
     today = ref_date or datetime.date.today()
     today_iso = today.isoformat()
+
+    state_path = ctx.telegram_state_path or (ctx.base_dir / "telegram_state.json")
+    state = load_telegram_state(state_path)
+
+    if not force and state.get("last_briefing_date") == today_iso:
+        return {
+            "status": "skipped",
+            "reason": f"Morning briefing already sent for {today_iso}",
+            "athlete": ctx.slug,
+            "chat_id": ctx.telegram_chat_id,
+            "target_date": today_iso,
+            "proposal": state.get("current_proposal"),
+            "telegram_response": None,
+        }
 
     if not ctx.telegram_chat_id:
         raise ValueError(
@@ -1206,6 +1221,7 @@ def handle_telegram_update(
             ref_date=today,
             dry_run=dry_run,
             project_root=root,
+            force=True,
         )
         return {"status": "briefing_sent", "athlete": ctx.slug, "result": res}
 
@@ -1609,28 +1625,98 @@ def check_and_send_due_post_run_reviews(
     project_root: Optional[Path] = None,
     registry_path: Optional[Path] = None,
     dry_run: bool = False,
+    intervals_api_key: Optional[str] = None,
+    intervals_api_base: str = "https://intervals.icu/api/v1",
+    poll_interval_seconds: int = 600,
+    now: Optional[datetime.datetime] = None,
 ) -> List[Dict[str, Any]]:
     """Checks all active athletes for un-notified completed runs and sends reviews."""
     root = project_root or PROJECT_ROOT
+    current_dt = now or datetime.datetime.now()
+    today_iso = current_dt.date().isoformat()
+    now_ts = current_dt.timestamp()
+
     sent_results: List[Dict[str, Any]] = []
     athletes = list_registered_athletes(project_root=root, registry_path=registry_path, active_only=True)
 
     for ctx in athletes:
         if not ctx.post_run_summary_enabled or not ctx.telegram_chat_id:
             continue
+
+        state_path = ctx.telegram_state_path or (ctx.base_dir / "telegram_state.json")
+        state = load_telegram_state(state_path)
+
+        # 1. Throttled activity polling from Intervals.icu (e.g. every 10 minutes)
+        if intervals_api_key and not dry_run:
+            last_poll_ts = float(state.get("last_activities_poll_ts") or 0.0)
+            if (now_ts - last_poll_ts) >= poll_interval_seconds:
+                try:
+                    fresh_acts = fetch_intervals_activities(
+                        api_key=intervals_api_key,
+                        athlete_id=ctx.intervals_id,
+                        api_base_url=intervals_api_base,
+                        raise_on_error=True,
+                    )
+                    if fresh_acts and isinstance(fresh_acts, list):
+                        ctx.activities_path.parent.mkdir(parents=True, exist_ok=True)
+                        ctx.activities_path.write_text(json.dumps(fresh_acts, indent=2, ensure_ascii=False), encoding="utf-8")
+                    state["last_activities_poll_ts"] = now_ts
+                    save_telegram_state(state_path, state)
+                except Exception as e:
+                    print(f"[WARN] Polling activities for athlete '{ctx.slug}' failed: {e}", file=sys.stderr)
+
         if not ctx.activities_path.is_file():
             continue
+
         try:
             activities = load_activities(ctx.activities_path)
             runs = filter_runs(activities)
             if not runs:
                 continue
+
+            notified = set(str(nid) for nid in (state.get("notified_activity_ids") or []))
+
+            # Cold-start guard: If state has never been initialized, mark all historical runs
+            # completed before today as notified so the bot never spams old history on first launch.
+            if not state.get("initialized") and not notified:
+                past_ids = [
+                    str(r.get("id"))
+                    for r in runs
+                    if r.get("id") and str(r.get("start_date_local") or "")[:10] < today_iso
+                ]
+                notified.update(past_ids)
+                state["notified_activity_ids"] = sorted(list(notified))
+                state["initialized"] = True
+                save_telegram_state(state_path, state)
+
             latest_run = sorted(runs, key=lambda r: str(r.get("start_date_local") or ""), reverse=True)[0]
             latest_id = str(latest_run.get("id") or "0")
-            state_path = ctx.telegram_state_path or (ctx.base_dir / "telegram_state.json")
-            state = load_telegram_state(state_path)
-            notified = set(state.get("notified_activity_ids") or [])
+
             if latest_id in notified:
+                continue
+
+            run_start_str = str(latest_run.get("start_date_local") or "")
+            run_date_str = run_start_str[:10] if len(run_start_str) >= 10 else ""
+
+            # Check run age/recency:
+            run_age_hours: Optional[float] = None
+            try:
+                run_dt = datetime.datetime.fromisoformat(run_start_str.replace("Z", "+00:00"))
+                if run_dt.tzinfo is not None and current_dt.tzinfo is None:
+                    run_dt = run_dt.replace(tzinfo=None)
+                run_age_hours = (current_dt - run_dt).total_seconds() / 3600.0
+            except Exception:
+                pass
+
+            # Only notify if run happened today OR within the last 6 hours
+            is_recent = (run_date_str == today_iso) or (run_age_hours is not None and 0 <= run_age_hours <= 6.0)
+
+            if not is_recent:
+                # Run is older (e.g. yesterday's run discovered during 07:00 morning check).
+                # Mark as notified without sending to avoid the 07:00 burst!
+                notified.add(latest_id)
+                state["notified_activity_ids"] = sorted(list(notified))
+                save_telegram_state(state_path, state)
                 continue
 
             res = send_post_run_review_for_athlete(
@@ -1695,6 +1781,8 @@ def run_bot_daemon(
                     project_root=root,
                     registry_path=registry_path,
                     dry_run=dry_run,
+                    intervals_api_key=intervals_api_key,
+                    intervals_api_base=intervals_api_base,
                 )
 
             updates = bot_client.get_updates(offset=offset, timeout=poll_timeout)
@@ -1857,7 +1945,14 @@ def main() -> None:
             intervals_api_base=args.intervals_api_base,
             dry_run=args.dry_run,
             project_root=PROJECT_ROOT,
+            force=args.force,
         )
+        if res.get("status") == "skipped":
+            print(
+                f"ℹ️ Morning briefing already sent for {ctx.display_name} on {res.get('target_date')} "
+                f"(use --force to override)."
+            )
+            return
         print(
             f"✅ Daily briefing sent to {ctx.display_name} (Chat ID: {ctx.telegram_chat_id}) "
             f"for target date {res['target_date']}."

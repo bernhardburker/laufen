@@ -132,3 +132,25 @@ Feature: Bidirectional Telegram Coach Bot and Daily Briefing
     Then the activity "act_200" is updated on Intervals.icu with description "Wadenkrämpfe nach 1. Intervall"
     And the last Telegram message sent to "987654321" contains "Notiz erfolgreich"
     And the last Telegram message sent to "987654321" contains "Coach-Update"
+
+  Scenario: Morning briefing is idempotent and not sent twice on the same day unless forced
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    When the scheduled briefing check runs at "2026-10-26T07:05:00"
+    Then the last Telegram message sent to "987654321" contains "Guten Morgen"
+    When the daily briefing is triggered manually for athlete "berni" on "2026-10-26"
+    Then exactly 1 Telegram message was sent to "987654321"
+    When the daily briefing is triggered with force for athlete "berni" on "2026-10-26"
+    Then exactly 2 Telegram messages were sent to "987654321"
+
+  Scenario: Post-run review is not sent for yesterday run during morning briefing check
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has completed a run "act_old_1" with name "Gestriger Abendlauf" on "2026-10-25"
+    When the post-run review check runs at "2026-10-26T07:00:05"
+    Then exactly 0 Telegram message was sent to "987654321"
+
+  Scenario: Post-run review polls fresh activities and sends review for today run
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And Intervals.icu has a new completed run "act_new_2" with name "Heutiger Nachmittagslauf" on "2026-10-26T17:30:00" for "berni"
+    When the scheduled post-run review check runs at "2026-10-26T17:45:00"
+    Then the last Telegram message sent to "987654321" contains "Coach-Review"
+    And the last Telegram message sent to "987654321" contains "Heutiger Nachmittagslauf"

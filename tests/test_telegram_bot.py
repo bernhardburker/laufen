@@ -242,6 +242,7 @@ class TelegramBotDriver:
         save_registry(reg, registry_path=self.registry_path, project_root=self.tmp_path)
 
     def add_completed_run(self, slug: str, act_id: str, name: str, date_str: str) -> None:
+        self.last_run_date = date_str
         ctx = resolve_athlete_context(slug, project_root=self.tmp_path, registry_path=self.registry_path)
         activities = []
         if ctx.activities_path.is_file():
@@ -268,6 +269,25 @@ class TelegramBotDriver:
         activities.append(act)
         ctx.activities_path.write_text(json.dumps(activities), encoding="utf-8")
         MockCombinedAPIHandler.intervals_activities = list(activities)
+
+    def add_remote_intervals_run(self, slug: str, act_id: str, name: str, start_dt_iso: str) -> None:
+        act = {
+            "id": act_id,
+            "type": "Run",
+            "name": name,
+            "start_date_local": start_dt_iso,
+            "distance": 8000.0,
+            "moving_time": 2880,
+            "elapsed_time": 2900,
+            "average_heartrate": 150,
+            "max_heartrate": 162,
+            "average_speed": 2.78,
+            "icu_training_load": 45,
+            "icu_ctl": 25.0,
+            "icu_atl": 24.0,
+            "icu_hr_zones": [300, 2200, 380, 0, 0, 0, 0],
+        }
+        MockCombinedAPIHandler.intervals_activities.append(act)
 
     def set_last_run_days_ago(self, slug: str, days_ago: int, ref_date_str: str) -> None:
         ctx = resolve_athlete_context(slug, project_root=self.tmp_path, registry_path=self.registry_path)
@@ -384,7 +404,7 @@ class TelegramBotDriver:
             ref_date=datetime.date.fromisoformat(ref_date_str),
         )
 
-    def trigger_briefing(self, slug: str, date_str: str) -> None:
+    def trigger_briefing(self, slug: str, date_str: str, force: bool = False) -> None:
         ctx = resolve_athlete_context(slug, project_root=self.tmp_path, registry_path=self.registry_path)
         send_daily_briefing_for_athlete(
             ctx=ctx,
@@ -393,6 +413,7 @@ class TelegramBotDriver:
             intervals_api_base=self.base_url,
             ref_date=datetime.date.fromisoformat(date_str),
             project_root=self.tmp_path,
+            force=force,
         )
 
     def run_due_briefing_check(self, iso_dt_str: str) -> None:
@@ -418,8 +439,23 @@ class TelegramBotDriver:
         )
 
     def run_post_run_review_check(self, slug: str) -> None:
+        now = None
+        if hasattr(self, "last_run_date") and self.last_run_date:
+            now = datetime.datetime.fromisoformat(f"{self.last_run_date}T19:00:00")
         check_and_send_due_post_run_reviews(
             bot_client=self.bot_client,
+            project_root=self.tmp_path,
+            registry_path=self.registry_path,
+            now=now,
+        )
+
+    def run_post_run_review_check_at(self, iso_dt_str: str) -> None:
+        dt = datetime.datetime.fromisoformat(iso_dt_str)
+        check_and_send_due_post_run_reviews(
+            bot_client=self.bot_client,
+            intervals_api_key="test_intervals_key",
+            intervals_api_base=self.base_url,
+            now=dt,
             project_root=self.tmp_path,
             registry_path=self.registry_path,
         )
@@ -527,10 +563,31 @@ def then_verify_workout_deleted(driver: TelegramBotDriver, date_str: str):
     assert len(workouts) == 0
 
 
-@then(parsers.parse('exactly {count:d} Telegram message was sent to "{chat_id}"'))
-def then_verify_message_count(driver: TelegramBotDriver, count: int, chat_id: str):
+@then(parsers.re(r'exactly (?P<count>\d+) Telegram messages? (?:was|were) sent to "(?P<chat_id>[^"]+)"'))
+def then_verify_message_count(driver: TelegramBotDriver, count: str, chat_id: str):
     msgs = [m for m in MockCombinedAPIHandler.sent_telegram_messages if str(m.get("chat_id")) == chat_id]
-    assert len(msgs) == count
+    assert len(msgs) == int(count)
+
+
+@when(parsers.parse('the daily briefing is triggered manually for athlete "{slug}" on "{date_str}"'))
+def when_briefing_triggered_manually(driver: TelegramBotDriver, slug: str, date_str: str):
+    driver.trigger_briefing(slug=slug, date_str=date_str, force=False)
+
+
+@when(parsers.parse('the daily briefing is triggered with force for athlete "{slug}" on "{date_str}"'))
+def when_briefing_triggered_force(driver: TelegramBotDriver, slug: str, date_str: str):
+    driver.trigger_briefing(slug=slug, date_str=date_str, force=True)
+
+
+@when(parsers.parse('the scheduled post-run review check runs at "{iso_dt}"'))
+@when(parsers.parse('the post-run review check runs at "{iso_dt}"'))
+def when_post_run_check_runs_at(driver: TelegramBotDriver, iso_dt: str):
+    driver.run_post_run_review_check_at(iso_dt_str=iso_dt)
+
+
+@given(parsers.parse('Intervals.icu has a new completed run "{act_id}" with name "{act_name}" on "{start_dt}" for "{slug}"'))
+def given_intervals_has_new_run(driver: TelegramBotDriver, act_id: str, act_name: str, start_dt: str, slug: str):
+    driver.add_remote_intervals_run(slug=slug, act_id=act_id, name=act_name, start_dt_iso=start_dt)
 
 
 @then(parsers.parse('a rest day note is created on Intervals.icu for "{date_str}"'))

@@ -176,7 +176,7 @@ jobs:
             ./run dashboard --all
           fi
 
-      - name: Trigger local Telegram briefing on Burkerserver
+      - name: Synchronize latest Coach artifacts to Burkerserver
         if: success() && github.event_name != 'push'
         run: |
           set -euo pipefail
@@ -189,11 +189,8 @@ jobs:
             if [ -d "data" ]; then
               cp -rf data/* "$TARGET_DIR/data/" 2>/dev/null || true
             fi
-            echo "Sende lokales Briefing..."
-            cd "$TARGET_DIR"
-            ./run briefing --all || echo "::warning ::Lokales Briefing meldete Warnung"
           else
-            echo "Lokales Zielverzeichnis $TARGET_DIR nicht gefunden; überspringe lokalen Briefing-Trigger."
+            echo "Lokales Zielverzeichnis $TARGET_DIR nicht gefunden; überspringe Synchronisation."
           fi
 
       - name: Setup Pages
