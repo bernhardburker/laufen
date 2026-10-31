@@ -292,22 +292,39 @@ def format_post_run_review_message(
     athlete_name: str,
 ) -> str:
     """Formats a coach-centric post-run Telegram message focusing on compliance and upcoming plan guidance."""
-    stage2 = evaluation.get("stage2") or {}
-    stage3 = evaluation.get("stage3") or []
-    stage4 = evaluation.get("stage4") or {}
-    summary = evaluation.get("summary") or ""
-    tip = evaluation.get("tip") or ""
+    stages = evaluation.get("stages") or {}
+    stage1 = stages.get("stage1_physiology") or evaluation.get("stage1") or {}
+    stage2 = stages.get("stage2_compliance") or evaluation.get("stage2") or {}
+    stage3 = stages.get("stage3_optimizations") or evaluation.get("stage3") or []
+    stage4 = stages.get("stage4_next_run") or evaluation.get("stage4") or {}
+    summary = evaluation.get("summary") or stage1.get("summary") or ""
+    tip = evaluation.get("coach_tip") or evaluation.get("tip") or ""
 
-    status_str = str(stage2.get("status") or "erfüllt")
+    status_str = str(stage2.get("status_label") or stage2.get("status") or "erfüllt")
     if "erfüllt" in status_str.lower():
         status_icon = "✅ Plan optimal erfüllt"
-    elif "über" in status_str.lower() or "drift" in status_str.lower():
+    elif "angepasst" in status_str.lower():
+        status_icon = f"🛡️ {status_str}"
+    elif "über" in status_str.lower() or "drift" in status_str.lower() or "intensiver" in status_str.lower():
         status_icon = "⚠️ Intensiver als geplant (Pace/HF drosseln)"
+    elif "teilweise" in status_str.lower():
+        status_icon = f"⚠️ {status_str}"
     else:
         status_icon = f"ℹ️ {status_str.title()}"
 
-    target_name = stage2.get("target_name") or stage2.get("target_type") or "Grundlagenlauf"
-    compliance_text = stage2.get("comment") or stage2.get("compliance_notes") or summary
+    target_name = (
+        stage2.get("planned_slot")
+        or stage2.get("target_name")
+        or stage2.get("intended_type")
+        or stage2.get("target_type")
+        or "Grundlagenlauf"
+    )
+    compliance_text = (
+        stage2.get("compliance_notes")
+        or stage2.get("target_comparison")
+        or stage2.get("comment")
+        or summary
+    )
 
     lines = [
         f"🏃 **Coach-Review: {run_name}**",
@@ -322,6 +339,15 @@ def format_post_run_review_message(
     if stage3 and isinstance(stage3, list):
         for opt in stage3[:2]:
             advice = opt.get("actionable_advice") or opt.get("advice")
+            if not advice:
+                title = opt.get("title")
+                text = opt.get("text")
+                if title and text:
+                    advice = f"{title}: {text}"
+                elif text:
+                    advice = text
+                elif title:
+                    advice = title
             if advice:
                 hebel_lines.append(f"• {advice}")
     elif tip:
@@ -335,7 +361,7 @@ def format_post_run_review_message(
     directive = stage4.get("directive") or "Körper gut regenerieren lassen."
     next_slot = stage4.get("next_slot") or "Nächste reguläre Einheit"
     next_type = stage4.get("next_workout_type") or "Lockerer Dauerlauf"
-    rec_h = stage4.get("recovery_window_hours")
+    rec_h = stage4.get("recovery_hours") or stage4.get("recovery_window_hours")
 
     lines.append("📅 **Auswirkung auf deinen weiteren Plan:**")
     if rec_h:

@@ -20,30 +20,15 @@
 
 ---
 
-### 1.2 [OPEN - BUG] Post-Run Review Telegram Message Reads Wrong Dictionary Keys (`telegram_bot.py` vs. `run_reviewer.py`)
-- **Location:** [`format_post_run_review_message()`](file:///home/berni/laufen/src/integrations/telegram_bot.py#L288-L346) vs. [`evaluate_run_deep()`](file:///home/berni/laufen/src/analysis/run_reviewer.py#L801-L816)
-- **Symptom:** Every post-run review sent via Telegram (`./run post-run-review` or the daemon's `check_and_send_due_post_run_reviews`) falls back to generic placeholder strings (`"✅ Plan optimal erfüllt"`, `"Grundlagenlauf"`, `"Körper gut regenerieren lassen."`, `"Nächste reguläre Einheit (Lockerer Dauerlauf)"`) instead of the actual 4-stage analysis.
-- **Root Cause:**
-  1. `evaluate_run_deep()` nests the stages under `evaluation["stages"]`:
-     ```python
-     {
-       "schema_version": 2,
-       "summary": "...",
-       "coach_tip": "...",
-       "stages": {
-         "stage1_physiology": stage1,
-         "stage2_compliance": stage2,
-         "stage3_optimizations": stage3,
-         "stage4_next_run": stage4,
-       }
-     }
-     ```
-     However, [`format_post_run_review_message()`](file:///home/berni/laufen/src/integrations/telegram_bot.py#L295-L299) looks for top-level keys `evaluation.get("stage2")`, `evaluation.get("stage3")`, `evaluation.get("stage4")`, and `evaluation.get("tip")` (all of which evaluate to `{}` or `""`).
-  2. Inside each stage dictionary, the field names also mismatch:
-     - Stage 2: `telegram_bot.py` reads `stage2.get("target_name") or stage2.get("target_type")` and `stage2.get("comment") or stage2.get("compliance_notes")`, whereas [`resolve_run_intent()`](file:///home/berni/laufen/src/analysis/run_reviewer.py#L469-L478) sets `planned_slot`, `intended_type`, and `target_comparison` (`compliance_notes` is only populated when `has_cramps` is `True`).
-     - Stage 3: `telegram_bot.py` reads `opt.get("actionable_advice") or opt.get("advice")`, whereas [`generate_actionable_optimizations()`](file:///home/berni/laufen/src/analysis/run_reviewer.py#L510-L567) sets `opt["title"]` and `opt["text"]` (`actionable_advice` is only set on the cramp item).
-     - Stage 4: `telegram_bot.py` reads `stage4.get("recovery_window_hours")`, whereas [`determine_post_run_recovery()`](file:///home/berni/laufen/src/analysis/run_reviewer.py#L649-L657) sets `stage4["recovery_hours"]`.
-- **Why Tests Missed It:** In [`tests/telegram_bot.feature`](file:///home/berni/laufen/tests/telegram_bot.feature#L90-L97), Scenario *"Post-run coach review focuses on coach assessment and future plan implications"* only asserts that the message contains static section headers (`"Coach-Review"`, `"Plan-Erfüllung"`, `"Auswirkung auf deinen weiteren Plan"`).
+### 1.2 [RESOLVED - BUG] Post-Run Review Telegram Message Reads Wrong Dictionary Keys (`telegram_bot.py` vs. `run_reviewer.py`)
+- **Location:** [`format_post_run_review_message()`](file:///home/berni/laufen/src/integrations/telegram_bot.py#L288-L370) vs. [`evaluate_run_deep()`](file:///home/berni/laufen/src/analysis/run_reviewer.py#L801-L816)
+- **Resolution:**
+  1. **Aligned Schema-v2 Nesting:** Updated [`format_post_run_review_message()`](file:///home/berni/laufen/src/integrations/telegram_bot.py) to extract stages from `evaluation.get("stages", {})` (`stage1_physiology`, `stage2_compliance`, `stage3_optimizations`, `stage4_next_run`) and `evaluation.get("coach_tip")`, eliminating the empty-dictionary fallbacks.
+  2. **Aligned Field Names Across Stages:**
+     - Stage 2: Correctly reads `planned_slot`, `intended_type`, `target_comparison`, `compliance_notes`, and `status_label`.
+     - Stage 3: Formats optimization titles & texts (`f"{title}: {text}"` or fallback) alongside `actionable_advice`.
+     - Stage 4: Reads `recovery_hours`, `next_slot`, `next_workout_type`, and `directive`. The `"Erholungsfenster: ca. X Stunden"` line is now reliably rendered.
+  3. **Automated BDD Tests:** Updated [`tests/telegram_bot.feature`](file:///home/berni/laufen/tests/telegram_bot.feature) and [`tests/test_telegram_bot.py`](file:///home/berni/laufen/tests/test_telegram_bot.py) to assert actual dynamic values (`Erholungsfenster: ca. 24 Stunden`, `Coach-Beobachtung & Hebel`, `Slot 2`) and added a dedicated scenario verifying dynamic cramp detection, 48h recovery window, and recovery run recommendations. All 140 tests pass.
 
 ---
 
@@ -121,7 +106,7 @@ Despite [`src/core/config.py`](file:///home/berni/laufen/src/core/config.py) exi
 | Area / Module | Missing Test Coverage | Status |
 | :--- | :--- | :--- |
 | **[`src/integrations/manage_note.py`](file:///home/berni/laufen/src/integrations/manage_note.py) (`./run note`)** | No dedicated `.feature` / `test_*.py` file. CLI flags (`--id`, `--date`, `--time`, `--overwrite`, `--dry-run`), 180-minute time-proximity matching, note deduplication, and `PUT /api/v1/activity/{id}` in `tests/drivers.py` (`UnifiedIntervalsHandler`) are untested via `./run note`. | `[OPEN]` |
-| **Post-Run Review Content in Telegram ([`telegram_bot.py`](file:///home/berni/laufen/src/integrations/telegram_bot.py#L288-L346))** | `tests/telegram_bot.feature` only checks static headers (`"Coach-Review"`, `"Plan-Erfüllung"`). Needs assertions verifying that actual Stage 2 compliance, Stage 3 optimization advice, and Stage 4 recovery hours/next slot from `evaluate_run_deep()` are rendered. | `[OPEN]` |
+| **Post-Run Review Content in Telegram ([`telegram_bot.py`](file:///home/berni/laufen/src/integrations/telegram_bot.py#L288-L370))** | Dynamic content assertion added in `tests/telegram_bot.feature` verifying Stage 2 compliance, Stage 3 optimizations, and Stage 4 recovery hours (24h/48h) / next slot. | `[RESOLVED]` |
 | **Evening Preview Edge Cases ([`telegram_bot.py`](file:///home/berni/laufen/src/integrations/telegram_bot.py#L622-L702))** | Needs scenarios when an uncompleted workout exists for today and verifying exact target date (`tomorrow` vs `tomorrow + 1`) when the athlete ran today. | `[OPEN]` |
 | **Multi-Athlete Dashboard Profile Resolution (`./run dashboard --athlete <slug>`)** | Needs a CLI runner test invoking `./run dashboard --athlete <slug>` to verify tenant `athlete.json` is passed to `generate_dashboard.py`. | `[OPEN]` |
 | **[`src/integrations/onboard_athlete.py`](file:///home/berni/laufen/src/integrations/onboard_athlete.py) (`./run add-athlete`, `./run athletes`)** | No BDD test executing `onboard_athlete.py` CLI (`cmd_onboard`, `cmd_list`, `--skip-sync`, error handling). | `[OPEN]` |

@@ -289,6 +289,21 @@ class TelegramBotDriver:
         }
         MockCombinedAPIHandler.intervals_activities.append(act)
 
+    def attach_run_description(self, slug: str, act_id: str, description: str) -> None:
+        ctx = resolve_athlete_context(slug, project_root=self.tmp_path, registry_path=self.registry_path)
+        activities = []
+        if ctx.activities_path.is_file():
+            try:
+                activities = json.loads(ctx.activities_path.read_text(encoding="utf-8"))
+            except Exception:
+                activities = []
+        for a in activities:
+            if str(a.get("id")) == str(act_id):
+                a["description"] = description
+                a["athlete_note"] = description
+        ctx.activities_path.write_text(json.dumps(activities), encoding="utf-8")
+        MockCombinedAPIHandler.intervals_activities = list(activities)
+
     def set_last_run_days_ago(self, slug: str, days_ago: int, ref_date_str: str) -> None:
         ctx = resolve_athlete_context(slug, project_root=self.tmp_path, registry_path=self.registry_path)
         ref_date = datetime.date.fromisoformat(ref_date_str)
@@ -620,6 +635,11 @@ def given_athlete_evening_briefing(driver: TelegramBotDriver, slug: str, e_time:
 @given(parsers.parse('the athlete "{slug}" has completed a run "{act_id}" with name "{act_name}" on "{run_date}"'))
 def given_athlete_completed_run(driver: TelegramBotDriver, slug: str, act_id: str, act_name: str, run_date: str):
     driver.add_completed_run(slug=slug, act_id=act_id, name=act_name, date_str=run_date)
+
+
+@given(parsers.parse('the athlete "{slug}" has run note "{note}" on activity "{act_id}"'))
+def given_athlete_run_note(driver: TelegramBotDriver, slug: str, note: str, act_id: str):
+    driver.attach_run_description(slug=slug, act_id=act_id, description=note)
 
 
 @given(parsers.parse('the athlete "{slug}" has post run reviews disabled'))

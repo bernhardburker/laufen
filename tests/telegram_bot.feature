@@ -91,9 +91,21 @@ Feature: Bidirectional Telegram Coach Bot and Daily Briefing
     Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
     And the athlete "berni" has completed a run "act_100" with name "Lockerer Abendlauf" on "2026-10-26"
     When the post-run review check is triggered for athlete "berni"
-    Then the last Telegram message sent to "987654321" contains "Coach-Review"
+    Then the last Telegram message sent to "987654321" contains "Coach-Review: Lockerer Abendlauf"
     And the last Telegram message sent to "987654321" contains "Plan-Erfüllung"
+    And the last Telegram message sent to "987654321" contains "Erholungsfenster: ca. 24 Stunden"
+    And the last Telegram message sent to "987654321" contains "Coach-Beobachtung & Hebel"
     And the last Telegram message sent to "987654321" contains "Auswirkung auf deinen weiteren Plan"
+    And the last Telegram message sent to "987654321" contains "Slot 2"
+
+  Scenario: Post-run coach review dynamically reflects cramps and 48 hour recovery
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has completed a run "act_102" with name "3x8m Schwellenintervalle" on "2026-10-26"
+    And the athlete "berni" has run note "Wadenkrämpfe nach erstem Intervall" on activity "act_102"
+    When the post-run review check is triggered for athlete "berni"
+    Then the last Telegram message sent to "987654321" contains "Erholungsfenster: ca. 48 Stunden"
+    And the last Telegram message sent to "987654321" contains "Waden"
+    And the last Telegram message sent to "987654321" contains "recovery_run"
 
   Scenario: Post-run coach review is skipped when athlete disabled review notifications
     Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
