@@ -139,3 +139,11 @@ def then_error_mentions(driver: CliRunnerDriver, keyword: str):
 @then(parsers.parse('the output contains "{keyword}"'))
 def then_output_contains(driver: CliRunnerDriver, keyword: str):
     driver.assert_output_contains(keyword)
+
+
+@then(parsers.parse('the generated dashboard for "{dash_slug}" contains "{content}"'))
+def then_generated_dashboard_contains(driver: CliRunnerDriver, dash_slug: str, content: str):
+    dashboard_file = driver.workspace_root / "dist" / dash_slug / "index.html"
+    assert dashboard_file.is_file(), f"Dashboard file not found at {dashboard_file}"
+    html_text = dashboard_file.read_text(encoding="utf-8")
+    assert content in html_text, f"Expected '{content}' in {dashboard_file}"

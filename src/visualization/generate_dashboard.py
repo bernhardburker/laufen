@@ -101,12 +101,18 @@ def parse_arguments() -> argparse.Namespace:
         default=PROJECT_ROOT / "data" / "ai_coach_summary.json",
         help="Path to AI coach structured JSON summary (default: data/ai_coach_summary.json)",
     )
+    default_athlete = Path(
+        os.getenv(
+            "ATHLETE_CONFIG_PATH",
+            str(PROJECT_ROOT / "config" / "athlete.json"),
+        )
+    )
     parser.add_argument(
         "--athlete",
         "-a",
         type=Path,
-        default=PROJECT_ROOT / "config" / "athlete.json",
-        help="Path to athlete profile JSON (default: config/athlete.json)",
+        default=default_athlete,
+        help="Path to athlete profile JSON (default: config/athlete.json or ATHLETE_CONFIG_PATH)",
     )
     parser.add_argument(
         "--coach-history",

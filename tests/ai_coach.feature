@@ -54,3 +54,14 @@ Feature: Agentic AI Running Coach with Abstracted LLM Pipeline
     Then the execution status is "fallback"
     And the error details mention "timeout"
     And heuristic per-run reviews are updated in the cache
+
+  Scenario: Successfully execute AI coach pipeline on rest day with no pending runs
+    Given an activities dataset with multiple running activities
+    And an athlete profile for "Berni"
+    And an active coach memory with an open recommendation from "2026-10-10" where all runs were evaluated
+    And a mock LLM client providing a valid rest day coaching response
+    When the AI coach engine is executed
+    Then the execution status is "success"
+    And the structured summary JSON file is created and contains status title "Regeneration & Ruhetag"
+    And the extracted commentary Markdown file is created and contains "Aktive Erholung"
+    And the open cycle in coach history remains open

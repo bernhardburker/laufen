@@ -38,3 +38,8 @@ Feature: Central task runner and command line interface
     Then the process exits with code 0
     And the output contains "Execute the full AI coach generation"
 
+  Scenario: Run dashboard task for specific athlete resolves athlete config profile
+    When the cli runner is executed with "dashboard --athlete berni-test"
+    Then the process exits with code 0
+    And the generated dashboard for "berni-test-415ebf" contains "LTHR: 183 bpm"
+

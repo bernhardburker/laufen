@@ -64,7 +64,6 @@ export AGY_TIMEOUT="$TIMEOUT"
 echo "==> Running AI Coach engine for target output '$OUTPUT_FILE' (model '$MODEL')..."
 if "$PYTHON_EXEC" "$REPO_ROOT/src/analysis/ai_coach.py" \
   --execute \
-  --skip-if-no-pending \
   --input "$ACTIVITIES_FILE" \
   --athlete "$ATHLETE_FILE" \
   --history "$HISTORY_FILE" \

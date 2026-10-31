@@ -114,6 +114,20 @@ class AICoachDriver:
             json.dumps(self.history, ensure_ascii=False, indent=2), encoding="utf-8"
         )
 
+    def setup_active_coach_memory_all_evaluated(self, open_date: str) -> None:
+        self.history = [
+            {
+                "id": "cycle-001",
+                "date": open_date,
+                "recommendation": "Laufe 2x 45min strikt unter 148 bpm zur aeroben Stabilisierung.",
+                "status": "offen",
+                "evaluated_run_ids": ["run-101", "run-102"],
+            }
+        ]
+        self.history_file.write_text(
+            json.dumps(self.history, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+
     def setup_mock_llm_valid_response(self) -> None:
         response_dict = {
             "status_title": "Solider Grundlagenaufbau",
@@ -153,6 +167,26 @@ class AICoachDriver:
 
     def setup_mock_llm_failure(self, error_message: str) -> None:
         self.llm_client = MockLLMClient(should_fail=True, error_message=error_message)
+
+    def setup_mock_llm_rest_day_response(self) -> None:
+        response_dict = {
+            "status_title": "Regeneration & Ruhetag",
+            "status_badge": "Ruhetag",
+            "status_level": "info",
+            "coach_commentary": "### Status\nAktive Erholung am Ruhetag. Beine regenerieren lassen.",
+            "history_evaluation": {
+                "compliance_status": "offen",
+                "actual_summary": "Heute Ruhetag.",
+                "effect_analysis": "Erholung verläuft planmäßig.",
+                "next_recommendation": "Laufe 2x 45min strikt unter 148 bpm zur aeroben Stabilisierung.",
+                "next_workout_type": "easy_run",
+                "next_target_hr": 148,
+                "next_duration_min": 45,
+            },
+            "insights": [],
+            "recommendations": [],
+        }
+        self.llm_client = MockLLMClient(responses=response_dict)
 
     def generate_prompt(self) -> None:
         self.prompt = build_coach_prompt(
@@ -268,6 +302,16 @@ def given_athlete_profile_z2(driver: AICoachDriver, name: str, z2_max: int):
 @given(parsers.parse('an active coach memory with an open recommendation from "{open_date}"'))
 def given_active_coach_memory(driver: AICoachDriver, open_date: str):
     driver.setup_active_coach_memory(open_date)
+
+
+@given(parsers.parse('an active coach memory with an open recommendation from "{open_date}" where all runs were evaluated'))
+def given_coach_memory_all_evaluated(driver: AICoachDriver, open_date: str):
+    driver.setup_active_coach_memory_all_evaluated(open_date)
+
+
+@given("a mock LLM client providing a valid rest day coaching response")
+def given_mock_llm_rest_day(driver: AICoachDriver):
+    driver.setup_mock_llm_rest_day_response()
 
 
 @given("a mock LLM client providing a valid structured coaching response")

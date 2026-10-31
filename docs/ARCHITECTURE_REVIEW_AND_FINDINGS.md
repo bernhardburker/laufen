@@ -45,21 +45,21 @@
 
 ---
 
-### 1.4 [OPEN - BUG] AI Coach LLM Execution Always Skipped in GitHub Actions (`deploy-pages.yml` + `run-ai-coach.sh`)
-- **Location:** [`.github/workflows/deploy-pages.yml` (lines 93–126)](../.github/workflows/deploy-pages.yml#L93-L126) and [`.github/scripts/run-ai-coach.sh` (lines 53–71)](../.github/scripts/run-ai-coach.sh#L53-L71)
-- **Symptom:** During scheduled or dispatched runs of `deploy-pages.yml`, the Macro AI Coach (`ai_coach.py`) is **never executed** for existing athletes whose `ai_coach_summary.json` and `ai_coach_commentary.md` are already committed in Git, even when new runs have been downloaded.
-- **Root Cause:**
-  1. Line 98/100 of `deploy-pages.yml` runs `./run review --all`. This executes [`src/analysis/run_reviewer.py`](../src/analysis/run_reviewer.py#L975-L982), which calls `update_run_reviews()` and writes `"schema_version": 2` entries for **all** new runs into `athletes/<slug>/run_reviews.json`.
-  2. Immediately afterward on line 119, `deploy-pages.yml` runs `./.github/scripts/run-ai-coach.sh`.
-  3. `run-ai-coach.sh` (lines 53–71) checks `find_unreviewed_runs(runs, reviews)` against `run_reviews.json`. Because `./run review` just populated `run_reviews.json` with `schema_version: 2` for every run, `UNREVIEWED_COUNT` is always `0`!
-  4. Since `athletes/berni/ai_coach_summary.json` and `athletes/berni/ai_coach_commentary.md` are tracked in Git (`[ -f "$SUMMARY_FILE" ] && [ -f "$COMMENTARY_FILE" ]`), `run-ai-coach.sh` prints `"No new unreviewed runs found (0 new runs)... Skipping redundant LLM execution"` and exits `0` without ever calling `ai_coach.py`!
+### 1.4 [RESOLVED - BUG] AI Coach LLM Execution Skipped on Rest Days and CI Runs (`deploy-pages.yml` + `run-ai-coach.sh`)
+- **Location:** [`.github/workflows/deploy-pages.yml` (lines 93–126)](../.github/workflows/deploy-pages.yml#L93-L126), [`.github/scripts/run-ai-coach.sh`](../.github/scripts/run-ai-coach.sh), and [`src/analysis/ai_coach.py`](../src/analysis/ai_coach.py)
+- **Resolution:**
+  1. **Removed `--skip-if-no-pending`:** Removed the flag from [`.github/scripts/run-ai-coach.sh`](../.github/scripts/run-ai-coach.sh) and eliminated the skip logic from [`run_ai_coach()`](../src/analysis/ai_coach.py).
+  2. **Daily Coaching on Rest Days:** The Macro AI Coach now runs consistently every day, evaluating rest days, recovery, and plan adjustments even when no runs occurred, rather than prematurely short-circuiting and staying silent when training is paused.
+  3. **Automated BDD Tests:** Added scenario `Successfully execute AI coach pipeline on rest day with no pending runs` in [`tests/ai_coach.feature`](../tests/ai_coach.feature) and step definitions in [`tests/test_ai_coach.py`](../tests/test_ai_coach.py).
 
 ---
 
-### 1.5 [OPEN - BUG] `./run dashboard` and `./run preview` Omit `--athlete "$ATHLETE_CONFIG_PATH"` (`run`)
-- **Location:** [`run` (lines 239–248 and 258–265)](../run#L239-L265)
-- **Symptom:** When generating a dashboard for any non-default athlete (e.g., `./run dashboard --athlete berni-test` or `./run dashboard --all`), `generate_dashboard.py` loads heart rate zones, weekly slots, and pace targets from the legacy root `config/athlete.json` (`berni`) instead of `athletes/<slug>/athlete.json`.
-- **Root Cause:** `run` omits `--athlete "$ATHLETE_CONFIG_PATH"`, so [`generate_dashboard.py` (line 715)](../src/visualization/generate_dashboard.py#L715) defaults `--athlete` to `PROJECT_ROOT / "config" / "athlete.json"`.
+### 1.5 [RESOLVED - BUG] `./run dashboard` and `./run preview` Omit `--athlete "$ATHLETE_CONFIG_PATH"` (`run`)
+- **Location:** [`run` (lines 239–275)](../run#L239-L275) and [`src/visualization/generate_dashboard.py`](../src/visualization/generate_dashboard.py#L104-L115)
+- **Resolution:**
+  1. **Explicit Athlete Config in Runner:** Added `--athlete "$ATHLETE_CONFIG_PATH"` to both `dashboard)` and `preview)` subcommands in [`run`](../run).
+  2. **Environment Variable Fallback:** Updated `argparse` default in [`src/visualization/generate_dashboard.py`](../src/visualization/generate_dashboard.py) to check `os.getenv("ATHLETE_CONFIG_PATH")` before falling back to legacy `config/athlete.json`.
+  3. **Automated BDD Tests:** Added scenario `Run dashboard task for specific athlete resolves athlete config profile` in [`tests/cli_runner.feature`](../tests/cli_runner.feature) and step definitions in [`tests/test_cli_runner.py`](../tests/test_cli_runner.py), verifying that `./run dashboard --athlete berni-test` renders the athlete's calibrated LTHR (183 bpm) instead of the default 178 bpm.
 
 ---
 
@@ -75,6 +75,13 @@
 ### 1.7 [OPEN - BUG] `extract_planning_markers` Hardcodes `z4_subthreshold` Key Lookup (`extract_markers.py`)
 - **Location:** [`extract_planning_markers()`](../src/planner/extract_markers.py#L221-L227)
 - **Symptom:** `z4_sub = zones.get("z4_subthreshold") or {}` only looks up `"z4_subthreshold"`, falling back to hardcoded `[169, 177]` whenever the key is named `"z4_threshold"` (e.g. standard 5-zone profiles synced via `sync_athlete.py`).
+
+---
+
+### 1.8 [OPEN] Integrate Wellness, Illness & Injury Metrics into Macro AI Coach Prompt (`ai_coach.py`)
+- **Location:** [`src/analysis/ai_coach.py`](../src/analysis/ai_coach.py#L143-L330) and [`.github/scripts/run-ai-coach.sh`](../.github/scripts/run-ai-coach.sh)
+- **Symptom:** While [`src/planner/extract_markers.py`](../src/planner/extract_markers.py) parses wellness data (sleep, HRV, resting HR, soreness, fatigue, illness, injury), `ai_coach.py` does not receive or parse `intervals_wellness.json`. As a result, the Macro AI Coach prompt is blind to whether an athlete is injured, sick, poorly rested, or recovering.
+- **Requirement:** Pass `--wellness` (or resolve `athletes/<slug>/intervals_wellness.json`) into `ai_coach.py` and `build_coach_prompt()`. Format recent wellness trends, resting HR delta, HRV status, and explicitly highlight `injury` and `sickness` flags so the Coach can adapt directives (e.g. prescribe rest or reduce load upon illness/injury).
 
 ---
 
@@ -113,11 +120,12 @@ Despite [`src/core/config.py`](../src/core/config.py) existing to centralize con
 | **[`src/integrations/manage_note.py`](../src/integrations/manage_note.py) (`./run note`)** | No dedicated `.feature` / `test_*.py` file. CLI flags (`--id`, `--date`, `--time`, `--overwrite`, `--dry-run`), 180-minute time-proximity matching, note deduplication, and `PUT /api/v1/activity/{id}` in `tests/drivers.py` (`UnifiedIntervalsHandler`) are untested via `./run note`. | `[OPEN]` |
 | **Post-Run Review Content in Telegram ([`telegram_bot.py`](../src/integrations/telegram_bot.py#L288-L370))** | Dynamic content assertion added in `tests/telegram_bot.feature` verifying Stage 2 compliance, Stage 3 optimizations, and Stage 4 recovery hours (24h/48h) / next slot. | `[RESOLVED]` |
 | **Evening Preview Edge Cases ([`telegram_bot.py`](../src/integrations/telegram_bot.py#L622-L710))** | Scenarios added in `tests/telegram_bot.feature` verifying uncompleted workouts of today are preserved and rest days / next workouts for tomorrow / day after tomorrow are scheduled accurately. | `[RESOLVED]` |
-| **Multi-Athlete Dashboard Profile Resolution (`./run dashboard --athlete <slug>`)** | Needs a CLI runner test invoking `./run dashboard --athlete <slug>` to verify tenant `athlete.json` is passed to `generate_dashboard.py`. | `[OPEN]` |
+| **Multi-Athlete Dashboard Profile Resolution (`./run dashboard --athlete <slug>`)** | Verified with BDD scenario `Run dashboard task for specific athlete resolves athlete config profile` in [`tests/cli_runner.feature`](../tests/cli_runner.feature). | `[RESOLVED]` |
 | **[`src/integrations/onboard_athlete.py`](../src/integrations/onboard_athlete.py) (`./run add-athlete`, `./run athletes`)** | No BDD test executing `onboard_athlete.py` CLI (`cmd_onboard`, `cmd_list`, `--skip-sync`, error handling). | `[OPEN]` |
 | **[`agent/tools/*.py`](../agent/tools/)** | Zero tests for `get_activities.py` (15-min cache TTL), `get_trends.py`, or `get_upcoming_workouts.py`. | `[OPEN]` |
 | **Interactive Note Picker & Cancel Callbacks ([`telegram_bot.py`](../src/integrations/telegram_bot.py#L1217-L1308))** | Missing tests for `note_pick_other`, `note_select:<id>`, `note_cancel`, `/evening`, and `/review` commands. | `[OPEN]` |
-| **CI Pipeline Script ([`.github/scripts/run-ai-coach.sh`](../.github/scripts/run-ai-coach.sh))** | Needs a test running `./run review` followed by `run-ai-coach.sh` to ensure new runs still trigger Macro AI Coach evaluation. | `[OPEN]` |
+| **CI Pipeline Script ([`.github/scripts/run-ai-coach.sh`](../.github/scripts/run-ai-coach.sh))** | Verified with BDD scenario `Successfully execute AI coach pipeline on rest day with no pending runs` in [`tests/ai_coach.feature`](../tests/ai_coach.feature). | `[RESOLVED]` |
+| **Wellness & Injury Context in AI Coach ([`src/analysis/ai_coach.py`](../src/analysis/ai_coach.py))** | Needs BDD scenario verifying `--wellness` parsing, illness/injury detection, and rest prescription prompt generation. | `[OPEN]` |
 
 ---
 

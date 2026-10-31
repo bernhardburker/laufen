@@ -247,6 +247,7 @@ case "$COMMAND" in
       --coach-history "$COACH_HISTORY_PATH" \
       --run-reviews "$RUN_REVIEWS_PATH" \
       --events "$CALENDAR_EVENTS_PATH" \
+      --athlete "$ATHLETE_CONFIG_PATH" \
       --title "Lauf- & Leistungs-Dashboard (${ATHLETE_DISPLAY_NAME})" \
       "${REMAINING_ARGS[@]}"
     if [[ "$ATHLETE_IS_DEFAULT" == "true" ]]; then
@@ -265,6 +266,7 @@ case "$COMMAND" in
       --coach-history "$COACH_HISTORY_PATH" \
       --run-reviews "$RUN_REVIEWS_PATH" \
       --events "$CALENDAR_EVENTS_PATH" \
+      --athlete "$ATHLETE_CONFIG_PATH" \
       --title "Lauf- & Leistungs-Dashboard (${ATHLETE_DISPLAY_NAME})"
     if [[ "$ATHLETE_IS_DEFAULT" == "true" ]]; then
       cp -f "$DASHBOARD_OUTPUT_DIR/index.html" "$WORKSPACE_ROOT/dist/index.html"
