@@ -1,55 +1,49 @@
 {
-  "status_title": "Regeneration vorziehen: HRV-Warnung beachten",
-  "status_badge": "Erholung priorisieren",
-  "status_level": "warning",
-  "coach_commentary": "### Lagebild & Vitalwerte\nServus Berni. Schauen wir nüchtern auf die Daten von heute: Dein Ruhepuls ist mit 48 bpm zwar stabil, aber deine HRV ist über die letzten drei Tage kontinuierlich von 82 ms über 67 ms auf aktuell 59 ms abgesackt. Zusammen mit dem mäßigen Schlafscore (61) signalisiert dein vegetatives Nervensystem klare Ermüdung. Der gestrige morgendliche Lauf (5,7 km bei Ø 152 bpm) steckte trotz überwiegendem Grundlagenfokus mit knapp 8 Minuten in Zone 3 und 4 spürbar in den Knochen.\n\n### Taktische Anpassung fürs Wochenende\nDie ursprüngliche Empfehlung für das Wochenende war ein ruhiger Long Run in Slot 3. Angesichts des deutlichen HRV-Abfalls streichen wir diesen Reiz für heute komplett. Ein langer Lauf würde das Nervensystem jetzt unnötig vertiefen und die Regeneration ausbremsen. Gönn deinen Beinen heute einen vollständigen Ruhetag. Morgen früh werfen wir einen neuen Blick auf die Morgenwerte: Erst wenn sich die HRV wieder stabilisiert, ist ein lockerer Grundlagenlauf sinnvoll.\n\n### Wochenaufgabe für nächste Woche\nDie ersten beiden Slots der neuen Woche konsequent auf die Z2-Basis ausrichten. Wir halten den Puls strikt unter 158 bpm und steuern das Tempo ausschließlich über den Puls – an Steigungen wird ohne falsche Scheu gegangen.",
+  "status_title": "Aerobe Basis stabilisieren & Slot 3 vollenden",
+  "status_badge": "Slot 3 ausstehend",
+  "status_level": "info",
+  "coach_commentary": "### Bestandsaufnahme zum Wochenabschluss\n\nServus Berni. Der Blick auf die Zahlen zeigt eine ruhige Ausgangslage: Dein TSB liegt bei -4,5 (CTL 13,9, ATL 18,4), der Ruhepuls mit 47 bpm leicht unter dem Schnitt. Die letzten 48 Stunden brachten vollständige Erholung für die Beine. In Woche 44 stehen bislang 10,5 km auf der Uhr, nachdem der Freitagslauf mit 5,7 km und einem mittleren Puls von 152 bpm überwiegend im aeroben Bereich lag – auch wenn kurze Abschnitte in Zone 3 gingen.\n\n### Heutige Einheit & Ausblick\n\nFür das aktuelle Wochenende (Slot 3) ist der Long Run noch offen. Nutze den heutigen Sonntag genau dafür: 55 bis 65 Minuten im reinen Grundlagenbereich. Für diesen Lauf existiert keine Ziel-Pace. Schau nur auf den Pulsmesser: Die Obergrenze liegt fest bei 158 bpm. Geht es bergauf und der Puls klettert, nimm konsequent Tempo heraus oder gehe ein paar Schritte, bis das System wieder absinkt.\n\n### Wochenaufgabe ab Montag\n\nKommende Woche streben wir wieder drei saubere Einheiten an:\n1. Slot 1 (Di): Kurze Intervalle oder Schwellenabschnitte an LTHR (178 bpm).\n2. Slot 2 (Do): Lockere Basis (40–45 Min) unter 158 bpm.\n3. Slot 3 (So): Ruhiger Long Run über rund 60 Minuten.\n\nWichtig bleibt die strikte Trennung: Wenn locker auf dem Plan steht, zählt einzig der Puls unter 158 bpm.",
   "history_evaluation": {
     "compliance_status": "teilweise",
-    "actual_summary": "Seit der gestrigen Empfehlung für Slot 3 (Long Run) wurde noch keine neue Laufeinheit absolviert.",
-    "effect_analysis": "Die HRV fiel im 3-Tage-Trend von 82 ms über 67 ms auf 59 ms ab (Schnitt: 69,7 ms). TSB liegt bei -4.5 (CTL 13.9, ATL 18.4). Das vegetative Nervensystem fordert nach dem Lauf vom 30.10. Erholung ein.",
-    "next_recommendation": "Heute vollständiger Ruhetag zur Stabilisierung des vegetativen Nervensystems. Belastung erst nach Normalisierung der HRV wieder aufnehmen.",
-    "next_workout_type": "rest_day",
-    "next_target_hr": 0,
-    "next_duration_min": 0
+    "actual_summary": "Seit der Empfehlung vom 30.10. wurde noch keine neue Einheit erfasst. Slot 3 (Wochenend-Grundlagenlauf) ist mit dem heutigen Sonntag noch offen.",
+    "effect_analysis": "Die Form steht bei TSB -4.5 (CTL 13.9, ATL 18.4). Der Ruhepuls liegt mit 47 bpm im grünen Bereich (-1.6 bpm unter Baseline). Die Beine sind nach zwei Ruhetagen regeneriert.",
+    "next_recommendation": "Den offenen Wochenend-Slot 3 heute für einen ruhigen Grundlagenlauf über 55–65 Minuten nutzen. Puls strikt unter 158 bpm halten, Pace komplett ausblenden.",
+    "next_workout_type": "easy_run",
+    "next_target_hr": 158,
+    "next_duration_min": 60
   },
   "insights": [
     {
-      "title": "Vegetatives Nervensystem & HRV-Abfall",
-      "type": "warning",
-      "badge": "HRV 59.0 ms (-15%)",
-      "text": "Die nächtliche HRV ist von 82 ms über 67 ms auf 59 ms gefallen und liegt spürbar unter deinem 14-Tage-Schnitt von 69,7 ms. Das signalisiert eine akute vegetative Ermüdung, die Vorrang vor weiteren Trainingsreizen hat."
+      "title": "Aerobe Zonendisziplin in den jüngsten Läufen",
+      "type": "success",
+      "badge": "88.2% Z1/Z2 (W44)",
+      "text": "Während der Gesamtwert historisch bei 57.7% liegt, zeigten die letzten Wochen (W42: 95.3%, W43: 82.1%, W44: 88.2%) eine deutliche Verschiebung in den Grundlagenbereich. Am 30.10. lag der Schnitt bei 152 bpm, mit 6 Minuten Drift in Z3."
     },
     {
-      "title": "Aerobe Basis & Zonendisziplin",
+      "title": "Wochenumfang & Slot-Nutzung",
       "type": "info",
-      "badge": "57.7% Z1/Z2 gesamt",
-      "text": "Im Gesamtschnitt liegt der Z1/Z2-Anteil bei 57,7 %, stabilisierte sich in den letzten Wochen jedoch verlässlich über 80 % (W44: 88,2 %). Der Lauf vom 30.10. wies 79,9 % in Z1/Z2 auf, driftete jedoch 6m in Zone 3 und knapp 2m in Zone 4 ab (Maximalpuls 171 bpm)."
-    },
-    {
-      "title": "Trainingsvolumen & Formkurve",
-      "type": "info",
-      "badge": "TSB -4.5 | CTL 13.9",
-      "text": "Mit aktuell 10,5 km in W44 und einem TSB von -4,5 (CTL 13,9, ATL 18,4) bewegt sich die Belastung im geplanten Rahmen. Das durchschnittliche Pensum von 13,5 km / Woche bildet eine solide Grundlage für den weiteren Basisaufbau."
+      "badge": "10.5 km (2 Läufe)",
+      "text": "Woche 44 steht aktuell bei 10.5 km aus 2 Einheiten (Schnitt der letzten Wochen: 13.5 km). Mit dem anstehenden Sonntags-Lauf über rund 8–9 km wird das Zielvolumen von ca. 19–20 km wie in W43 planmäßig erreicht."
     }
   ],
   "recommendations": [
     {
-      "title": "Akute Erholung priorisieren (Ruhetag)",
-      "tag": "Priorität 1: Vitalwerte",
+      "title": "Grundlagenläufe strikt nach Herzfrequenz steuern",
+      "tag": "Priorität 1: Aerobe Basis",
       "tag_class": "tag-amber",
-      "text": "Aufgrund der unterdrückten HRV (59 ms) heute zwingend pausieren. Kein Lauftraining, Fokus auf Erholung, ausreichend Schlaf und Entlastung des Nervensystems."
+      "text": "Puls strikt unter der aeroben Schwelle von 158 bpm halten. Die Pace ist nebensächlich und wetter- sowie tagesformabhängig. Bei Gegenwind oder Steigungen sofort Tempo rausnehmen oder gehen."
     },
     {
-      "title": "Grundlagenläufe strikt über Puls steuern",
-      "tag": "Aerobe Basis",
+      "title": "Klare Reiztrennung nach dem Flexi-Modell",
+      "tag": "Trainingsstruktur",
       "tag_class": "tag-cyan",
-      "text": "Für die nächste Grundlageneinheit gilt: Herzfrequenz strikt unter 158 bpm halten. Die Pace ist vollkommen zweitrangig. An Anstiegen konsequent gehen, um die Z2-Grenze nicht zu überschreiten."
+      "text": "75–80% des Volumens strikt in Z1/Z2 belassen. Qualitative Reize (Z3/Z4) gezielt in Slot 1 bündeln (z.B. nahe LTHR 178 bpm), statt bei lockeren Dauerläufen unbemerkt in mittlere Intensitäten zu rutschen."
     },
     {
-      "title": "Behutsamer Wochenumfang im Basisbereich",
+      "title": "Drei verlässliche Einheiten pro Woche etablieren",
       "tag": "Umfangsaufbau",
       "tag_class": "tag-green",
-      "text": "Für die kommende Woche ein Wochenvolumen von ca. 14–16 km über 2 bis 3 Einheiten anpeilen, davon mindestens 80% im aeroben Fundament (Z1/Z2), um die aerobe Kapazität ohne Überlastung auszubauen."
+      "text": "Konstanz schlägt Spitzenbelastung. Das Ziel für die Basisstufe liegt bei 3 stabilen Läufen pro Woche (ca. 18–22 km Gesamtvolumen), bestehend aus zwei kürzeren Einheiten (35–45 Min) und einem längeren Lauf (60 Min)."
     }
   ],
   "athlete": {
