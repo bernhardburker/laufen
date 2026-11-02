@@ -42,6 +42,27 @@ def is_quality_run(run: Dict[str, Any]) -> bool:
     return False
 
 
+def has_muscular_or_health_complaint(run: Dict[str, Any]) -> bool:
+    """Detects subjective muscular, cramp, pain, or illness notes attached to an activity."""
+    note = str(run.get("description") or run.get("athlete_note") or "").lower()
+    if not note:
+        return False
+    complaint_keywords = (
+        "krampf",
+        "krämpf",
+        "schmerz",
+        "zerrung",
+        "verletz",
+        "abgebrochen",
+        "unwohl",
+        "krank",
+        "schwindel",
+        "übel",
+        "stechen",
+    )
+    return any(kw in note for kw in complaint_keywords)
+
+
 def get_readiness_markers(
     wellness_records: Optional[List[Dict[str, Any]]],
     activities: List[Dict[str, Any]],
@@ -96,6 +117,47 @@ def get_readiness_markers(
 
     resting_hr_today = int(latest_w.get("restingHR")) if latest_w.get("restingHR") is not None else int(rhr_baseline)
     hrv_today = round(float(latest_w["hrv"]), 1) if latest_w.get("hrv") is not None else 70.0
+    rhr_delta = round(resting_hr_today - rhr_baseline, 1)
+    elevated_rhr = bool(rhr_delta >= 4.0)
+
+    # Subjective wellness, injury & illness checks across latest 3 days
+    soreness = int(latest_w["soreness"]) if latest_w.get("soreness") is not None else None
+    fatigue = int(latest_w["fatigue"]) if latest_w.get("fatigue") is not None else None
+    injury_desc: Optional[str] = None
+    illness_comment: Optional[str] = None
+    illness_keywords = (
+        "krank",
+        "infekt",
+        "erkält",
+        "fieber",
+        "husten",
+        "hals",
+        "corona",
+        "covid",
+        "unwohl",
+        "schlapp",
+        "magen",
+        "übel",
+        "sick",
+        "ill",
+        "flu",
+        "unwell",
+    )
+    for rec in dated_records[:3]:
+        raw_inj = rec.get("injury")
+        if raw_inj and str(raw_inj).strip().lower() not in ("none", "null", "0", "false") and not injury_desc:
+            injury_desc = str(raw_inj).strip()
+        comm = str(rec.get("comments") or "").strip()
+        if comm and any(kw in comm.lower() for kw in illness_keywords) and not illness_comment:
+            illness_comment = comm
+
+    health_warning = bool(
+        injury_desc
+        or illness_comment
+        or elevated_rhr
+        or (soreness is not None and soreness >= 4)
+        or (fatigue is not None and fatigue >= 4)
+    )
 
     # TSB / ATL / CTL from latest wellness or activities
     ctl = float(latest_w.get("ctl")) if latest_w.get("ctl") is not None else None
@@ -127,7 +189,14 @@ def get_readiness_markers(
         "sleep_date": sleep_date,
         "resting_hr_today": resting_hr_today,
         "resting_hr_baseline": rhr_baseline,
+        "rhr_delta": rhr_delta,
+        "elevated_rhr": elevated_rhr,
         "hrv_today": hrv_today,
+        "soreness": soreness,
+        "fatigue": fatigue,
+        "injury": injury_desc,
+        "illness_comment": illness_comment,
+        "health_warning": health_warning,
     }
 
 
@@ -135,8 +204,9 @@ def get_run_history_markers(
     activities: List[Dict[str, Any]],
     ref_date: datetime.date,
     target_date: Optional[datetime.date] = None,
+    athlete_profile: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """Computes history of recent runs, quality stimulus spacing, and weekly volume."""
+    """Computes history of recent runs, quality stimulus spacing, base anchor status, and weekly volume."""
     runs = [
         a for a in activities
         if a.get("type") == "Run" and str(a.get("start_date_local") or a.get("date") or "")[:10] <= ref_date.isoformat()
@@ -149,6 +219,9 @@ def get_run_history_markers(
             "target_days_since_last_run": 999,
             "days_since_last_quality": 999,
             "target_days_since_last_quality": 999,
+            "days_since_last_base_run": 999,
+            "base_anchor_completed": True,
+            "missed_anchor_days": [],
             "last_run": None,
             "last_quality_run": None,
             "weekly_runs_completed": 0,
@@ -171,6 +244,9 @@ def get_run_history_markers(
     total_z_s = sum(z_times) if z_times else 0
     z1_z2_pct = round((z1_z2_s / total_z_s) * 100.0, 1) if total_z_s > 0 else 0.0
 
+    latest_note = str(latest.get("description") or latest.get("athlete_note") or "").strip() or None
+    latest_has_complaint = has_muscular_or_health_complaint(latest)
+
     last_run_summary = {
         "date": latest_date_str,
         "type": "easy_run" if not is_quality_run(latest) else "quality_run",
@@ -180,7 +256,61 @@ def get_run_history_markers(
         "avg_hr": round(float(latest.get("average_heartrate") or 0.0), 1),
         "load": round(float(latest.get("icu_training_load") or latest.get("training_load") or 0.0), 1),
         "z1_z2_pct": z1_z2_pct,
+        "has_muscular_complaint": latest_has_complaint,
+        "athlete_note": latest_note,
     }
+
+    # Days since last clean aerobic base run
+    days_since_last_base_run = 999
+    for r in runs:
+        if not is_quality_run(r) and not has_muscular_or_health_complaint(r):
+            b_date_str = str(r.get("start_date_local") or r.get("date") or "")[:10]
+            if b_date_str:
+                try:
+                    b_date = datetime.date.fromisoformat(b_date_str)
+                    days_since_last_base_run = max(0, (ref_date - b_date).days)
+                    break
+                except ValueError:
+                    continue
+
+    # Check if mandatory base anchor (e.g. Slot 3 weekend run) was completed in preceding cycle
+    check_date = target_date or ref_date
+    slots = (athlete_profile or {}).get("athlete", {}).get("weekly_slots", [])
+    anchor_allowed_days = set()
+    for s in slots:
+        if s.get("role") == "base_anchor" or s.get("is_mandatory_base") or s.get("is_base_anchor"):
+            for d_name in s.get("allowed_days", []):
+                anchor_allowed_days.add(str(d_name).lower())
+
+    base_anchor_completed = True
+    missed_anchor_days: List[str] = []
+    if anchor_allowed_days:
+        recent_anchor_dates: List[datetime.date] = []
+        for i in range(1, 8):
+            past_d = check_date - datetime.timedelta(days=i)
+            if past_d.strftime("%A").lower() in anchor_allowed_days:
+                recent_anchor_dates.append(past_d)
+
+        if recent_anchor_dates:
+            min_anchor_d = min(recent_anchor_dates)
+            anchor_done = False
+            for r in runs:
+                r_d_str = str(r.get("start_date_local") or r.get("date") or "")[:10]
+                if not r_d_str:
+                    continue
+                try:
+                    r_d = datetime.date.fromisoformat(r_d_str)
+                    if r_d in recent_anchor_dates and not has_muscular_or_health_complaint(r):
+                        anchor_done = True
+                        break
+                    if min_anchor_d <= r_d <= ref_date and not is_quality_run(r) and not has_muscular_or_health_complaint(r):
+                        anchor_done = True
+                        break
+                except ValueError:
+                    continue
+            base_anchor_completed = anchor_done
+            if not anchor_done:
+                missed_anchor_days = sorted(d.isoformat() for d in recent_anchor_dates)
 
     # Last quality run
     last_quality_summary = None
@@ -248,6 +378,9 @@ def get_run_history_markers(
         "target_days_since_last_run": target_days_since_last_run,
         "days_since_last_quality": days_since_last_quality,
         "target_days_since_last_quality": target_days_since_last_quality,
+        "days_since_last_base_run": days_since_last_base_run,
+        "base_anchor_completed": base_anchor_completed,
+        "missed_anchor_days": missed_anchor_days,
         "last_run": last_run_summary,
         "last_quality_run": last_quality_summary,
         "weekly_runs_completed": runs_this_week,
@@ -277,9 +410,11 @@ def get_periodization_markers(
             "target_day_name": target_day_name,
             "slot_id": 2,
             "slot_name": "Flexible Slot",
+            "role": "flexible",
             "allowed_types": ["easy_run", "tempo_run"],
             "preferred_type": "easy_run",
             "slot_purpose": "Flexible aerobe Basis oder Erhaltung",
+            "requires_base_anchor": False,
         }
 
     return {
@@ -290,6 +425,72 @@ def get_periodization_markers(
         "allowed_types": matched_slot.get("allowed_types", ["easy_run"]),
         "preferred_type": matched_slot.get("preferred_type", "easy_run"),
         "slot_purpose": matched_slot.get("description", ""),
+        "requires_base_anchor": bool(matched_slot.get("requires_base_anchor", False)),
+    }
+
+
+def get_coach_context_markers(
+    history_records: Optional[List[Dict[str, Any]]],
+    activities: List[Dict[str, Any]],
+    ref_date: datetime.date,
+) -> Dict[str, Any]:
+    """Extracts the active open coaching directive from coach_history.json and checks if it is still pending."""
+    records = history_records if isinstance(history_records, list) else []
+    open_cycle: Optional[Dict[str, Any]] = None
+    evaluated_ids = set()
+
+    for entry in records:
+        if not isinstance(entry, dict):
+            continue
+        for eid in entry.get("evaluated_run_ids") or []:
+            evaluated_ids.add(str(eid))
+        if entry.get("status") == "offen":
+            open_cycle = entry
+
+    if not open_cycle:
+        return {
+            "has_open_cycle": False,
+            "open_cycle_id": None,
+            "open_cycle_date": None,
+            "target_type": None,
+            "target_hr_max": None,
+            "recommendation": None,
+            "runs_completed_since_cycle": 0,
+            "unfulfilled_base_directive": False,
+        }
+
+    cycle_date_str = str(open_cycle.get("date") or "")[:10]
+    target_type = str(open_cycle.get("target_type") or "easy_run").lower()
+    target_hr_max = open_cycle.get("target_hr_max")
+    recommendation = str(open_cycle.get("recommendation") or "")
+
+    runs_since = 0
+    for a in activities:
+        if a.get("type") != "Run":
+            continue
+        a_id = str(a.get("id") or "")
+        a_date = str(a.get("start_date_local") or a.get("date") or "")[:10]
+        if not a_date or a_date > ref_date.isoformat():
+            continue
+        if a_id and a_id in evaluated_ids:
+            continue
+        if cycle_date_str and a_date >= cycle_date_str:
+            runs_since += 1
+
+    unfulfilled_base = bool(
+        target_type in ("easy_run", "recovery_run", "rest_day", "long_run")
+        and runs_since == 0
+    )
+
+    return {
+        "has_open_cycle": True,
+        "open_cycle_id": open_cycle.get("id"),
+        "open_cycle_date": cycle_date_str,
+        "target_type": target_type,
+        "target_hr_max": target_hr_max,
+        "recommendation": recommendation,
+        "runs_completed_since_cycle": runs_since,
+        "unfulfilled_base_directive": unfulfilled_base,
     }
 
 
@@ -297,6 +498,7 @@ def calculate_guardrails(
     readiness: Dict[str, Any],
     history: Dict[str, Any],
     periodization: Dict[str, Any],
+    coach_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Evaluates physiological boundaries to protect athlete against overtraining or excessive fatigue."""
     tsb = readiness.get("tsb", 0.0)
@@ -319,9 +521,30 @@ def calculate_guardrails(
     # 4. Volume spike alert: last run exceeded 60 minutes
     volume_spike_alert = (last_duration >= 60.0) and (days_since_last_run <= 1)
 
-    # 5. Slot allows threshold: slot must allow tempo_run AND quality is not discouraged
+    # 5. Health / muscular complaint warning (wellness illness/injury/elevated RHR or muscular complaint on last run)
+    wellness_health_warn = bool(readiness.get("health_warning", False))
+    last_run_complaint = bool(last_run.get("has_muscular_complaint", False))
+    health_warning = wellness_health_warn or last_run_complaint
+
+    # 6. Base anchor missing (target slot requires base anchor, but preceding weekend/anchor slot was missed)
+    requires_base_anchor = bool(periodization.get("requires_base_anchor", False))
+    base_anchor_completed = bool(history.get("base_anchor_completed", True))
+    base_anchor_missing = requires_base_anchor and (not base_anchor_completed)
+
+    # 7. Unfulfilled Coach base directive (e.g. open easy_run / Long Run recommendation in coach_history.json)
+    c_ctx = coach_context or {}
+    coach_directive_override = bool(c_ctx.get("unfulfilled_base_directive", False))
+
+    # 8. Slot allows threshold: slot must allow tempo_run AND no blocking guardrails
     allowed_types = periodization.get("allowed_types", [])
-    slot_allows_threshold = ("tempo_run" in allowed_types) and (not quality_discouraged) and (not fatigue_warning)
+    slot_allows_threshold = (
+        ("tempo_run" in allowed_types)
+        and (not quality_discouraged)
+        and (not fatigue_warning)
+        and (not health_warning)
+        and (not base_anchor_missing)
+        and (not coach_directive_override)
+    )
 
     # Compile warnings list
     reasons: List[str] = []
@@ -331,6 +554,27 @@ def calculate_guardrails(
         reasons.append(f"Erhöhte Ermüdung: Schlaf {sleep_h:.1f}h (Score {sleep_score:.0f}) oder TSB {tsb}")
     if volume_spike_alert:
         reasons.append(f"Hohe Vorbelastung: Letzter Lauf dauerte {last_duration:.0f} Min.")
+    if health_warning:
+        if last_run_complaint:
+            reasons.append(f"Muskel-/Beschwerdeschutz aktiv: Letzter Lauf ({last_run.get('date')}) verzeichnete Beschwerden/Krämpfe.")
+        if readiness.get("injury"):
+            reasons.append(f"Verletzungsschutz aktiv: {readiness.get('injury')}")
+        if readiness.get("illness_comment"):
+            reasons.append(f"Krankheits-/Unwohlsein-Warnung: {readiness.get('illness_comment')}")
+        if readiness.get("elevated_rhr"):
+            reasons.append(f"Erhöhter Ruhepuls: {readiness.get('resting_hr_today')} bpm (+{readiness.get('rhr_delta')} bpm über Baseline)")
+    if base_anchor_missing:
+        missed_str = ", ".join(history.get("missed_anchor_days") or [])
+        reasons.append(
+            f"Basis-Anker fehlt: Wochenend-/Grundlagenlauf ({missed_str or 'Slot 3'}) wurde ausgelassen – Z2-Fundament hat Vorrang vor Intervallen."
+        )
+    if coach_directive_override:
+        cid = c_ctx.get("open_cycle_id") or "offen"
+        cdate = c_ctx.get("open_cycle_date") or ""
+        ctype = c_ctx.get("target_type") or "easy_run"
+        reasons.append(
+            f"Offene Coach-Vorgabe ({cid} vom {cdate}): '{ctype}' steht noch unvollendet aus."
+        )
     if rest_day_recommended:
         reasons.append("Ruhetag empfohlen: Am selben Kalendertag wurde bereits gelaufen.")
 
@@ -339,6 +583,9 @@ def calculate_guardrails(
         "fatigue_warning": fatigue_warning,
         "rest_day_recommended": rest_day_recommended,
         "volume_spike_alert": volume_spike_alert,
+        "health_warning": health_warning,
+        "base_anchor_missing": base_anchor_missing,
+        "coach_directive_override": coach_directive_override,
         "slot_allows_threshold": slot_allows_threshold,
         "active_warnings": reasons,
     }
@@ -359,9 +606,11 @@ def extract_planning_markers(
     activities_file: Optional[Path] = None,
     wellness_file: Optional[Path] = None,
     profile_file: Optional[Path] = None,
+    history_file: Optional[Path] = None,
     activities_data: Optional[List[Dict[str, Any]]] = None,
     wellness_data: Optional[List[Dict[str, Any]]] = None,
     profile_data: Optional[Dict[str, Any]] = None,
+    history_data: Optional[List[Dict[str, Any]]] = None,
     ref_date: Optional[datetime.date] = None,
     target_date: Optional[datetime.date] = None,
     project_root: Optional[Path] = None,
@@ -373,12 +622,21 @@ def extract_planning_markers(
 
     # Load data files or use provided in-memory datasets
     act_path = activities_file or (root / "data" / "intervals_activities.json")
-    well_path = wellness_file or (root / "data" / "intervals_wellness.json")
-    prof_path = profile_file or (root / "config" / "athlete.json")
+    sibling_dir = act_path.parent if activities_file else None
+    well_path = wellness_file or (
+        (sibling_dir / "intervals_wellness.json") if (sibling_dir and (sibling_dir / "intervals_wellness.json").is_file()) else (root / "data" / "intervals_wellness.json")
+    )
+    prof_path = profile_file or (
+        (sibling_dir / "athlete.json") if (sibling_dir and (sibling_dir / "athlete.json").is_file()) else (root / "config" / "athlete.json")
+    )
+    hist_path = history_file or (
+        (sibling_dir / "coach_history.json") if (sibling_dir and (sibling_dir / "coach_history.json").is_file()) else None
+    )
 
     activities = activities_data if activities_data is not None else (load_json_file(act_path) or [])
     wellness = wellness_data if wellness_data is not None else (load_json_file(well_path) or [])
     profile = profile_data if profile_data is not None else (load_json_file(prof_path) or {})
+    coach_history = history_data if history_data is not None else (load_json_file(hist_path) if hist_path else [])
 
     zones = profile.get("athlete", {}).get("heart_rate", {}).get("zones", {})
     z2 = find_heart_rate_zone(zones, 2) or {}
@@ -396,9 +654,10 @@ def extract_planning_markers(
     }
 
     readiness = get_readiness_markers(wellness, activities, today)
-    history = get_run_history_markers(activities, today, planned_target)
+    history = get_run_history_markers(activities, today, planned_target, athlete_profile=profile)
     periodization = get_periodization_markers(planned_target, profile)
-    guardrails = calculate_guardrails(readiness, history, periodization)
+    coach_context = get_coach_context_markers(coach_history, activities, today)
+    guardrails = calculate_guardrails(readiness, history, periodization, coach_context=coach_context)
 
     return {
         "reference_date": today.isoformat(),
@@ -407,6 +666,7 @@ def extract_planning_markers(
         "readiness": readiness,
         "history": history,
         "periodization": periodization,
+        "coach_context": coach_context,
         "guardrails": guardrails,
     }
 

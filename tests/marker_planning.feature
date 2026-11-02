@@ -40,3 +40,22 @@ Feature: 4-Stage Marker-Based Adaptive Workout Planning
     Given an athlete configured with standard 5-zone model with Z2 max 144 bpm and Z4 range 155 to 165 bpm
     When planning markers are extracted for tomorrow
     Then the extracted athlete markers have Z2 max 144 bpm and Z4 range 155 to 165 bpm
+
+  Scenario: Missed weekend base anchor and open coach directive prevent Slot 1 intervals on Monday
+    Given a fresh athlete with TSB of -4.5 and 7.3 hours sleep
+    And Slot 1 requires a completed weekend base anchor
+    And the last run occurred 3 days ago with note "Nach dem ersten Schwellenteil haben die Waden begonnen zu krampfen"
+    And an open coach directive requests "easy_run"
+    And the target day is a Monday matching Slot 1
+    When planning markers are extracted for the target day
+    Then the guardrail "base_anchor_missing" is active
+    And the guardrail "health_warning" is active
+    And the guardrail "coach_directive_override" is active
+    And the selected adaptive workout is "Aerober Anker & Grundlagenlauf (45m Z2)"
+
+  Scenario: Decision trace CLI outputs evaluated criteria, rejected alternatives, and reasoning
+    When the decision trace CLI is executed for reference date "2026-11-02"
+    Then the process exits with code 0
+    And the trace stdout contains "COACH DECISION TRACE & KRITERIEN-ANALYSE"
+    And the trace stdout contains "Verworfen"
+    And the trace stdout contains "Aerober Anker & Grundlagenlauf (45m Z2)"

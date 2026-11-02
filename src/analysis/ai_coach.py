@@ -23,6 +23,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.analysis.daily_recommendation import calculate_stimulus_context
+from src.analysis.decision_trace import append_decision_trace
 from src.analysis.coach_history import (
     find_runs_since,
     get_evaluated_run_ids,
@@ -910,6 +911,47 @@ def run_ai_coach(
                 history_file=hist_path,
             )
             history_updated = True
+
+        # Append AI Coach decision trace to decision_trace.jsonl
+        hist_eval = parsed["history_evaluation"]
+        now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        today_iso = date.today().isoformat()
+        trace_entry = {
+            "timestamp": now_iso,
+            "trigger": "ai_coach",
+            "reference_date": today_iso,
+            "target_date": today_iso,
+            "is_rest_day": hist_eval.get("next_workout_type") == "rest_day",
+            "decision_source": f"llm:{llm_res.model or 'coach'}",
+            "selected_workout_name": str(hist_eval.get("next_recommendation") or parsed.get("status_title") or "Coach-Direktive")[:90],
+            "selected_workout_type": str(hist_eval.get("next_workout_type") or "easy_run"),
+            "rejected_alternatives": [],
+            "inputs": {
+                "compliance_status": hist_eval.get("compliance_status"),
+                "runs_since_count": len(runs_since),
+                "next_target_hr": hist_eval.get("next_target_hr"),
+                "next_duration_min": hist_eval.get("next_duration_min"),
+            },
+            "criteria_evaluated": [
+                {
+                    "criterion": "Makro-Coach Zyklus-Auswertung (IST vs. SOLL)",
+                    "passed": hist_eval.get("compliance_status") in ("erfüllt", "angepasst_nach_tempo"),
+                    "status": "ok" if hist_eval.get("compliance_status") == "erfüllt" else "override",
+                    "value": hist_eval.get("compliance_status"),
+                    "detail": str(hist_eval.get("actual_summary") or ""),
+                },
+                {
+                    "criterion": "Physiologische Wirkungsanalyse",
+                    "passed": True,
+                    "status": "ok",
+                    "value": hist_eval.get("next_workout_type"),
+                    "detail": str(hist_eval.get("effect_analysis") or ""),
+                },
+            ],
+            "active_warnings": [],
+            "reasoning_summary": str(hist_eval.get("next_recommendation") or ""),
+        }
+        append_decision_trace(trace_entry, out_json_path.parent / "decision_trace.jsonl")
 
     return {
         "status": "success",

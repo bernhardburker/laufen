@@ -550,6 +550,7 @@ def send_daily_briefing_for_athlete(
             profile_data = {}
 
     events_path = ctx.calendar_events_path or (ctx.base_dir / "calendar_events.json")
+    trace_path = ctx.decision_trace_path or (ctx.base_dir / "decision_trace.jsonl")
     sync_res = sync_adaptive_plan(
         api_key=intervals_api_key,
         athlete_id=ctx.intervals_id,
@@ -560,7 +561,10 @@ def send_daily_briefing_for_athlete(
         project_root=root,
         clean_past=True,
         activities_file=ctx.activities_path,
+        wellness_file=ctx.wellness_path,
+        history_file=ctx.coach_history_path,
         events_file=events_path,
+        trace_file=trace_path,
     )
 
     target_date_str = sync_res.get("target_date") or today_iso
@@ -671,6 +675,7 @@ def send_evening_preview_for_athlete(
             profile_data = {}
 
     events_path = ctx.calendar_events_path or (ctx.base_dir / "calendar_events.json")
+    trace_path = ctx.decision_trace_path or (ctx.base_dir / "decision_trace.jsonl")
     sync_res = sync_adaptive_plan(
         api_key=intervals_api_key,
         athlete_id=ctx.intervals_id,
@@ -681,7 +686,10 @@ def send_evening_preview_for_athlete(
         project_root=root,
         clean_past=True,
         activities_file=ctx.activities_path,
+        wellness_file=ctx.wellness_path,
+        history_file=ctx.coach_history_path,
         events_file=events_path,
+        trace_file=trace_path,
         evening_preview=True,
     )
 

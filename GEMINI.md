@@ -54,6 +54,7 @@ tests/
   - `./run report`: Show terminal summary of recent runs & weekly trends
   - `./run review`: Run incremental 4-stage physiological & compliance reviews (`athletes/<slug>/run_reviews.json`)
   - `./run coach`: Execute Macro AI Coach pipeline (`athletes/<slug>/ai_coach_summary.json` & `coach_history.json`)
+  - `./run trace`: Inspect Coach thinking, evaluated decision criteria, rejected alternatives & `decision_trace.jsonl`
   - `./run dashboard`: Generate multi-tenant HTML dashboard (`dist/<dashboard_slug>/index.html`)
   - `./run preview [PORT]`: Build dashboard and launch local webserver (default port 8080)
   - `./run plan`: Schedule workouts or inspect readiness markers (`--markers`, `--adaptive-plan`)

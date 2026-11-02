@@ -54,6 +54,7 @@ Commands:
   runs              Display recent running activities table
   trends            Display weekly trends, volume & zone discipline
   history           Display Coach memory, past recommendations & feedback loop
+  trace [ARGS...]   Inspect Coach decision criteria, reasoning & trace log
   today             Display daily evaluated training recommendation
   coach [ARGS...]   Execute AI Running Coach pipeline with LLM integration
   review [ARGS...]  Incrementally review unanalyzed runs and cache results
@@ -218,6 +219,16 @@ case "$COMMAND" in
     ;;
   history)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/coach_history.py" --history "$COACH_HISTORY_PATH" "${REMAINING_ARGS[@]}"
+    ;;
+  trace|explain)
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/decision_trace.py" \
+      --activities-file "$ACTIVITIES_PATH" \
+      --wellness-file "$WELLNESS_PATH" \
+      --athlete-config "$ATHLETE_CONFIG_PATH" \
+      --history-file "$COACH_HISTORY_PATH" \
+      --ai-summary-file "$AI_SUMMARY_PATH" \
+      --trace-file "$DECISION_TRACE_PATH" \
+      "${REMAINING_ARGS[@]}"
     ;;
   today|daily)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/daily_recommendation.py" --input "$ACTIVITIES_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" --events "$CALENDAR_EVENTS_PATH" "${REMAINING_ARGS[@]}"

@@ -93,6 +93,24 @@
 
 ---
 
+### 1.9 [RESOLVED - BUG] Adaptive Planner Ignores Missed Weekend Base Anchor, Open Coach Directives & Muscular/Wellness Guardrails + Missing Decision Tracing (`extract_markers.py`, `schedule_workout.py`, `decision_trace.py`)
+- **Location:** [`src/planner/extract_markers.py`](../src/planner/extract_markers.py), [`src/planner/schedule_workout.py`](../src/planner/schedule_workout.py), [`src/analysis/decision_trace.py`](../src/analysis/decision_trace.py), and [`src/integrations/telegram_bot.py`](../src/integrations/telegram_bot.py)
+- **Resolution:**
+  1. **Extended Planning Markers & Guardrails (`extract_markers.py`):**
+     - `health_warning`: Detects subjective muscular/cramp complaints on the most recent run (`has_muscular_or_health_complaint`) as well as wellness illness comments, active injuries, high soreness/fatigue ($\ge 4$), or elevated resting HR ($\ge +4\text{ bpm}$ over 30d baseline).
+     - `base_anchor_missing`: Checks whether the target slot has `requires_base_anchor: true` (e.g. Monday `Slot 1`) and verifies whether a clean base run was completed during the preceding `base_anchor` window (e.g. Saturday/Sunday `Slot 3`).
+     - `coach_directive_override`: Evaluates `coach_history.json` (`get_coach_context_markers`) to detect unfulfilled open base directives (`easy_run`, `recovery_run`, `rest_day`, `long_run`) with zero runs completed since the directive was issued.
+  2. **Adaptive Workout Selection (`schedule_workout.py` & `telegram_bot.py`):**
+     - Wired `wellness_file`, `history_file`, and `trace_file` into `sync_adaptive_plan()` and `choose_adaptive_workout()` (with automatic sibling-file discovery in `athletes/<slug>/`).
+     - Prevents `Slot 1` speed intervals or `Slot 2` threshold sessions whenever `health_warning`, `base_anchor_missing`, or `coach_directive_override` is active, substituting a 45m Zone 2 base run (`Aerober Anker & Grundlagenlauf (45m Z2)`) or 35m recovery run.
+  3. **Structured Decision Tracing & CLI Inspector (`./run trace`, `decision_trace.py`):**
+     - Created [`src/analysis/decision_trace.py`](../src/analysis/decision_trace.py) and `DecisionTraceEntryContract` in [`src/core/contracts.py`](../src/core/contracts.py).
+     - Logs structured JSONL decision records (`athletes/<slug>/decision_trace.jsonl`) on every `sync_adaptive_plan()` and `run_ai_coach()` execution.
+     - Added `./run trace [--athlete <slug>] [--ref-date YYYY-MM-DD] [--json]` to inspect the Macro Coach state, all 7 evaluated decision criteria, rejected workout alternatives, and historical trace logs.
+  4. **Automated BDD Tests:** Added 2 BDD scenarios in [`tests/marker_planning.feature`](../tests/marker_planning.feature) and contract validation in [`tests/test_documentation_integrity.py`](../tests/test_documentation_integrity.py). All 155 tests pass.
+
+---
+
 ## 2. Structural & Architectural Issues
 
 ### 2.1 Two Divergent Planning / Recommendation Engines with Rigid `if/else` Logic
@@ -134,6 +152,7 @@ Despite [`src/core/config.py`](../src/core/config.py) existing to centralize con
 | **Interactive Note Picker & Cancel Callbacks ([`telegram_bot.py`](../src/integrations/telegram_bot.py#L1217-L1308))** | Missing tests for `note_pick_other`, `note_select:<id>`, `note_cancel`, `/evening`, and `/review` commands. | `[OPEN]` |
 | **CI Pipeline Script ([`.github/scripts/run-ai-coach.sh`](../.github/scripts/run-ai-coach.sh))** | Verified with BDD scenario `Successfully execute AI coach pipeline on rest day with no pending runs` in [`tests/ai_coach.feature`](../tests/ai_coach.feature). | `[RESOLVED]` |
 | **Wellness & Injury Context in AI Coach ([`src/analysis/ai_coach.py`](../src/analysis/ai_coach.py))** | Verified with BDD scenarios in [`tests/ai_coach.feature`](../tests/ai_coach.feature) verifying `--wellness` parsing, illness/injury detection, and rest prescription prompt generation. | `[RESOLVED]` |
+| **Decision Tracing & Weekend Base-Anchor / Coach Directive Guardrails ([`decision_trace.py`](../src/analysis/decision_trace.py), [`extract_markers.py`](../src/planner/extract_markers.py))** | Verified with BDD scenarios in [`tests/marker_planning.feature`](../tests/marker_planning.feature) and contract validation in [`tests/test_documentation_integrity.py`](../tests/test_documentation_integrity.py). | `[RESOLVED]` |
 
 ---
 

@@ -30,6 +30,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.analysis.decision_trace import append_decision_trace, evaluate_workout_decision
 from src.planner.extract_markers import extract_planning_markers
 
 
@@ -613,8 +614,10 @@ def choose_adaptive_workout(
     templates_dir: Path,
     target_date: datetime.date | None = None,
     wellness_records: list[dict] | None = None,
+    history_records: list[dict] | None = None,
     activities_file: Path | None = None,
     wellness_file: Path | None = None,
+    history_file: Path | None = None,
     project_root: Path | None = None,
 ) -> tuple[str, str]:
     """Returns (workout_name, workout_description) adapted to current recovery state and guardrails."""
@@ -632,9 +635,11 @@ def choose_adaptive_workout(
     markers = extract_planning_markers(
         activities_file=activities_file,
         wellness_file=wellness_file,
+        history_file=history_file,
         activities_data=activities,
         wellness_data=wellness_records,
         profile_data=athlete_profile,
+        history_data=history_records,
         ref_date=ref_date,
         target_date=planned_target,
         project_root=project_root,
@@ -642,13 +647,16 @@ def choose_adaptive_workout(
     guardrails = markers.get("guardrails", {})
     periodization = markers.get("periodization", {})
 
-    # 3. Check guardrails: fatigue, volume spike or quality spacing
+    # 3. Check guardrails: fatigue, volume spike, health/muscular issues, missing base anchor, or coach directive
     is_fatigued = guardrails.get("fatigue_warning", False)
     volume_spike = guardrails.get("volume_spike_alert", False)
     quality_discouraged = guardrails.get("quality_discouraged", False)
+    health_warning = guardrails.get("health_warning", False)
+    base_anchor_missing = guardrails.get("base_anchor_missing", False)
+    coach_directive_override = guardrails.get("coach_directive_override", False)
 
-    if volume_spike or (is_fatigued and quality_discouraged):
-        # High volume yesterday or severe fatigue -> short recovery/easy run
+    if volume_spike or (is_fatigued and quality_discouraged) or (health_warning and is_fatigued):
+        # High volume yesterday or severe fatigue / unwellness -> short recovery/easy run
         name = "Easy Run - Aktive Erholung & Basis (35m Z2)"
         desc = render_template(
             templates_dir / "easy_run.txt",
@@ -656,8 +664,8 @@ def choose_adaptive_workout(
         )
         return name, desc
 
-    if quality_discouraged or is_fatigued:
-        # Quality discouraged or fatigue warning -> solid base run without high heart rate
+    if quality_discouraged or is_fatigued or health_warning or base_anchor_missing or coach_directive_override:
+        # Quality discouraged, fatigue, muscular/health complaint, missed weekend anchor, or open easy_run Coach directive
         name = "Aerober Anker & Grundlagenlauf (45m Z2)"
         desc = render_template(
             templates_dir / "easy_run.txt",
@@ -723,7 +731,10 @@ def sync_adaptive_plan(
     project_root: Path | None = None,
     clean_past: bool = True,
     activities_file: Path | None = None,
+    wellness_file: Path | None = None,
+    history_file: Path | None = None,
     events_file: Path | None = None,
+    trace_file: Path | None = None,
     evening_preview: bool = False,
 ) -> dict:
     """Dynamically plans next workout, cleans up past uncompleted events, and respects rest days."""
@@ -731,10 +742,29 @@ def sync_adaptive_plan(
     today = ref_date or datetime.date.today()
     today_iso = today.isoformat()
 
+    sibling_dir = Path(activities_file).parent if activities_file else None
+    resolved_wellness_file = wellness_file or (
+        (sibling_dir / "intervals_wellness.json")
+        if (sibling_dir and (sibling_dir / "intervals_wellness.json").is_file())
+        else None
+    )
+    resolved_history_file = history_file or (
+        (sibling_dir / "coach_history.json")
+        if (sibling_dir and (sibling_dir / "coach_history.json").is_file())
+        else None
+    )
+    resolved_trace_file = trace_file or (
+        (sibling_dir / "decision_trace.jsonl") if sibling_dir else (root / "data" / "decision_trace.jsonl")
+    )
+
     # Load profile
     profile = athlete_profile or {}
     if not profile:
-        profile_path = root / "config" / "athlete.json"
+        profile_path = (
+            (sibling_dir / "athlete.json")
+            if (sibling_dir and (sibling_dir / "athlete.json").is_file())
+            else (root / "config" / "athlete.json")
+        )
         if profile_path.is_file():
             try:
                 profile = json.loads(profile_path.read_text(encoding="utf-8"))
@@ -958,7 +988,7 @@ def sync_adaptive_plan(
         print("=" * 60)
         return results
 
-    # Step 4: Generate adaptive workout payload
+    # Step 4: Generate adaptive workout payload & record structured decision trace
     templates_dir = root / "workouts" / "templates"
     name, description = choose_adaptive_workout(
         activities=act_list,
@@ -968,8 +998,30 @@ def sync_adaptive_plan(
         templates_dir=templates_dir,
         target_date=target_date,
         activities_file=activities_file,
+        wellness_file=resolved_wellness_file,
+        history_file=resolved_history_file,
         project_root=root,
     )
+
+    markers_for_trace = extract_planning_markers(
+        activities_file=activities_file,
+        wellness_file=resolved_wellness_file,
+        history_file=resolved_history_file,
+        activities_data=act_list,
+        profile_data=profile,
+        ref_date=today,
+        target_date=target_date,
+        project_root=root,
+    )
+    decision_trace = evaluate_workout_decision(
+        markers=markers_for_trace,
+        days_since_last_run=days_since_last_run,
+        is_rest_day=is_rest_day,
+        trigger="evening_preview" if evening_preview else "adaptive_plan",
+    )
+    results["decision_trace"] = decision_trace
+    if not dry_run and resolved_trace_file:
+        append_decision_trace(decision_trace, resolved_trace_file)
 
     payload = {
         "category": "WORKOUT",

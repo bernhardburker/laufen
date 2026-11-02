@@ -200,23 +200,55 @@ class PeriodizationMarkersContract(TypedDict, total=False):
     slot_purpose: str
 
 
-class GuardrailsContract(TypedDict):
+class GuardrailsContract(TypedDict, total=False):
     quality_discouraged: bool
     fatigue_warning: bool
     rest_day_recommended: bool
     volume_spike_alert: bool
     slot_allows_threshold: bool
+    health_warning: bool
+    base_anchor_missing: bool
+    coach_directive_override: bool
     active_warnings: List[str]
 
 
-class PlanningMarkersContract(TypedDict):
+class PlanningMarkersContract(TypedDict, total=False):
     reference_date: str
     target_date: str
     athlete: Dict[str, Any]
     readiness: ReadinessMarkersContract
     history: Dict[str, Any]
     periodization: PeriodizationMarkersContract
+    coach_context: Dict[str, Any]
     guardrails: GuardrailsContract
+
+
+# ==============================================================================
+# 5. Decision Trace Contract (`decision_trace.jsonl`)
+# ==============================================================================
+
+class DecisionCriterionContract(TypedDict):
+    criterion: str
+    passed: bool
+    status: str  # "ok" | "warning" | "override"
+    value: Any
+    detail: str
+
+
+class DecisionTraceEntryContract(TypedDict, total=False):
+    timestamp: str
+    trigger: str
+    reference_date: str
+    target_date: str
+    is_rest_day: bool
+    decision_source: str
+    selected_workout_name: str
+    selected_workout_type: str
+    rejected_alternatives: List[Dict[str, str]]
+    inputs: Dict[str, Any]
+    criteria_evaluated: List[DecisionCriterionContract]
+    active_warnings: List[str]
+    reasoning_summary: str
 
 
 # ==============================================================================
@@ -366,5 +398,40 @@ def validate_planning_markers(markers: Any) -> Tuple[bool, List[str]]:
         for k in ("quality_discouraged", "fatigue_warning", "rest_day_recommended", "volume_spike_alert", "slot_allows_threshold", "active_warnings"):
             if k not in guardrails:
                 errors.append(f"Missing key 'guardrails.{k}'.")
+
+    return len(errors) == 0, errors
+
+
+def validate_decision_trace_entry(entry: Any) -> Tuple[bool, List[str]]:
+    """Validates a single decision trace record against `DecisionTraceEntryContract`."""
+    errors: List[str] = []
+    if not isinstance(entry, dict):
+        return False, ["Decision trace entry must be a dictionary."]
+
+    for req_key in (
+        "timestamp",
+        "trigger",
+        "reference_date",
+        "target_date",
+        "decision_source",
+        "selected_workout_name",
+        "selected_workout_type",
+        "criteria_evaluated",
+        "reasoning_summary",
+    ):
+        if req_key not in entry:
+            errors.append(f"Missing required decision trace key '{req_key}'.")
+
+    criteria = entry.get("criteria_evaluated")
+    if not isinstance(criteria, list):
+        errors.append("'criteria_evaluated' must be a list.")
+    else:
+        for idx, c in enumerate(criteria):
+            if not isinstance(c, dict):
+                errors.append(f"Criterion [{idx}] must be a dictionary.")
+                continue
+            for ck in ("criterion", "passed", "status", "detail"):
+                if ck not in c:
+                    errors.append(f"Criterion [{idx}] missing key '{ck}'.")
 
     return len(errors) == 0, errors

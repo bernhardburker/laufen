@@ -74,6 +74,7 @@ class MarkerPlanningDriver:
         }
         self.wellness: List[Dict[str, Any]] = []
         self.activities: List[Dict[str, Any]] = []
+        self.coach_history: List[Dict[str, Any]] = []
         self.markers_result: Dict[str, Any] = {}
         self.selected_workout: Optional[tuple[str, str]] = None
         self.cli_result: Optional[subprocess.CompletedProcess] = None
@@ -131,6 +132,7 @@ class MarkerPlanningDriver:
             activities_data=self.activities,
             wellness_data=self.wellness,
             profile_data=self.athlete_profile,
+            history_data=self.coach_history,
             ref_date=self.ref_date,
             target_date=target,
             project_root=PROJECT_ROOT,
@@ -145,6 +147,7 @@ class MarkerPlanningDriver:
             templates_dir=templates_dir,
             target_date=target,
             wellness_records=self.wellness,
+            history_records=self.coach_history,
             project_root=PROJECT_ROOT,
         )
 
@@ -348,4 +351,78 @@ def step_configure_5zone_athlete(driver: MarkerPlanningDriver, z2_max: int, z4_m
 @then(parsers.parse('the extracted athlete markers have Z2 max {z2_max:d} bpm and Z4 range {z4_min:d} to {z4_max:d} bpm'))
 def step_assert_athlete_zones(driver: MarkerPlanningDriver, z2_max: int, z4_min: int, z4_max: int):
     driver.assert_athlete_zones(expected_z2_max=z2_max, expected_z4_min=z4_min, expected_z4_max=z4_max)
+
+
+@given('Slot 1 requires a completed weekend base anchor')
+def step_slot1_requires_base_anchor(driver: MarkerPlanningDriver):
+    slots = driver.athlete_profile["athlete"]["weekly_slots"]
+    slots[0]["requires_base_anchor"] = True
+    slots[2]["role"] = "base_anchor"
+    slots[2]["is_mandatory_base"] = True
+
+
+@given(parsers.parse('the last run occurred {days_ago:d} days ago with note "{note}"'))
+def step_last_run_with_note(driver: MarkerPlanningDriver, days_ago: int, note: str):
+    driver.add_run(days_ago=days_ago, duration_min=39.0, name="Kontrollierter Schwellenlauf", is_quality=True, z4_sec=111)
+    driver.activities[-1]["id"] = "i203449631"
+    driver.activities[-1]["description"] = note
+
+
+@given(parsers.parse('an open coach directive requests "{target_type}"'))
+def step_open_coach_directive(driver: MarkerPlanningDriver, target_type: str):
+    driver.coach_history = [
+        {
+            "id": "cycle-009",
+            "date": "2026-10-23",
+            "recommendation": "Schwellenreiz",
+            "target_type": "tempo_run",
+            "status": "erfüllt",
+            "evaluated_run_ids": ["i203449631"],
+        },
+        {
+            "id": "cycle-010",
+            "date": "2026-10-23",
+            "recommendation": "Slot 3 am Wochenende als ruhigen Long Run nutzen (< 158 bpm).",
+            "target_type": target_type,
+            "target_hr_max": 158,
+            "status": "offen",
+        },
+    ]
+
+
+@given('the target day is a Monday matching Slot 1')
+def step_target_day_monday_slot1(driver: MarkerPlanningDriver):
+    driver.target_date = datetime.date(2026, 10, 26)  # Monday
+
+
+@when(parsers.parse('the decision trace CLI is executed for reference date "{ref_date}"'))
+def step_run_decision_trace_cli(driver: MarkerPlanningDriver, ref_date: str):
+    cmd = [
+        "bash",
+        str(PROJECT_ROOT / "run"),
+        "trace",
+        "--athlete",
+        "berni",
+        "--ref-date",
+        ref_date,
+    ]
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(PROJECT_ROOT)
+    driver.cli_result = subprocess.run(
+        cmd,
+        cwd=str(PROJECT_ROOT),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=env,
+    )
+
+
+@then(parsers.parse('the trace stdout contains "{expected}"'))
+def step_trace_stdout_contains(driver: MarkerPlanningDriver, expected: str):
+    assert driver.cli_result is not None
+    assert expected in driver.cli_result.stdout, (
+        f"Expected '{expected}' in stdout, got:\n{driver.cli_result.stdout}"
+    )
+
 

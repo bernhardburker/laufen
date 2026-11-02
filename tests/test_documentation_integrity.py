@@ -17,10 +17,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.analysis.decision_trace import evaluate_workout_decision
 from src.analysis.run_reviewer import evaluate_run_deep, extract_deep_run_metrics
 from src.core.contracts import (
     validate_athlete_profile,
     validate_coach_history,
+    validate_decision_trace_entry,
     validate_planning_markers,
     validate_run_review_evaluation,
 )
@@ -223,6 +225,12 @@ class DocumentationIntegrityDriver:
         ok_hist, errs_hist = validate_coach_history(history_data)
         if not ok_hist:
             self.contract_errors.extend([f"coach_history.json: {e}" for e in errs_hist])
+
+        # 5. Validate decision trace contract
+        trace_entry = evaluate_workout_decision(markers, trigger="test_contract")
+        ok_trace, errs_trace = validate_decision_trace_entry(trace_entry)
+        if not ok_trace:
+            self.contract_errors.extend([f"evaluate_workout_decision: {e}" for e in errs_trace])
 
     def assert_no_contract_errors(self) -> None:
         assert not self.contract_errors, (
