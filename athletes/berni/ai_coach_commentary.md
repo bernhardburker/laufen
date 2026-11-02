@@ -1,11 +1,11 @@
-### Rückblick auf das Wochenende
+### Wochenauftakt & Status
 
-Am Wochenende stand kein Lauf im Protokoll, der geplante lange Lauf ist damit entfallen. Nach der soliden Belastungswoche mit dem Schwellenlauf und dem morgendlichen Dauerlauf am 30. Oktober haben die Beine dadurch drei volle Ruhetage bekommen. Dein Ruhepuls liegt stabil bei 49 bpm (+0,4 bpm zur Baseline) und die Ermüdung hat sich spürbar abgebaut (TSB aktuell bei -4,5).
+Servus Berni. Nach dem 39-Minuten-Lauf am Freitag (5,7 km bei 152 bpm Schnitt mit etwas Z3-Drift) hast du das Wochenende komplett laufruhig gehalten. Der geplante Long Run entfiel somit, was den Wochenumfang in KW 44 auf 10,5 km begrenzte. Der praktische Effekt: Deine Beine hatten drei Tage Pause, der Schlaf war mit 8,8 Stunden top und dein Ruhepuls liegt mit 49 bpm im Normalbereich.
 
-### Ausblick und Reizverteilung
+### Ausblick für Woche 45
 
-Mit drei Tagen Pause im Rücken sind die Energiespeicher voll. In Woche 44 standen insgesamt 10,5 km in zwei Einheiten zu Buche. Um im Basisaufbau kontinuierlich weiterzukommen, peilen wir für diese Woche wieder verlässlich drei Einheiten an. Durch die Frische bietet sich Slot 1 (Montag oder Dienstag) direkt für einen kontrollierten Reiz an, bevor es unter der Woche wieder ins aerobe Fundament geht.
+Mit einem TSB von -4,5 gehst du erholt in die neue Woche. Für Slot 1 (Montag oder Dienstag) hast du die Wahl: Entweder setzt du einen sauberen Schwellenreiz (z. B. 45 Min mit kurzen Z4-Abschnitten nahe 178 bpm) oder du absolvierst einen lockeren Grundlagenlauf.
 
-### Wochenaufgabe: Kontrollierte Intervalle zum Start
+### Wochenaufgabe
 
-Nutze Slot 1 für ein kurzes Intervalltraining: 10 Minuten locker einlaufen (< 158 bpm), danach 4 bis 5 Wiederholungen à 3 Minuten im Schwellenbereich (168–174 bpm) mit je 2 Minuten Trab- oder Gehpause. Zum Abschluss 10 Minuten locker auslaufen. Ziel ist es, die Schwellenbelastung sauber zu treffen, ohne zu überziehen.
+Slot 1 heute oder morgen für 45 Minuten nutzen. Wenn du dich spritzig fühlst, laufe zügig an der Schwelle. Falls der Arbeitstag in den Knochen steckt: Reiner Z2-Lauf, Puls strikt unter 158 bpm halten und das Tempo komplett ausblenden.

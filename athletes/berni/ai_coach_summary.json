@@ -1,49 +1,49 @@
 {
-  "status_title": "Ausgeruhte Beine zum Wochenstart",
-  "status_badge": "Erholung genutzt",
+  "status_title": "Solides Fundament nach Ruhetagen",
+  "status_badge": "Basis stabil",
   "status_level": "info",
-  "coach_commentary": "### Rückblick auf das Wochenende\n\nAm Wochenende stand kein Lauf im Protokoll, der geplante lange Lauf ist damit entfallen. Nach der soliden Belastungswoche mit dem Schwellenlauf und dem morgendlichen Dauerlauf am 30. Oktober haben die Beine dadurch drei volle Ruhetage bekommen. Dein Ruhepuls liegt stabil bei 49 bpm (+0,4 bpm zur Baseline) und die Ermüdung hat sich spürbar abgebaut (TSB aktuell bei -4,5).\n\n### Ausblick und Reizverteilung\n\nMit drei Tagen Pause im Rücken sind die Energiespeicher voll. In Woche 44 standen insgesamt 10,5 km in zwei Einheiten zu Buche. Um im Basisaufbau kontinuierlich weiterzukommen, peilen wir für diese Woche wieder verlässlich drei Einheiten an. Durch die Frische bietet sich Slot 1 (Montag oder Dienstag) direkt für einen kontrollierten Reiz an, bevor es unter der Woche wieder ins aerobe Fundament geht.\n\n### Wochenaufgabe: Kontrollierte Intervalle zum Start\n\nNutze Slot 1 für ein kurzes Intervalltraining: 10 Minuten locker einlaufen (< 158 bpm), danach 4 bis 5 Wiederholungen à 3 Minuten im Schwellenbereich (168–174 bpm) mit je 2 Minuten Trab- oder Gehpause. Zum Abschluss 10 Minuten locker auslaufen. Ziel ist es, die Schwellenbelastung sauber zu treffen, ohne zu überziehen.",
+  "coach_commentary": "### Wochenauftakt & Status\n\nServus Berni. Nach dem 39-Minuten-Lauf am Freitag (5,7 km bei 152 bpm Schnitt mit etwas Z3-Drift) hast du das Wochenende komplett laufruhig gehalten. Der geplante Long Run entfiel somit, was den Wochenumfang in KW 44 auf 10,5 km begrenzte. Der praktische Effekt: Deine Beine hatten drei Tage Pause, der Schlaf war mit 8,8 Stunden top und dein Ruhepuls liegt mit 49 bpm im Normalbereich.\n\n### Ausblick für Woche 45\n\nMit einem TSB von -4,5 gehst du erholt in die neue Woche. Für Slot 1 (Montag oder Dienstag) hast du die Wahl: Entweder setzt du einen sauberen Schwellenreiz (z. B. 45 Min mit kurzen Z4-Abschnitten nahe 178 bpm) oder du absolvierst einen lockeren Grundlagenlauf.\n\n### Wochenaufgabe\n\nSlot 1 heute oder morgen für 45 Minuten nutzen. Wenn du dich spritzig fühlst, laufe zügig an der Schwelle. Falls der Arbeitstag in den Knochen steckt: Reiner Z2-Lauf, Puls strikt unter 158 bpm halten und das Tempo komplett ausblenden.",
   "history_evaluation": {
-    "compliance_status": "teilweise",
-    "actual_summary": "Seit der Empfehlung vom 30.10. wurde kein weiterer Lauf aufgezeichnet; die geplante 55–65 min Z2-Einheit am Wochenende entfiel.",
-    "effect_analysis": "Drei Ruhetage in Folge haben für vollständige muskuläre Frische gesorgt. Die Ermüdung (ATL 18.4) sinkt, der Ruhepuls ist mit 49 bpm stabil im Normbereich.",
-    "next_recommendation": "Slot 1 (Mo/Di) für kontrollierte Schwellenintervalle (4x3 Min bei 168–174 bpm) nutzen, um die Frische für den ersten Wochenreiz einzusetzen.",
-    "next_workout_type": "intervals",
-    "next_target_hr": 172,
-    "next_duration_min": 40
+    "compliance_status": "verfehlt",
+    "actual_summary": "Die Empfehlung vom 30.10. sah einen ruhigen Long Run (55–65 Min) am Wochenende vor. Am Wochenende (31.10./01.11.) wurde keine Laufeinheit absolviert.",
+    "effect_analysis": "Die 3-tägige Pause hat die akute Ermüdung gesenkt (TSB von -4,5). Das aerobe Ausdauerpensum blieb in KW 44 mit 10,5 km jedoch unter dem Schnitt.",
+    "next_recommendation": "Slot 1 (Mo/Di) für einen kontrollierten 45-Minuten-Lauf nutzen. Bei guter Frische als Schwellenlauf, sonst strikt Z2 unter 158 bpm.",
+    "next_workout_type": "easy_run",
+    "next_target_hr": 158,
+    "next_duration_min": 45
   },
   "insights": [
     {
       "title": "Aerobe Zonendisziplin & Reizverteilung",
       "type": "info",
-      "badge": "57.7% Gesamt / 88.2% W44",
-      "text": "In der vergangenen Woche lag der Z1/Z2-Anteil bei soliden 88,2 %. Über den gesamten Trainingszeitraum stehen 57,7 % Grundlagendisziplin zu Buche. Um das Fundament für längere Läufe zu stabilisieren, bleiben lockere Einheiten unter 158 bpm das Fundament."
+      "badge": "88.2% Z1/Z2 in KW 44",
+      "text": "In den letzten Einheiten lag der Schwerpunkt verlässlich im aeroben Bereich (Ø 151–152 bpm). Am 30.10. gab es 6 Min Drift in Zone 3, was den Lauf minimal fordernder machte, aber im normalen Rahmen blieb."
     },
     {
-      "title": "Wochenvolumen & Regelmäßigkeit",
+      "title": "Trainingsvolumen & Kontinuität",
       "type": "info",
       "badge": "Ø 13.5 km / Wo.",
-      "text": "Nach 20,9 km in W43 lag W44 bei 10,5 km verteilt auf zwei Läufe. Der aktuelle Schnitt von 2,1 Einheiten pro Woche ist ausbaufähig. Das primäre Ziel für die kommenden Wochen ist die Konstanz bei drei wöchentlichen Läufen."
+      "text": "Mit durchschnittlich 2,1 Läufen und 13,5 km pro Woche ist die Basis gelegt. Um die prognostizierten Wettkampfzeiten (10 km in 1:01 h) zu stabilisieren, ist ein regelmäßiger dritter Wochenslot (Long Run) der wirksamste Hebel."
     }
   ],
   "recommendations": [
     {
-      "title": "Grundlagenläufe strikt nach Herzfrequenz steuern",
+      "title": "Grundlagenläufe strikt über Puls deckeln",
       "tag": "Priorität 1: Aerobe Basis",
       "tag_class": "tag-amber",
-      "text": "Zone-2-Läufe konsequent unter 158 bpm halten. Die Pace auf der Uhr komplett ignorieren und an Steigungen ohne Zögern in Gehpausen übergehen, sobald der Puls die Schwelle erreicht."
+      "text": "Bei allen Z2-Einheiten gilt: Herzfrequenz strikt unter 158 bpm halten. Die Pace auf der Uhr ignorieren und bei Steigungen konsequent ins Gehen übergehen, sobald der Puls die Grenze erreicht."
     },
     {
-      "title": "Klare Reiztrennung nach Flexi-Modell",
+      "title": "Qualitätseinheiten gezielt dosieren",
       "tag": "Trainingsstruktur",
       "tag_class": "tag-cyan",
-      "text": "Die Rollen der Einheiten trennen: Qualitätstage (Mo/Di oder Mi-Fr) nutzen gezielt Z3/Z4 bis zur Laktatschwelle (178 bpm). Alle anderen Einheiten und der lange Wochenendlauf bleiben strikt im aeroben Z1/Z2-Bereich."
+      "text": "Schwellen- und Tempoläufe in Z3/Z4 sind im Flexi-Modell mit 15–20% fest eingeplant. Nutze Slot 1 gezielt dafür, wenn Schlaf und Tagesform stimmen, und laufe die restlichen Einheiten strikt aerob."
     },
     {
-      "title": "Drei Einheiten als Wochenstandard etablieren",
+      "title": "3 Einheiten pro Woche etablieren",
       "tag": "Umfangsaufbau",
       "tag_class": "tag-green",
-      "text": "Für das Niveau Basisaufbau ist das Halten von drei Einheiten pro Woche wichtiger als das Einzelvolumen. Ziel für die laufende Woche sind 18 bis 22 km Gesamtumfang."
+      "text": "Ziel für diese Woche: Alle 3 Slots besetzen (Slot 1 Mo/Di, Slot 2 Mi-Fr, Slot 3 Sa/So als Long Run), um ein Wochenvolumen von ca. 18–20 km behutsam und ermüdungsarm zu erreichen."
     }
   ],
   "athlete": {
