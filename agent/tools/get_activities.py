@@ -49,11 +49,13 @@ def main():
         else:
             oldest_dt = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=args.days)
             oldest_str = oldest_dt.strftime("%Y-%m-%d")
+            api_base = os.environ.get("INTERVALS_API_BASE", "https://intervals.icu/api/v1")
             try:
                 activities = fetch_intervals_activities(
                     api_key=api_key,
                     athlete_id=athlete_id,
                     oldest=oldest_str,
+                    api_base_url=api_base,
                 )
                 cache_file.write_text(json.dumps(activities, ensure_ascii=False, indent=2), encoding="utf-8")
             except Exception as e:

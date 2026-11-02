@@ -58,7 +58,7 @@ tools:
           description: "Datum des Trainings: ISO-Datum (YYYY-MM-DD), 'today' oder 'tomorrow'"
         type:
           type: string
-          enum: [easy_run, intervals, tempo_run, long_run, recovery_run, fartlek, threshold_intervals]
+          enum: [easy_run, intervals, tempo_run, long_run, recovery_run, fartlek, threshold_intervals, micro_threshold, progressive_threshold]
           description: "Typ des Workouts"
         name:
           type: string

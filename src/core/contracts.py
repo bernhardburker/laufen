@@ -209,6 +209,9 @@ class GuardrailsContract(TypedDict, total=False):
     health_warning: bool
     base_anchor_missing: bool
     coach_directive_override: bool
+    is_deload_week: bool
+    reentry_recommended: bool
+    calendar_rest_day: bool
     active_warnings: List[str]
 
 
@@ -221,6 +224,7 @@ class PlanningMarkersContract(TypedDict, total=False):
     periodization: PeriodizationMarkersContract
     coach_context: Dict[str, Any]
     guardrails: GuardrailsContract
+    calendar_context: Optional[Dict[str, Any]]
 
 
 # ==============================================================================

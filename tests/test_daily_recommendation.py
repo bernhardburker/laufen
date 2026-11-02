@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """BDD Step definitions and test driver for Daily Adaptive Training Recommendation."""
 
-from datetime import date
+from datetime import date, timedelta
 import json
 from pathlib import Path
 import sys
@@ -787,4 +787,44 @@ def then_headline_indicates_rest_day(driver: DailyRecommendationDriver) -> None:
 @then("the recommendation headline indicates completed training")
 def then_headline_indicates_completed(driver: DailyRecommendationDriver) -> None:
     assert "Training absolviert" in driver.recommendation.get("headline", "")
+
+
+@given("calendar events exist for other days but not for today Tuesday")
+def given_calendar_other_days(driver: DailyRecommendationDriver) -> None:
+    driver.set_reference_date(date(2026, 10, 13))
+    other_day = (driver.reference_date + timedelta(days=2)).isoformat()
+    driver.calendar_events = [
+        {
+            "id": 301,
+            "start_date_local": f"{other_day}T07:00:00",
+            "category": "WORKOUT",
+            "name": "Donnerstags-Schwellenlauf",
+            "paired_activity_id": None,
+        }
+    ]
+
+
+@given("the runner completed a run yesterday with muscular cramp complaints")
+def given_runner_run_with_cramps(driver: DailyRecommendationDriver) -> None:
+    yesterday = (driver.reference_date - timedelta(days=1)).isoformat()
+    driver.runs = [
+        {
+            "id": "run-cramp",
+            "type": "Run",
+            "name": "Schwellenlauf Versuch",
+            "start_date_local": f"{yesterday}T07:00:00",
+            "distance": 4000.0,
+            "moving_time": 1500,
+            "average_heartrate": 160.0,
+            "icu_training_load": 30.0,
+            "athlete_note": "Nach dem ersten Intervall haben die Waden begonnen zu krampfen. Vorzeitig abgebrochen.",
+        }
+    ]
+
+
+@then("the recommendation headline indicates muscular complaint protection")
+def then_headline_indicates_muscular_protection(driver: DailyRecommendationDriver) -> None:
+    assert driver.recommendation.get("action_type") == "rest_day"
+    headline = driver.recommendation.get("headline", "")
+    assert "Beschwerdeschutz" in headline or "Muskel" in headline
 

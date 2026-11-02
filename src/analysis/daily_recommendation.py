@@ -24,6 +24,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.analysis.coach_history import get_open_recommendation, load_coach_history
 from src.analysis.forecast import calculate_fitness_form_trend
 from src.analysis.trends import filter_runs, load_activities
+from src.planner.extract_markers import has_muscular_or_health_complaint
 
 
 def load_athlete_profile(file_path: Optional[Path] = None) -> Dict[str, Any]:
@@ -662,6 +663,7 @@ def generate_daily_recommendation(
     reference_date: Optional[date] = None,
     form_data: Optional[Dict[str, Any]] = None,
     calendar_events: Optional[List[Dict[str, Any]]] = None,
+    wellness: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Evaluates the athlete's current state and produces today's targeted training advice."""
     profile = athlete_profile or {}
@@ -794,26 +796,83 @@ def generate_daily_recommendation(
                 "is_calendar_override": True,
             })
 
-        # 3. Calendar rest day note OR no workout scheduled today
-        reason_label = "Ruhetag-Notiz im Kalender" if rest_note else "Kein Lauf im Kalender eingetragen"
+        # 3. Calendar rest day note
+        if rest_note:
+            return _finalize({
+                "date": ref_date.isoformat(),
+                "date_display": ref_date_str,
+                "days_since_last_run": days_since,
+                "action_type": "rest_day",
+                "headline": "Heute: Ruhetag (Laut Kalender)",
+                "badge": "Ruhetag",
+                "badge_class": "tag-cyan",
+                "icon": "🛋️",
+                "details": (
+                    "Ruhetag-Notiz im Kalender. "
+                    "Für heute ist kein Training vorgesehen. "
+                    "Nutze den Tag zur aktiven Erholung, Schlaf und Regeneration."
+                ),
+                "suggested_duration_min": 0,
+                "suggested_target_hr": 0,
+                "tsb": tsb,
+                "is_calendar_override": True,
+            })
+
+    # Subjective health / muscular complaint or wellness check
+    last_has_complaint = has_muscular_or_health_complaint(last_run) if last_run else False
+    wellness_warning = False
+    wellness_reason = ""
+    if wellness:
+        dated_w = []
+        for w in wellness:
+            wid = str(w.get("id") or "")[:10]
+            if wid:
+                try:
+                    wd = date.fromisoformat(wid)
+                    if wd <= ref_date:
+                        dated_w.append((wd, w))
+                except Exception:
+                    continue
+        dated_w.sort(key=lambda x: x[0], reverse=True)
+        if dated_w:
+            latest_w = dated_w[0][1]
+            inj = str(latest_w.get("injury") or "").strip()
+            comm = str(latest_w.get("comments") or "").strip()
+            rhr = latest_w.get("restingHR")
+            if inj and inj.lower() not in ("none", "null", "0", "false"):
+                wellness_warning = True
+                wellness_reason = f"Verletzungsschutz: {inj}"
+            elif comm and any(kw in comm.lower() for kw in ("krank", "infekt", "erkält", "fieber", "unwohl", "sick", "ill")):
+                wellness_warning = True
+                wellness_reason = f"Krankheitsschutz: {comm}"
+            elif rhr is not None:
+                recent_rhr = [float(item[1]["restingHR"]) for item in dated_w[:30] if item[1].get("restingHR") is not None]
+                avg_rhr = sum(recent_rhr) / len(recent_rhr) if recent_rhr else float(rhr)
+                if float(rhr) - avg_rhr >= 4.0:
+                    wellness_warning = True
+                    wellness_reason = f"Erhöhter Ruhepuls: {rhr} bpm (+{float(rhr)-avg_rhr:.1f} bpm über Baseline)"
+
+    if (last_has_complaint or wellness_warning) and days_since <= 1:
+        headline = "Heute: Muskel- & Beschwerdeschutz" if last_has_complaint else "Heute: Gesundheitsschutz (Ruhetag)"
+        badge = "Beschwerdeschutz" if last_has_complaint else "Gesundheitsschutz"
+        details = (
+            f"Aufgrund von Krämpfen/Beschwerden beim letzten Lauf ({last_name}) steht heute Schonung im Vordergrund."
+            if last_has_complaint else
+            f"Aufgrund von Warnindikatoren ({wellness_reason}) wird für heute strikte Erholung empfohlen."
+        )
         return _finalize({
             "date": ref_date.isoformat(),
             "date_display": ref_date_str,
             "days_since_last_run": days_since,
             "action_type": "rest_day",
-            "headline": "Heute: Ruhetag (Laut Kalender)",
-            "badge": "Ruhetag",
-            "badge_class": "tag-cyan",
-            "icon": "🛋️",
-            "details": (
-                f"{reason_label}. "
-                "Für heute ist kein Training vorgesehen. "
-                "Nutze den Tag zur aktiven Erholung, Schlaf und Regeneration."
-            ),
+            "headline": headline,
+            "badge": badge,
+            "badge_class": "tag-amber",
+            "icon": "🛡️",
+            "details": details,
             "suggested_duration_min": 0,
             "suggested_target_hr": 0,
             "tsb": tsb,
-            "is_calendar_override": True,
         })
 
     if not runs:
@@ -1073,6 +1132,12 @@ def main() -> int:
         help="Path to calendar events JSON file",
     )
     parser.add_argument(
+        "--wellness",
+        type=Path,
+        default=Path(os.getenv("WELLNESS_PATH", "")) if os.getenv("WELLNESS_PATH") else None,
+        help="Path to wellness JSON file",
+    )
+    parser.add_argument(
         "--date",
         type=str,
         help="Reference date for evaluation (YYYY-MM-DD, defaults to today)",
@@ -1098,12 +1163,26 @@ def main() -> int:
         except Exception:
             events_data = None
 
+    wellness_data = None
+    well_path = args.wellness
+    if not well_path and args.input:
+        sibling = args.input.parent / "intervals_wellness.json"
+        if sibling.is_file():
+            well_path = sibling
+    if well_path and well_path.is_file():
+        try:
+            with open(well_path, "r", encoding="utf-8") as f:
+                wellness_data = json.load(f)
+        except Exception:
+            wellness_data = None
+
     rec = generate_daily_recommendation(
         runs=runs,
         athlete_profile=profile,
         coach_history=history,
         reference_date=ref_d,
         calendar_events=events_data,
+        wellness=wellness_data,
     )
 
     if args.json:

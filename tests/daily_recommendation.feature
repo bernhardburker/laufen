@@ -162,6 +162,23 @@ Feature: Daily adaptive training recommendation
     Then the recommendation type is "rest_day"
     And the recommendation headline indicates completed training
 
+  Scenario: Evaluate regular slot workout when calendar contains events for other days but none for today
+    Given a runner with pyramidal hybrid weekly slots configured
+    And the runner completed a Zone 2 long run on Sunday
+    And calendar events exist for other days but not for today Tuesday
+    When the daily training recommendation is calculated with calendar events
+    Then the recommendation type is "workout_day"
+    And the recommended workout slot is 1
+    And the recommended workout type is "intervals"
+    And the recommendation badge indicates "Tempo / Speed"
+
+  Scenario: Protect runner with rest day when latest run recorded muscular cramps
+    Given a runner with pyramidal hybrid weekly slots configured
+    And the runner completed a run yesterday with muscular cramp complaints
+    When the daily training recommendation is calculated for today
+    Then the recommendation type is "rest_day"
+    And the recommendation headline indicates muscular complaint protection
+
 
 
 

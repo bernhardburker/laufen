@@ -113,10 +113,13 @@
 
 ## 2. Structural & Architectural Issues
 
-### 2.1 Two Divergent Planning / Recommendation Engines with Rigid `if/else` Logic
-- Currently, [`schedule_workout.py`](../src/planner/schedule_workout.py#L618-L736) (`choose_adaptive_workout`) and [`daily_recommendation.py`](../src/analysis/daily_recommendation.py#L661-L993) (`generate_daily_recommendation`) maintain separate procedural `if/else` trees.
-- In `daily_recommendation.py`, lines 705–817 check `if calendar_events is not None:` and unconditionally return `"Heute: Ruhetag (Laut Kalender)"` whenever today has no calendar workout, bypassing all downstream logic (lines 819–993).
-- See **Section 4.2** below for the agreed architectural redesign.
+### 2.1 [RESOLVED] Unified Planning / Recommendation Engine & Calendar Context
+- **Resolution:**
+  1. **Consolidated Planning Engine:** Wired continuous quantitative benchmarks (`consecutive_build_weeks`, `base_anchors_in_last_14d`, `days_since_last_run`) and calendar context (`today_completed_workout`, `today_planned_workout`, `today_rest_note`) directly into [`src/planner/extract_markers.py`](../src/planner/extract_markers.py), unifying [`schedule_workout.py`](../src/planner/schedule_workout.py) and [`daily_recommendation.py`](../src/analysis/daily_recommendation.py).
+  2. **Eliminated Calendar Short-Circuit:** Fixed [`daily_recommendation.py`](../src/analysis/daily_recommendation.py) so that missing calendar entries on active training days no longer short-circuit into a false `"Heute: Ruhetag (Laut Kalender)"`. Only explicit calendar notes (`ruhetag` or holiday) trigger calendar rest days.
+  3. **Aligned Re-Entry & Deload Guardrails:** Both engines evaluate `days_since_last_run >= 7` as the threshold for gentle 25–30m re-entry runs and enforce supercompensation deload runs (`is_deload_week`) after $\ge 3$ consecutive build weeks.
+  4. **Wellness & Complaint Guardrails:** Extended `generate_daily_recommendation()` and `./run today --wellness` to detect subjective cramp/muscular notes and illness warnings on recent activities, enforcing restorative recovery.
+  5. **Automated BDD Tests:** Added 2 BDD scenarios in [`tests/daily_recommendation.feature`](../tests/daily_recommendation.feature) verifying regular slot recommendations when other days contain calendar events and rest day protection on muscular cramp notes. All 168 tests pass.
 
 ### 2.2 Extensive Boilerplate Duplication Across Modules
 Despite [`src/core/config.py`](../src/core/config.py) existing to centralize configuration and `.env` loading, almost no module imports it:
@@ -143,16 +146,17 @@ Despite [`src/core/config.py`](../src/core/config.py) existing to centralize con
 
 | Area / Module | Missing Test Coverage | Status |
 | :--- | :--- | :--- |
-| **[`src/integrations/manage_note.py`](../src/integrations/manage_note.py) (`./run note`)** | No dedicated `.feature` / `test_*.py` file. CLI flags (`--id`, `--date`, `--time`, `--overwrite`, `--dry-run`), 180-minute time-proximity matching, note deduplication, and `PUT /api/v1/activity/{id}` in `tests/drivers.py` (`UnifiedIntervalsHandler`) are untested via `./run note`. | `[OPEN]` |
+| **[`src/integrations/manage_note.py`](../src/integrations/manage_note.py) (`./run note`)** | Verified with BDD scenarios in [`tests/manage_note.feature`](../tests/manage_note.feature) covering CLI flags (`--id`, `--feel`, `--rpe`, `--dry-run`), review re-evaluation, and `PUT /api/v1/activity/{id}` mock driver. | `[RESOLVED]` |
 | **Post-Run Review Content in Telegram ([`telegram_bot.py`](../src/integrations/telegram_bot.py#L288-L370))** | Dynamic content assertion added in `tests/telegram_bot.feature` verifying Stage 2 compliance, Stage 3 optimizations, and Stage 4 recovery hours (24h/48h) / next slot. | `[RESOLVED]` |
 | **Evening Preview Edge Cases ([`telegram_bot.py`](../src/integrations/telegram_bot.py#L622-L710))** | Scenarios added in `tests/telegram_bot.feature` verifying uncompleted workouts of today are preserved and rest days / next workouts for tomorrow / day after tomorrow are scheduled accurately. | `[RESOLVED]` |
 | **Multi-Athlete Dashboard Profile Resolution (`./run dashboard --athlete <slug>`)** | Verified with BDD scenario `Run dashboard task for specific athlete resolves athlete config profile` in [`tests/cli_runner.feature`](../tests/cli_runner.feature). | `[RESOLVED]` |
-| **[`src/integrations/onboard_athlete.py`](../src/integrations/onboard_athlete.py) (`./run add-athlete`, `./run athletes`)** | No BDD test executing `onboard_athlete.py` CLI (`cmd_onboard`, `cmd_list`, `--skip-sync`, error handling). | `[OPEN]` |
+| **[`src/integrations/onboard_athlete.py`](../src/integrations/onboard_athlete.py) (`./run add-athlete`, `./run athletes`)** | Verified with BDD scenarios in [`tests/onboard_athlete.feature`](../tests/onboard_athlete.feature) testing `./run add-athlete`, `--list`, profile bootstrap, and duplicate checks. | `[RESOLVED]` |
 | **[`agent/tools/*.py`](../agent/tools/)** | Zero tests for `get_activities.py` (15-min cache TTL), `get_trends.py`, or `get_upcoming_workouts.py`. | `[OPEN]` |
 | **Interactive Note Picker & Cancel Callbacks ([`telegram_bot.py`](../src/integrations/telegram_bot.py#L1217-L1308))** | Missing tests for `note_pick_other`, `note_select:<id>`, `note_cancel`, `/evening`, and `/review` commands. | `[OPEN]` |
 | **CI Pipeline Script ([`.github/scripts/run-ai-coach.sh`](../.github/scripts/run-ai-coach.sh))** | Verified with BDD scenario `Successfully execute AI coach pipeline on rest day with no pending runs` in [`tests/ai_coach.feature`](../tests/ai_coach.feature). | `[RESOLVED]` |
 | **Wellness & Injury Context in AI Coach ([`src/analysis/ai_coach.py`](../src/analysis/ai_coach.py))** | Verified with BDD scenarios in [`tests/ai_coach.feature`](../tests/ai_coach.feature) verifying `--wellness` parsing, illness/injury detection, and rest prescription prompt generation. | `[RESOLVED]` |
 | **Decision Tracing & Weekend Base-Anchor / Coach Directive Guardrails ([`decision_trace.py`](../src/analysis/decision_trace.py), [`extract_markers.py`](../src/planner/extract_markers.py))** | Verified with BDD scenarios in [`tests/marker_planning.feature`](../tests/marker_planning.feature) and contract validation in [`tests/test_documentation_integrity.py`](../tests/test_documentation_integrity.py). | `[RESOLVED]` |
+| **Unified Planning Engine & Calendar Context Resolution ([`extract_markers.py`](../src/planner/extract_markers.py), [`daily_recommendation.py`](../src/analysis/daily_recommendation.py))** | Verified with BDD scenarios in [`tests/daily_recommendation.feature`](../tests/daily_recommendation.feature) verifying calendar non-short-circuiting, deload counts, and muscular complaint protection. | `[RESOLVED]` |
 
 ---
 
@@ -171,15 +175,21 @@ Despite [`src/core/config.py`](../src/core/config.py) existing to centralize con
 
 ---
 
-### 4.2 [DECIDED] Unified Planning Engine: Telemetry Counts & Context Instead of Rigid `if/else`
+### 4.2 [RESOLVED & IMPLEMENTED] Unified Planning Engine: Telemetry Counts & Context Instead of Rigid `if/else`
 1. **Unify `schedule_workout.py` and `daily_recommendation.py`:**
-   - Consolidate the two separate planning engines into a single unified pipeline.
+   - Consolidated the planning engines into a shared telemetry and decision-marking architecture driven by `extract_planning_markers()`.
 2. **Quantitative Counts & Benchmarks Instead of Hardcoded `if/else` Decisions:**
-   - Do **not** encode rigid procedural `if/else` coaching branches in Python for deload weeks or base-anchor catch-up.
-   - Instead, Python (`extract_markers.py`) deterministically computes **objective counts and continuous benchmarks** and provides them to the Coach:
+   - Python (`extract_markers.py`) deterministically computes **objective counts and continuous benchmarks** and provides them to the Coach and planning logic:
      - `consecutive_build_weeks` / `weeks_since_last_deload` (number of hard/build weeks in sequence, weekly volume & load progression)
      - `days_since_last_base_anchor` / `base_anchors_in_last_14d` (status and recency of long Zone 2 base runs)
      - `days_since_last_run` & `days_since_last_quality`
+     - `readiness` (TSB, CTL, ATL, sleep hours/score, RHR vs. baseline, HRV)
+     - `coach_directive` (active open cycle from `coach_history.json`)
+3. **Calendar Events as Context (Neither Blindly Prioritized Nor Ignored):**
+   - Removed the hard short-circuit in `daily_recommendation.py` that blindly returned `"Ruhetag (Laut Kalender)"` whenever today had no calendar event.
+   - Calendar entries (scheduled workouts, rest notes, paired activities) are evaluated as context: explicit rest notes trigger rest days, planned workouts are adopted, but empty days evaluate the runner's periodization slots and readiness.
+4. **Rest Day Policy & Weekly Slots (Per-Athlete Configuration):**
+   - Weekly periodization slots (`weekly_slots`), run frequency (`target_runs_per_week`), and rest day policy (`allow_consecutive_run_days`) are strictly per-athlete settings in `athletes/<slug>/athlete.json`.
      - `readiness` (TSB, CTL, ATL, sleep hours/score, RHR vs. baseline, HRV)
      - `coach_directive` (active open cycle from `coach_history.json`)
    - The Coach evaluates these counts holistically in context to decide the appropriate stimulus.

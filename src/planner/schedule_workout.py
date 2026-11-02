@@ -618,11 +618,13 @@ def choose_adaptive_workout(
     activities_file: Path | None = None,
     wellness_file: Path | None = None,
     history_file: Path | None = None,
+    events_file: Path | None = None,
+    events_data: list[dict] | None = None,
     project_root: Path | None = None,
 ) -> tuple[str, str]:
     """Returns (workout_name, workout_description) adapted to current recovery state and guardrails."""
-    # 1. Long inactivity break -> gentle re-entry
-    if days_since_last_run >= 10:
+    # 1. Long inactivity break -> gentle re-entry (7+ days per Section 4.2)
+    if days_since_last_run >= 7:
         name = "Easy Run - Sanfter Wiedereinstieg (30m)"
         desc = render_template(
             templates_dir / "easy_run.txt",
@@ -636,10 +638,12 @@ def choose_adaptive_workout(
         activities_file=activities_file,
         wellness_file=wellness_file,
         history_file=history_file,
+        events_file=events_file,
         activities_data=activities,
         wellness_data=wellness_records,
         profile_data=athlete_profile,
         history_data=history_records,
+        events_data=events_data,
         ref_date=ref_date,
         target_date=planned_target,
         project_root=project_root,
@@ -654,6 +658,16 @@ def choose_adaptive_workout(
     health_warning = guardrails.get("health_warning", False)
     base_anchor_missing = guardrails.get("base_anchor_missing", False)
     coach_directive_override = guardrails.get("coach_directive_override", False)
+    is_deload = guardrails.get("is_deload_week", False)
+
+    if is_deload:
+        # Deload week (triggered after >= 3 build weeks): pure Zone 2 active recovery
+        name = "Deload Run - Aktive Erholung & Basis (35m Z2)"
+        desc = render_template(
+            templates_dir / "easy_run.txt",
+            {"warmup": "10m", "main": "20m", "cooldown": "5m", "target": "Z2 HR"},
+        )
+        return name, desc
 
     if volume_spike or (is_fatigued and quality_discouraged) or (health_warning and is_fatigued):
         # High volume yesterday or severe fatigue / unwellness -> short recovery/easy run
@@ -1000,6 +1014,7 @@ def sync_adaptive_plan(
         activities_file=activities_file,
         wellness_file=resolved_wellness_file,
         history_file=resolved_history_file,
+        events_file=Path(events_file) if events_file else None,
         project_root=root,
     )
 
@@ -1007,6 +1022,7 @@ def sync_adaptive_plan(
         activities_file=activities_file,
         wellness_file=resolved_wellness_file,
         history_file=resolved_history_file,
+        events_file=Path(events_file) if events_file else None,
         activities_data=act_list,
         profile_data=profile,
         ref_date=today,

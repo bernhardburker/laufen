@@ -145,6 +145,19 @@ class UnifiedIntervalsHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(200, server.events[event_id])
             return
 
+        # Activity PUT: /api/v1/activity/{id}
+        if "/activity/" in self.path:
+            act_id = self.path.split("/activity/")[-1].split("?")[0].strip("/")
+            for act in server.activities:
+                if str(act.get("id")) == act_id:
+                    act.update(body)
+                    self._send_json(200, act)
+                    return
+            record = {"id": act_id, **body}
+            server.activities.append(record)
+            self._send_json(200, record)
+            return
+
         self._send_json(404, {"error": "Not Found", "path": self.path})
 
     def do_DELETE(self) -> None:

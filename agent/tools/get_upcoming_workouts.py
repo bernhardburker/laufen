@@ -30,7 +30,8 @@ def main():
     oldest_str = today.isoformat()
     newest_str = end_date.isoformat()
 
-    url = f"https://intervals.icu/api/v1/athlete/{athlete_id}/events?oldest={oldest_str}&newest={newest_str}"
+    api_base = os.environ.get("INTERVALS_API_BASE", "https://intervals.icu/api/v1").rstrip("/")
+    url = f"{api_base}/athlete/{athlete_id}/events?oldest={oldest_str}&newest={newest_str}"
     auth_str = f"API_KEY:{api_key}"
     b64_auth = base64.b64encode(auth_str.encode("utf-8")).decode("ascii")
 

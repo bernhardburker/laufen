@@ -63,6 +63,116 @@ def has_muscular_or_health_complaint(run: Dict[str, Any]) -> bool:
     return any(kw in note for kw in complaint_keywords)
 
 
+def calculate_consecutive_build_weeks(
+    runs: List[Dict[str, Any]],
+    ref_date: datetime.date,
+    min_load: float = 65.0,
+    min_distance_m: float = 12000.0,
+) -> int:
+    """Calculates how many consecutive completed calendar weeks prior to ref_date were build weeks."""
+    current_monday = ref_date - datetime.timedelta(days=ref_date.weekday())
+    consecutive_build = 0
+
+    for w in range(1, 5):
+        week_start = current_monday - datetime.timedelta(weeks=w)
+        week_end = week_start + datetime.timedelta(days=6)
+
+        week_runs = []
+        for r in runs:
+            d_str = str(r.get("start_date_local") or r.get("date") or "")[:10]
+            if d_str:
+                try:
+                    run_d = datetime.date.fromisoformat(d_str)
+                    if week_start <= run_d <= week_end:
+                        week_runs.append(r)
+                except Exception:
+                    continue
+
+        if not week_runs:
+            break
+
+        total_load = sum(float(r.get("training_load") or r.get("icu_training_load") or 0.0) for r in week_runs)
+        total_dist = sum(float(r.get("distance") or 0.0) for r in week_runs)
+        has_quality = any(is_quality_run(r) for r in week_runs)
+
+        if has_quality and (total_load >= min_load or total_dist >= min_distance_m):
+            consecutive_build += 1
+        else:
+            break
+
+    return consecutive_build
+
+
+def count_base_anchors_14d(
+    runs: List[Dict[str, Any]],
+    ref_date: datetime.date,
+) -> int:
+    """Counts completed clean aerobic base runs in the preceding 14 days."""
+    count = 0
+    start_14d = ref_date - datetime.timedelta(days=14)
+    for r in runs:
+        d_str = str(r.get("start_date_local") or r.get("date") or "")[:10]
+        if not d_str:
+            continue
+        try:
+            d = datetime.date.fromisoformat(d_str)
+            if start_14d <= d <= ref_date:
+                if not is_quality_run(r) and not has_muscular_or_health_complaint(r):
+                    dist_m = float(r.get("distance") or 0.0)
+                    dur_s = float(r.get("moving_time") or r.get("elapsed_time") or 0.0)
+                    if dist_m >= 4000.0 or dur_s >= 1500.0:
+                        count += 1
+        except Exception:
+            continue
+    return count
+
+
+def get_calendar_context(
+    calendar_events: Optional[List[Dict[str, Any]]],
+    ref_date: datetime.date,
+) -> Dict[str, Any]:
+    """Extracts today's planned, completed, or rest notes from calendar events for planning context."""
+    if not calendar_events:
+        return {
+            "has_calendar": False,
+            "today_completed_workout": None,
+            "today_planned_workout": None,
+            "today_rest_note": None,
+            "events_today_count": 0,
+        }
+
+    today_iso = ref_date.isoformat()
+    events_today = [
+        e for e in calendar_events
+        if isinstance(e, dict) and str(e.get("start_date_local") or e.get("date") or "")[:10] == today_iso
+    ]
+
+    completed_workout = next(
+        (e for e in events_today if e.get("category") == "WORKOUT" and e.get("paired_activity_id")),
+        None,
+    )
+    planned_workout = next(
+        (e for e in events_today if e.get("category") == "WORKOUT" and not e.get("paired_activity_id")),
+        None,
+    )
+    rest_note = next(
+        (
+            e for e in events_today
+            if (e.get("category") == "NOTE" and "ruhetag" in str(e.get("name") or "").lower())
+            or e.get("category") == "HOLIDAY"
+        ),
+        None,
+    )
+
+    return {
+        "has_calendar": True,
+        "today_completed_workout": completed_workout,
+        "today_planned_workout": planned_workout,
+        "today_rest_note": rest_note,
+        "events_today_count": len(events_today),
+    }
+
+
 def get_readiness_markers(
     wellness_records: Optional[List[Dict[str, Any]]],
     activities: List[Dict[str, Any]],
@@ -228,6 +338,8 @@ def get_run_history_markers(
             "target_runs_per_week": 3,
             "last_week_total_km": 0.0,
             "last_week_z1_z2_pct": 0.0,
+            "consecutive_build_weeks": 0,
+            "base_anchors_in_last_14d": 0,
         }
 
     # Latest run
@@ -373,6 +485,9 @@ def get_run_history_markers(
         else 0.0
     )
 
+    consecutive_build = calculate_consecutive_build_weeks(runs, ref_date)
+    base_anchors_14d = count_base_anchors_14d(runs, ref_date)
+
     return {
         "days_since_last_run": days_since_last_run,
         "target_days_since_last_run": target_days_since_last_run,
@@ -387,6 +502,8 @@ def get_run_history_markers(
         "target_runs_per_week": 3,
         "last_week_total_km": round(last_week_dist_m / 1000.0, 2),
         "last_week_z1_z2_pct": last_week_z_pct,
+        "consecutive_build_weeks": consecutive_build,
+        "base_anchors_in_last_14d": base_anchors_14d,
     }
 
 
@@ -499,6 +616,7 @@ def calculate_guardrails(
     history: Dict[str, Any],
     periodization: Dict[str, Any],
     coach_context: Optional[Dict[str, Any]] = None,
+    calendar_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Evaluates physiological boundaries to protect athlete against overtraining or excessive fatigue."""
     tsb = readiness.get("tsb", 0.0)
@@ -508,6 +626,7 @@ def calculate_guardrails(
     days_since_last_run = history.get("days_since_last_run", 999)
     last_run = history.get("last_run") or {}
     last_duration = last_run.get("duration_min", 0.0)
+    consec_build = int(history.get("consecutive_build_weeks", 0))
 
     # 1. Quality spacing: at least 72h (3 days) between hard quality stimuli
     quality_discouraged = (days_since_last_quality < 3) or (tsb < -8.0)
@@ -515,8 +634,11 @@ def calculate_guardrails(
     # 2. Fatigue / sleep warning: sleep deficit or acute exhaustion
     fatigue_warning = (sleep_h < 6.0) or (sleep_score < 72.0) or (tsb < -10.0)
 
-    # 3. Rest day recommended if athlete ran today (0 days ago)
-    rest_day_recommended = (days_since_last_run <= 0)
+    # 3. Rest day recommended if athlete ran today (0 days ago) or completed workout today
+    cal_ctx = calendar_context or {}
+    calendar_completed = bool(cal_ctx.get("today_completed_workout"))
+    calendar_rest_day = bool(cal_ctx.get("today_rest_note"))
+    rest_day_recommended = (days_since_last_run <= 0) or calendar_completed
 
     # 4. Volume spike alert: last run exceeded 60 minutes
     volume_spike_alert = (last_duration >= 60.0) and (days_since_last_run <= 1)
@@ -535,7 +657,11 @@ def calculate_guardrails(
     c_ctx = coach_context or {}
     coach_directive_override = bool(c_ctx.get("unfulfilled_base_directive", False))
 
-    # 8. Slot allows threshold: slot must allow tempo_run AND no blocking guardrails
+    # 8. Deload week & Re-entry benchmarks
+    is_deload_week = bool(consec_build >= 3)
+    reentry_recommended = bool(days_since_last_run >= 7)
+
+    # 9. Slot allows threshold: slot must allow tempo_run AND no blocking guardrails
     allowed_types = periodization.get("allowed_types", [])
     slot_allows_threshold = (
         ("tempo_run" in allowed_types)
@@ -544,6 +670,9 @@ def calculate_guardrails(
         and (not health_warning)
         and (not base_anchor_missing)
         and (not coach_directive_override)
+        and (not is_deload_week)
+        and (not reentry_recommended)
+        and (not calendar_rest_day)
     )
 
     # Compile warnings list
@@ -575,6 +704,16 @@ def calculate_guardrails(
         reasons.append(
             f"Offene Coach-Vorgabe ({cid} vom {cdate}): '{ctype}' steht noch unvollendet aus."
         )
+    if is_deload_week:
+        reasons.append(
+            f"Deload-Woche aktiv: {consec_build} aufeinanderfolgende Belastungswochen – aktive Superkompensation."
+        )
+    if reentry_recommended:
+        reasons.append(
+            f"Wiedereinstieg empfohlen: Letzter Lauf vor {days_since_last_run} Tag(en) – sanfter Einstieg (25–30 Min.)."
+        )
+    if calendar_rest_day:
+        reasons.append("Kalender-Ruhetag: Im Kalender ist für heute explizit ein Ruhetag eingetragen.")
     if rest_day_recommended:
         reasons.append("Ruhetag empfohlen: Am selben Kalendertag wurde bereits gelaufen.")
 
@@ -586,6 +725,9 @@ def calculate_guardrails(
         "health_warning": health_warning,
         "base_anchor_missing": base_anchor_missing,
         "coach_directive_override": coach_directive_override,
+        "is_deload_week": is_deload_week,
+        "reentry_recommended": reentry_recommended,
+        "calendar_rest_day": calendar_rest_day,
         "slot_allows_threshold": slot_allows_threshold,
         "active_warnings": reasons,
     }
@@ -607,10 +749,12 @@ def extract_planning_markers(
     wellness_file: Optional[Path] = None,
     profile_file: Optional[Path] = None,
     history_file: Optional[Path] = None,
+    events_file: Optional[Path] = None,
     activities_data: Optional[List[Dict[str, Any]]] = None,
     wellness_data: Optional[List[Dict[str, Any]]] = None,
     profile_data: Optional[Dict[str, Any]] = None,
     history_data: Optional[List[Dict[str, Any]]] = None,
+    events_data: Optional[List[Dict[str, Any]]] = None,
     ref_date: Optional[datetime.date] = None,
     target_date: Optional[datetime.date] = None,
     project_root: Optional[Path] = None,
@@ -632,11 +776,15 @@ def extract_planning_markers(
     hist_path = history_file or (
         (sibling_dir / "coach_history.json") if (sibling_dir and (sibling_dir / "coach_history.json").is_file()) else None
     )
+    ev_path = events_file or (
+        (sibling_dir / "calendar_events.json") if (sibling_dir and (sibling_dir / "calendar_events.json").is_file()) else None
+    )
 
     activities = activities_data if activities_data is not None else (load_json_file(act_path) or [])
     wellness = wellness_data if wellness_data is not None else (load_json_file(well_path) or [])
     profile = profile_data if profile_data is not None else (load_json_file(prof_path) or {})
     coach_history = history_data if history_data is not None else (load_json_file(hist_path) if hist_path else [])
+    calendar_events = events_data if events_data is not None else (load_json_file(ev_path) if ev_path else [])
 
     zones = profile.get("athlete", {}).get("heart_rate", {}).get("zones", {})
     z2 = find_heart_rate_zone(zones, 2) or {}
@@ -657,7 +805,14 @@ def extract_planning_markers(
     history = get_run_history_markers(activities, today, planned_target, athlete_profile=profile)
     periodization = get_periodization_markers(planned_target, profile)
     coach_context = get_coach_context_markers(coach_history, activities, today)
-    guardrails = calculate_guardrails(readiness, history, periodization, coach_context=coach_context)
+    calendar_context = get_calendar_context(calendar_events, today)
+    guardrails = calculate_guardrails(
+        readiness,
+        history,
+        periodization,
+        coach_context=coach_context,
+        calendar_context=calendar_context,
+    )
 
     return {
         "reference_date": today.isoformat(),
@@ -668,6 +823,7 @@ def extract_planning_markers(
         "periodization": periodization,
         "coach_context": coach_context,
         "guardrails": guardrails,
+        "calendar_context": calendar_context,
     }
 
 
