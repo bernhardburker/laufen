@@ -1,8 +1,8 @@
-### Rückblick & Status Quo
-Das geplante Wochenende blieb ohne Laufkilometer. Nach dem morgendlichen Lauf am Freitag (5,7 km mit leichtem Z3-Drift) hatten die Beine drei Tage komplette Pause. Das bedeutet ganz nüchtern: Der aerobe Ausdauerreiz am Wochenende entfiel, dafür gehst du vollkommen erholt in die neue Woche. Der Schlaf war mit 8,8 Stunden und einem Score von 95 hervorragend, der Ruhepuls liegt mit 49 bpm im Normalbereich und die HRV ist stabil.
+### Aktueller Stand & Rückblick
+Die letzten vier Tage ist kein Lauf im Protokoll gelandet. Der für das Wochenende angedachte ruhige Long Run ist damit entfallen. Das hat für deine Beine einen einfachen, messbaren Effekt: Die physiologische Ermüdung hat sich komplett abgebaut. Dein Ruhepuls liegt mit 46 bpm spürbar unter deiner Baseline (48.5 bpm), die HRV steht bei starken 78 ms und der Schlaf war mit 8 Stunden voll im Soll. Deine Energiespeicher sind voll, die muskuläre Frische ist da.
 
-### Ausrichtung für die neue Trainingswoche
-Mit einer CTL von 13,9 und einem TSB von -4,5 ist die Belastung im grünen Bereich. Nach zehn Tagen ohne spezifischen Temporeiz ist die Muskulatur bereit für Slot 1 unseres Flexi-Modells (Montag oder Dienstag). Wir nutzen die Frische für eine kontrollierte Intervalleinheit, um das Herz-Kreislauf-System an der Schwelle zu fordern, ohne zu überziehen.
+### Ausrichtung für Woche 45
+Mit einem aktuellen Schnitt von rund 13,5 Kilometern pro Woche geht es jetzt schlicht darum, wieder in den gewohnten Dreier-Rhythmus zu finden. Wir nutzen die Frische pragmatisch für den Einstieg in die neue Trainingswoche.
 
-### Konkrete Wochenaufgabe
-Absolviere in Slot 1 eine 45-minütige Intervalleinheit: 10 Minuten lockeres Einlaufen, 4x 3 Minuten kontrolliert im Schwellenbereich (Puls 168–174 bpm) mit je 2 Minuten Geh-/Trabpause, danach ruhiges Auslaufen. Halte die Pausen diszipliniert ein.
+### Deine Wochenaufgabe
+Starte heute oder morgen (Dienstag/Mittwoch) mit einem kontrollierten Grundlagenlauf über 45 Minuten. Lass dich nicht von den frischen Beinen verleiten, sofort das Tempo anzuziehen: Die Herzfrequenz bleibt strikt unter 158 bpm (Zone 2). Die Pace ist völlig egal – wenn es an Steigungen nötig ist, nimm Gehschritte mit. Am Donnerstag oder Freitag folgt dann Slot 2, am Wochenende Slot 3.

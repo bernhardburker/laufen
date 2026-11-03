@@ -1,0 +1,52 @@
+{
+  "status_title": "Kaltstart: Aufbau der aeroben Grundlagenausdauer",
+  "status_badge": "Basis vermessen / Z2 etablieren",
+  "status_level": "info",
+  "coach_commentary": "### Ausgangslage und Einstieg\n\nFür dich liegen im System bisher keine absolvierten Laufeinheiten vor. Es gibt damit keine empirischen Daten zu deiner aeroben Effizienz, deiner Schwellenleistung oder deiner aktuellen Belastungstoleranz. Zu Beginn geht es ausschließlich darum, eine verlässliche Datenbasis zu schaffen und den Bewegungsapparat behutsam an die spezifische Stoßbelastung des Laufens zu gewöhnen.\n\n### Trainingssteuerung über Herzfrequenz\n\nFür den Einstieg gilt: Die Pace ist vollkommen irrelevant. Deine aerobe Zone 2 reicht bis maximal 163 bpm (LTHR: 183 bpm). Dein Training wird in dieser Phase ausschließlich über die Herzfrequenz gesteuert. Steigt der Puls über 163 bpm – insbesondere an Steigungen –, wechselst du ohne Zögern in zügiges Gehen, bis der Puls wieder spürbar gesunken ist. Gehpausen sind ein Werkzeug zur disziplinierten Herzfrequenzkontrolle, kein Leistungsdefizit.\n\n### Wochenaufgabe\n\nAbsolviere in dieser Woche zwei bis maximal drei Einheiten von jeweils 30 bis maximal 40 Minuten. Halte die Herzfrequenz strikt im Bereich von Zone 1 und Zone 2 (unter 163 bpm). Keine Steigerungsläufe, keine Schwellenreize, kein Ausbelasten.",
+  "history_evaluation": {
+    "compliance_status": "offen",
+    "actual_summary": "Bisher keine Laufaktivitäten im System erfasst. Kaltstart-Phase.",
+    "effect_analysis": "Physiologische Ausgangsbasis steht noch aus. Es liegen noch keine Herzfrequenz-, Trittfrequenz- oder Pace-Messungen vor.",
+    "next_recommendation": "Grundlagenlauf: 30–35 Minuten strikt in Zone 2 (Puls maximal 163 bpm). Pace ignorieren, bei Pulsanstieg sofort in zügiges Gehen wechseln.",
+    "next_workout_type": "easy_run",
+    "next_target_hr": 163,
+    "next_duration_min": 35
+  },
+  "insights": [
+    {
+      "title": "Keine historischen Trainingsdaten vorhanden",
+      "type": "info",
+      "badge": "0 Läufe erfasst",
+      "text": "Für fundierte Aussagen zu aerober Schwelle, Ermüdungsmustern oder Formtrend (CTL/ATL) fehlen reale Trainingsaufzeichnungen. Die ersten 2–3 Wochen dienen der Datenerfassung."
+    },
+    {
+      "title": "Orthopädischer Schutz vor kardiovaskulärer Überlastung",
+      "type": "warning",
+      "badge": "Priorität Sehnen/Gelenke",
+      "text": "Sehnen, Bänder und Gelenke adaptieren deutlich langsamer an die Stoßbelastung als das Herz-Kreislauf-System. Niedrige Intensitäten und Gehpausen verhindern frühe Überlastungsschäden."
+    }
+  ],
+  "recommendations": [
+    {
+      "title": "Grundlagenläufe strikt nach Herzfrequenz steuern",
+      "tag": "Priorität 1: Aerobe Basis",
+      "tag_class": "tag-amber",
+      "text": "Puls strikt unter 163 bpm halten (Zone 2). Pace vollständig ignorieren. Sobald der Puls 163 bpm erreicht oder übersteigt, sofort in zügiges Gehen wechseln."
+    },
+    {
+      "title": "Run-Walk-Methode aktiv nutzen",
+      "tag": "Biomechanik & Entlastung",
+      "tag_class": "tag-cyan",
+      "text": "Gehintervalle bei Bedarf einstreuen, um Belastungsspitzen zu kappen. Ziel ist kontinuierliche aerobe Stoffwechselarbeit ohne anaerobe Laktatakkumulation."
+    },
+    {
+      "title": "Vollständiger Verzicht auf Tempo- und Schwellenreize",
+      "tag": "Trainingsstruktur",
+      "tag_class": "tag-green",
+      "text": "100 % des Volumens verbleiben in der Einstiegsphase in den Zonen 1 und 2. Intensive Intervalle oder Schwellenläufe werden erst nach solider Basiserfassung eingeplant."
+    }
+  ],
+  "athlete": {
+    "name": "Berni Test"
+  }
+}
