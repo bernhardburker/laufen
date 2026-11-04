@@ -1,49 +1,55 @@
 {
-  "status_title": "Hohe Erholung nach Ruhetagen – Basis für Slot 1",
-  "status_badge": "Erholt / Basis aktivieren",
+  "status_title": "Aerobe Basis stabil – Regelmäßigkeit im Fokus",
+  "status_badge": "Basis im Soll",
   "status_level": "info",
-  "coach_commentary": "### Aktueller Stand & Rückblick\nDie letzten vier Tage ist kein Lauf im Protokoll gelandet. Der für das Wochenende angedachte ruhige Long Run ist damit entfallen. Das hat für deine Beine einen einfachen, messbaren Effekt: Die physiologische Ermüdung hat sich komplett abgebaut. Dein Ruhepuls liegt mit 46 bpm spürbar unter deiner Baseline (48.5 bpm), die HRV steht bei starken 78 ms und der Schlaf war mit 8 Stunden voll im Soll. Deine Energiespeicher sind voll, die muskuläre Frische ist da.\n\n### Ausrichtung für Woche 45\nMit einem aktuellen Schnitt von rund 13,5 Kilometern pro Woche geht es jetzt schlicht darum, wieder in den gewohnten Dreier-Rhythmus zu finden. Wir nutzen die Frische pragmatisch für den Einstieg in die neue Trainingswoche.\n\n### Deine Wochenaufgabe\nStarte heute oder morgen (Dienstag/Mittwoch) mit einem kontrollierten Grundlagenlauf über 45 Minuten. Lass dich nicht von den frischen Beinen verleiten, sofort das Tempo anzuziehen: Die Herzfrequenz bleibt strikt unter 158 bpm (Zone 2). Die Pace ist völlig egal – wenn es an Steigungen nötig ist, nimm Gehschritte mit. Am Donnerstag oder Freitag folgt dann Slot 2, am Wochenende Slot 3.",
+  "coach_commentary": "### Status & Einordnung\nServus Berni. Schauen wir nüchtern auf die Daten seit dem letzten Eintrag.\n\nAm Wochenende stand eigentlich ein ruhiger Long Run an. Der fiel aus, dafür hast du am Dienstag 51 Minuten in Gerasdorf nachgeholt. Mit 6,5 Kilometern, einem Schnitt von 148 bpm und einer Spitze bei 157 bpm bist du komplett unter der 158er-Grenze geblieben. Dass rund 10 Minuten in Zone 3 gerutscht sind, passiert bei leichten Wellen oder Wind – entscheidend ist: Der Maximalpuls schlug nicht nach oben aus und die Beine haben keinen intensiven Verschleiß abbekommen.\n\n### Wellness & Belastung\nDie Erholungsdaten von heute zeigen einen leichten Ausschlag: Der Ruhepuls liegt bei 51 bpm (+2,4 bpm über Baseline), die HRV bei 65 ms nach knapp 7 Stunden Schlaf. Bei einem TSB von -3,5 ist das kein Alarmsignal, aber ein klares Zeichen, heute nicht mit Gewalt Tempo zu bolzen.\n\n### Wochenaufgabe: Slot 2 & Slot 3 sauber aufteilen\nWir sind jetzt mitten in der Woche. Nutzen wir Slot 2 am Donnerstag oder Freitag für einen unaufgeregten Grundlagenlauf von 40–45 Minuten – Puls strikt unter 158 bpm, Tempo völlig egal, Steigungen konsequent gehen. Am Wochenende (Slot 3) hängen wir dann den langen Kanten mit 55–60 Minuten an. Zwei saubere Grundlageneinheiten ohne Tempodruck festigen die Basis.",
   "history_evaluation": {
-    "compliance_status": "verfehlt",
-    "actual_summary": "Seit der Empfehlung vom 30. Oktober (Morgenlauf 5,68 km) wurde keine weitere Einheit erfasst. Der geplante Long Run für das Wochenende ist entfallen.",
-    "effect_analysis": "Die viertägige Laufpause hat die akute Ermüdung (ATL) auf 18.4 gesenkt und die Erholungswerte (RHR 46 bpm, HRV 78 ms) auf ein exzellentes Niveau gehoben. Der Trainingsreiz am Wochenende blieb aus, die aerobe Kontinuität stockte kurz, aber das System ist komplett regeneriert.",
-    "next_recommendation": "Wiedereinstieg über Slot 1 mit 40–45 Minuten ruhigem Grundlagenlauf (Zone 2). Puls strikt unter 158 bpm deckeln, Pace ausblenden.",
+    "compliance_status": "teilweise",
+    "actual_summary": "Wochenendlauf entfiel, dafür am Dienstag (03.11.) 6,47 km in 51 min gelaufen (Ø 148 bpm, Max 157 bpm, 79,1 % Z1/Z2, Load 53).",
+    "effect_analysis": "Puls blieb verlässlich unter der Z2-Grenze (158 bpm). Leichter Z3-Drift (10m 45s) ohne laktazide Ermüdung. TSB steht bei -3,5; RHR heute leicht erhöht (+2,4 bpm).",
+    "next_recommendation": "Slot 2 (Do/Fr) für einen lockeren Z2-Dauerlauf (40–45 Min) nutzen. Puls strikt < 158 bpm halten, Pace völlig ignorieren und an Steigungen gehen.",
     "next_workout_type": "easy_run",
     "next_target_hr": 158,
     "next_duration_min": 45
   },
   "insights": [
     {
-      "title": "Erholungsstatus & Autonomes Nervensystem",
+      "title": "Aerobe Zonendisziplin im letzten Lauf",
       "type": "success",
-      "badge": "RHR 46 bpm | HRV 78 ms",
-      "text": "Nach vier lauffreien Tagen zeigen Ruhepuls (-2,5 bpm unter Schnitt) und HRV eine maximale Erholung an. Keine orthopädischen Beschwerden gemeldet, TSB liegt bei -4.5."
+      "badge": "Max 157 bpm",
+      "text": "Im Lauf am 03.11. blieb die Herzfrequenz über die gesamte Dauer unter der Z2-Schwelle von 158 bpm. Trotz 10 Minuten Z3-Drift im welligen Gelände blieb der Reiz rein aerob."
     },
     {
-      "title": "Trainingsvolumen & Kontinuität",
+      "title": "Trainingsfrequenz & Regelmäßigkeit",
       "type": "info",
-      "badge": "Ø 13.5 km / Wo.",
-      "text": "In Woche 44 standen 10,5 km bei 2 Einheiten zu Buche. Um das Fundament im Basisaufbau zu festigen, ist das regelmäßige Bedienen der drei wöchentlichen Slots wichtiger als Einzelsprünge bei Tempo oder Distanz."
+      "badge": "Ø 12.9 km / Wo.",
+      "text": "Mit aktuell 2 Läufen pro Woche liegt das Volumen im Schnitt bei knapp 13 km. Um für längere Distanzen Stabilität aufzubauen, ist das verlässliche Füllen aller 3 Wochen-Slots der wichtigste Hebel."
+    },
+    {
+      "title": "Erholung & Ruhepuls-Trend",
+      "type": "info",
+      "badge": "RHR +2.4 bpm",
+      "text": "Der Ruhepuls liegt heute bei 51 bpm (Baseline 48.6 bpm), die HRV bei 65 ms. Noch im Normalbereich, aber ein Grund, im anstehenden Slot 2 auf Tempoexzesse zu verzichten."
     }
   ],
   "recommendations": [
     {
-      "title": "Wiedereinstieg strikt nach Herzfrequenz steuern",
+      "title": "Grundlagenläufe strikt über Herzfrequenz steuern",
       "tag": "Priorität 1: Aerobe Basis",
       "tag_class": "tag-amber",
-      "text": "Für die nächste Einheit gilt eine harte Obergrenze von 158 bpm (Zone 2). Weil die Beine frisch sind, fühlt sich das Anfangstempo oft zu leicht an – diszipliniere dich über den Puls, ignoriere die Pace und gehe an Anstiegen ohne Zögern in den Schritt."
+      "text": "Puls konsequent unter 158 bpm deckeln. An Steigungen sofort Tempo rausnehmen und Gehpausen nutzen, bis der Puls wieder fällt. Die Pace auf der Uhr bleibt ausgeblendet."
     },
     {
-      "title": "Wochenstruktur im Flexi-Modell etablieren",
+      "title": "Slot 2 am Donnerstag/Freitag dosieren",
       "tag": "Trainingsstruktur",
       "tag_class": "tag-cyan",
-      "text": "Ziel für diese Woche: Alle 3 Slots abdecken. Slot 1 (Di): 45 Min Z2 Basis. Slot 2 (Do/Fr): Je nach Tagesform Z2 oder Schwellenreiz (168–174 bpm). Slot 3 (Sa/So): Z2 Long Run (55–65 Min)."
+      "text": "Nach dem Dienstagslauf und leicht erhöhtem Ruhepuls keine harten Intervalle erzwingen. 40 bis 45 Minuten ruhiges Rollen im aeroben Bereich halten die Beine frisch für den langen Lauf."
     },
     {
-      "title": "Umfang behutsam bei 15–18 km einpendeln",
+      "title": "Wochenend-Long-Run verlässlich anpeilen",
       "tag": "Umfangsaufbau",
       "tag_class": "tag-green",
-      "text": "Im Basisaufbau liegt der Schlüssel in der Verlässlichkeit. Drei Einheiten mit 45, 40 und 55–60 Minuten bringen dich ohne Überlastungsrisiko stabil in den anvisierten Wochenbereich."
+      "text": "Slot 3 am Samstag oder Sonntag als aeroben Anker mit 55 bis 60 Minuten einplanen. Gleichmäßiges Traben im Wohlfühltempo stabilisiert die wöchentliche Kilometerleistung."
     }
   ],
   "athlete": {
