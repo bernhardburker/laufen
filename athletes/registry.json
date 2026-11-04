@@ -12,7 +12,7 @@
     "berni-test": {
       "intervals_id": "i771119",
       "display_name": "Berni Test",
-      "active": true,
+      "active": false,
       "dashboard_slug": "berni-test-415ebf"
     }
   }
