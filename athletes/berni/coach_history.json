@@ -135,6 +135,19 @@
     "recommendation": "Slot 2 (Do/Fr) für einen lockeren Z2-Dauerlauf (40–45 Min) nutzen. Puls strikt < 158 bpm halten, Pace völlig ignorieren und an Steigungen gehen.",
     "target_type": "easy_run",
     "target_hr_max": 158,
+    "status": "angepasst_nach_tempo",
+    "actual": "Am 05.11. wurde Slot 2 als zügiger Dauerlauf absolviert (7.14 km in 51m, Pace: 7:12 /km, Ø Puls: 153 bpm, Max: 174 bpm). Hoher Intensitätsanteil mit 24m 17s in Zone 3 und 8m 49s in Zone 4 bei nur 27.5% Z1/Z2-Anteil.",
+    "effect": "Wirksamer Reiz für Herzschlagvolumen und Schwellenbereich, jedoch mit erhöhtem Ermüdungsübertrag auf das vegetative Nervensystem. TSB liegt bei -6.6 (CTL: 14.6, ATL: 21.2). Gepaart mit erhöhtem Ruhepuls (52 bpm) und gesunkener HRV (58 ms) signalisiert der Körper Erholungsbedarf.",
+    "evaluated_run_ids": [
+      "i205997734"
+    ]
+  },
+  {
+    "id": "cycle-012",
+    "date": "2026-11-07",
+    "recommendation": "Akute Erholung priorisieren: Heute vollständiger Ruhetag (rest_day). Keine Belastung, bis Ruhepuls und HRV wieder das gewohnte Niveau erreichen.",
+    "target_type": "rest_day",
+    "target_hr_max": 158,
     "status": "offen",
     "actual": "Ausstehend (wird nach den nächsten Läufen analysiert)",
     "effect": "-"

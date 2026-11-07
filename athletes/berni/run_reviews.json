@@ -9931,5 +9931,161 @@
       }
     },
     "analyzed_at": "2026-11-04T07:00:22.217909"
+  },
+  "i205997734": {
+    "id": "i205997734",
+    "date": "2026-11-05T07:24:58",
+    "name": "Lauf am Morgen",
+    "distance_km": 7.14,
+    "moving_time_s": 3084,
+    "moving_time_str": "51m",
+    "pace_str": "7:12 /km",
+    "avg_hr": 153.0,
+    "max_hr": 174,
+    "cadence_spm": 155.1,
+    "elevation_gain_m": 47.2,
+    "training_load": 61.0,
+    "icu_ctl": 14.648749,
+    "icu_atl": 21.214205,
+    "tsb_at_run": -6.6,
+    "aerobic_ef": 0.908,
+    "z1_z2_pct": 27.5,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 621,
+        "time_str": "10m 21s",
+        "pct": 20.1
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 227,
+        "time_str": "3m 47s",
+        "pct": 7.4
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo)",
+        "seconds": 1457,
+        "time_str": "24m 17s",
+        "pct": 47.2
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 529,
+        "time_str": "8m 49s",
+        "pct": 17.2
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 250,
+        "time_str": "4m 10s",
+        "pct": 8.1
+      }
+    },
+    "intervals": [
+      "1x 6m36s 127bpm",
+      "3x 8m42s 151bpm",
+      "2x 1m40s 155bpm",
+      "15x 60s 165bpm",
+      "1x 37s 154bpm",
+      "1x 2m35s 157bpm"
+    ],
+    "intensity_class": "tempo_z3",
+    "athlete_note": "Interval start hat eigentlich gut funktioniert, ich war relativ schnell am pace den ich haben wollte (gefühlt) aber die Pausen waren zu kurz um meine Puls in z2 zu bekommen. Ich bin auch gegangen (20-30 sek)",
+    "review": {
+      "schema_version": 2,
+      "rating": "zuegig",
+      "rating_label": "Zügiger Dauerlauf (Zone 3)",
+      "summary": "Zügiger Ausdauerlauf mit Schwerpunkt im Übergangsbereich (27.5% in Z1/Z2, 24m 17s in Zone 3, 8m 49s in Zone 4). Spitzenpuls lag bei 174 bpm mit 24m 17s in Zone 3. Ein solider Reiz für das Herzschlagvolumen.",
+      "coach_tip": "Dieser Reiz beansprucht die Glykogenspeicher spürbar – plane vor der nächsten tempo- oder schwellenbetonten Einheit 48 Stunden lockere Erholung ein.",
+      "cadence_feedback": "Ø 155 spm liegt im soliden, ökonomischen Freizeit-Bereich.",
+      "athlete_note": "Interval start hat eigentlich gut funktioniert, ich war relativ schnell am pace den ich haben wollte (gefühlt) aber die Pausen waren zu kurz um meine Puls in z2 zu bekommen. Ich bin auch gegangen (20-30 sek)",
+      "zone_distribution_text": "Z1: 10m 21s | Z2: 3m 47s | Z3: 24m 17s | Z4: 8m 49s",
+      "stages": {
+        "stage1_physiology": {
+          "headline": "Tempo Z3: 7.14 km in 51m",
+          "summary": "Herzfrequenz lag bei Ø 153 bpm (Max: 174 bpm). Zonenverteilung: Z1/Z2 27.5%, Z3 24m 17s, Z4 8m 49s. Training Load: 61.",
+          "ef": 0.908,
+          "tsb_at_run": -6.6,
+          "parsed_intervals": [
+            {
+              "raw": "1x 6m36s 127bpm",
+              "reps": 1,
+              "duration_s": 396,
+              "duration_str": "6m 36s",
+              "avg_hr": 127,
+              "role": "recovery"
+            },
+            {
+              "raw": "3x 8m42s 151bpm",
+              "reps": 3,
+              "duration_s": 522,
+              "duration_str": "8m 42s",
+              "avg_hr": 151,
+              "role": "recovery"
+            },
+            {
+              "raw": "2x 1m40s 155bpm",
+              "reps": 2,
+              "duration_s": 100,
+              "duration_str": "1m 40s",
+              "avg_hr": 155,
+              "role": "steady"
+            },
+            {
+              "raw": "15x 60s 165bpm",
+              "reps": 15,
+              "duration_s": 60,
+              "duration_str": "1m",
+              "avg_hr": 165,
+              "role": "work"
+            },
+            {
+              "raw": "1x 37s 154bpm",
+              "reps": 1,
+              "duration_s": 37,
+              "duration_str": "37s",
+              "avg_hr": 154,
+              "role": "steady"
+            },
+            {
+              "raw": "1x 2m35s 157bpm",
+              "reps": 1,
+              "duration_s": 155,
+              "duration_str": "2m 35s",
+              "avg_hr": 157,
+              "role": "steady"
+            }
+          ]
+        },
+        "stage2_compliance": {
+          "planned_slot": "Slot 2 (Wochenmitte – Aerobe Basis)",
+          "intent_source": "slot",
+          "intended_type": "easy_run",
+          "status": "teilweise",
+          "status_label": "Teilweise erfüllt",
+          "intervals_icu_compliance": 0.0,
+          "target_comparison": "27.5% in Zone 1/2 mit 24m 17s in Zone 3 (Drift an Hügeln/im Schlussteil)."
+        },
+        "stage3_optimizations": [
+          {
+            "category": "cadence",
+            "title": "Kadenzökonomie & Gehpausen an Anstiegen",
+            "text": "Schrittfrequenz durch kürzere Schritte behutsam Richtung 158–165 spm steigern und an Anstiegen konsequent ins zügige Gehen wechseln, bevor der Puls über 155 bpm klettert."
+          }
+        ],
+        "stage4_next_run": {
+          "recovery_hours": 48,
+          "tsb_context": "TSB -6.6 (CTL 14.6 / ATL 21.2)",
+          "next_slot": "Slot 3 (Wochenende)",
+          "next_workout_type": "easy_run",
+          "target_hr_max": 158,
+          "duration_min": 50,
+          "directive": "Mindestens 48h Erholung ohne intensive Spitzen (TSB -6.6 (CTL 14.6 / ATL 21.2)). Nächste Einheit: Slot 3 (Wochenende). Fokus auf Kadenzökonomie (Schrittfrequenz Richtung 158–165 spm) und Gehpausen an Anstiegen konsequent nutzen.",
+          "optimization_focus": "Kadenzökonomie & Gehpausen an Anstiegen"
+        }
+      }
+    },
+    "analyzed_at": "2026-11-07T07:00:22.490530"
   }
 }
