@@ -1,8 +1,11 @@
-### Rückblick & Reizwirkung
-Am Donnerstag (05.11.) hast du das Tempo angezogen: 7,1 km in 7:12 min/km bei 153 bpm im Schnitt und 174 bpm in der Spitze. Mit über 24 Minuten in Zone 3 und fast 9 Minuten in Zone 4 war das ein handfester zügiger Dauerlauf statt des geplanten lockeren Grundlagenlaufs. Physiologisch ist das im Flexi-Modell ein wirksamer Reiz für Herzschlagvolumen und Schwellenstabilität, hat aber spürbar Substanz gekostet.
+### Blick auf die Woche
+Die Trainingswoche steht bei 13,6 Kilometern verteilt auf zwei Einheiten. Am Donnerstag warst du mit 7,1 Kilometern zügig unterwegs: 24 Minuten in Zone 3 und fast 9 Minuten in Zone 4. Das war ein solider Schwellenreiz fürs Herzschlagvolumen, hat aber spürbar Körner gekostet. Dein Ruhepuls lag am Samstag bei 52 bpm – sechs Schläge über deiner Baseline von 46 bpm – und die HRV ging auf 58 ms zurück.
 
-### Vitalstatus & Regeneration
-Die Auswirkung zeigt sich heute in den Vitalwerten: Der Ruhepuls liegt bei 52 bpm (+3,2 bpm über deiner Baseline), während die HRV auf 58 ms abgesackt ist (Schnitt: 69,4 ms). Dein vegetatives Nervensystem signalisiert damit eine deutliche Ermüdung. Der für das Wochenende angedachte lange Grundlagenlauf entfällt daher heute. Priorität hat vollständige Regeneration.
+### Aktuelle Erholung & Stand
+Dass du gestern die Beine hochgelegt hast, war genau die richtige Reaktion auf die vegetativen Werte. Die akute Ermüdung liegt bei ATL 21,2, die Form bei TSB -6,6. Für den aktuellen Basisaufbau ist das eine messbare Beanspruchung, die Zeit zur Anpassung braucht. Solange der morgendliche Ruhepuls nicht wieder Richtung 46 bis 48 bpm sinkt, bleibt jedes Tempotraining im Schrank.
 
-### Wochenaufgabe
-Gönn den Beinen heute einen echten Ruhetag ohne Laufschuhe. Steige in die neue Woche erst ein, wenn der Ruhepuls wieder unter 49 bpm sinkt. Die Aufgabe für die nächste Grundlageneinheit: Puls strikt unter 158 bpm halten, Tempoanzeige ignorieren und Anstiege konsequent gehen.
+### Wochenaufgabe: Saubere Reiztrennung
+Für die neue Woche peilen wir drei Einheiten an:
+1. Dienstag: Reiner Grundlagenlauf (40 min) strikt unter 158 bpm. Gehpausen an Steigungen nutzen, Pace völlig ignorieren.
+2. Donnerstag: Schwellenreiz (3x 5 min bei 168–174 bpm) nur dann, wenn der Ruhepuls morgens unter 48 bpm liegt. Andernfalls Z2 laufen.
+3. Sonntag: Ruhiger Long Run (50–60 min) im reinen Grundlagenbereich.

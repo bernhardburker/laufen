@@ -1,49 +1,55 @@
 {
-  "status_title": "Vegetative Ermüdung – Erholung einsteuern",
-  "status_badge": "Erholung priorisieren",
+  "status_title": "Erholung nach Schwellenreiz & Puls-Signal",
+  "status_badge": "Regeneration vor Tempo",
   "status_level": "warning",
-  "coach_commentary": "### Rückblick & Reizwirkung\nAm Donnerstag (05.11.) hast du das Tempo angezogen: 7,1 km in 7:12 min/km bei 153 bpm im Schnitt und 174 bpm in der Spitze. Mit über 24 Minuten in Zone 3 und fast 9 Minuten in Zone 4 war das ein handfester zügiger Dauerlauf statt des geplanten lockeren Grundlagenlaufs. Physiologisch ist das im Flexi-Modell ein wirksamer Reiz für Herzschlagvolumen und Schwellenstabilität, hat aber spürbar Substanz gekostet.\n\n### Vitalstatus & Regeneration\nDie Auswirkung zeigt sich heute in den Vitalwerten: Der Ruhepuls liegt bei 52 bpm (+3,2 bpm über deiner Baseline), während die HRV auf 58 ms abgesackt ist (Schnitt: 69,4 ms). Dein vegetatives Nervensystem signalisiert damit eine deutliche Ermüdung. Der für das Wochenende angedachte lange Grundlagenlauf entfällt daher heute. Priorität hat vollständige Regeneration.\n\n### Wochenaufgabe\nGönn den Beinen heute einen echten Ruhetag ohne Laufschuhe. Steige in die neue Woche erst ein, wenn der Ruhepuls wieder unter 49 bpm sinkt. Die Aufgabe für die nächste Grundlageneinheit: Puls strikt unter 158 bpm halten, Tempoanzeige ignorieren und Anstiege konsequent gehen.",
+  "coach_commentary": "### Blick auf die Woche\nDie Trainingswoche steht bei 13,6 Kilometern verteilt auf zwei Einheiten. Am Donnerstag warst du mit 7,1 Kilometern zügig unterwegs: 24 Minuten in Zone 3 und fast 9 Minuten in Zone 4. Das war ein solider Schwellenreiz fürs Herzschlagvolumen, hat aber spürbar Körner gekostet. Dein Ruhepuls lag am Samstag bei 52 bpm – sechs Schläge über deiner Baseline von 46 bpm – und die HRV ging auf 58 ms zurück.\n\n### Aktuelle Erholung & Stand\nDass du gestern die Beine hochgelegt hast, war genau die richtige Reaktion auf die vegetativen Werte. Die akute Ermüdung liegt bei ATL 21,2, die Form bei TSB -6,6. Für den aktuellen Basisaufbau ist das eine messbare Beanspruchung, die Zeit zur Anpassung braucht. Solange der morgendliche Ruhepuls nicht wieder Richtung 46 bis 48 bpm sinkt, bleibt jedes Tempotraining im Schrank.\n\n### Wochenaufgabe: Saubere Reiztrennung\nFür die neue Woche peilen wir drei Einheiten an:\n1. Dienstag: Reiner Grundlagenlauf (40 min) strikt unter 158 bpm. Gehpausen an Steigungen nutzen, Pace völlig ignorieren.\n2. Donnerstag: Schwellenreiz (3x 5 min bei 168–174 bpm) nur dann, wenn der Ruhepuls morgens unter 48 bpm liegt. Andernfalls Z2 laufen.\n3. Sonntag: Ruhiger Long Run (50–60 min) im reinen Grundlagenbereich.",
   "history_evaluation": {
-    "compliance_status": "angepasst_nach_tempo",
-    "actual_summary": "Am 05.11. wurde Slot 2 als zügiger Dauerlauf absolviert (7.14 km in 51m, Pace: 7:12 /km, Ø Puls: 153 bpm, Max: 174 bpm). Hoher Intensitätsanteil mit 24m 17s in Zone 3 und 8m 49s in Zone 4 bei nur 27.5% Z1/Z2-Anteil.",
-    "effect_analysis": "Wirksamer Reiz für Herzschlagvolumen und Schwellenbereich, jedoch mit erhöhtem Ermüdungsübertrag auf das vegetative Nervensystem. TSB liegt bei -6.6 (CTL: 14.6, ATL: 21.2). Gepaart mit erhöhtem Ruhepuls (52 bpm) und gesunkener HRV (58 ms) signalisiert der Körper Erholungsbedarf.",
-    "next_recommendation": "Akute Erholung priorisieren: Heute vollständiger Ruhetag (rest_day). Keine Belastung, bis Ruhepuls und HRV wieder das gewohnte Niveau erreichen.",
-    "next_workout_type": "rest_day",
-    "next_target_hr": 158,
-    "next_duration_min": 0
+    "compliance_status": "erfüllt",
+    "actual_summary": "Am 07.11. wurde der empfohlene Ruhetag konsequent eingehalten. Seit der Vorgabe gab es keine weiteren Läufe, sodass die Beine nach dem zügigen Lauf vom 05.11. Pause hatten.",
+    "effect_analysis": "Der Schwellenlauf vom 05.11. (Load 61, 33 Min in Z3/Z4) führte zu einem messbaren Erholungsbedarf mit RHR 52 bpm (+6 bpm über Baseline) und sinkender HRV (58 ms). Die Form liegt bei TSB -6.6 (CTL 14.6, ATL 21.2).",
+    "next_recommendation": "Heute entweder einen weiteren Ruhetag einlegen oder maximal 30 Minuten sehr locker traben (Zone 1/untere Zone 2, Puls strikt < 145 bpm). Kein Tempotraining, bis der Ruhepuls normalisiert ist.",
+    "next_workout_type": "recovery_run",
+    "next_target_hr": 145,
+    "next_duration_min": 30
   },
   "insights": [
     {
-      "title": "Aerobe Basis & Zonendisziplin",
+      "title": "Vegetatives Feedback & Ruhepuls",
       "type": "warning",
-      "badge": "57.6% Z1/Z2",
-      "text": "Über den Gesamtzeitraum liegt der Z1/Z2-Anteil bei 57.6% und in Woche 45 bei 53.3%. Für einen nachhaltigen Basisaufbau sollte das aerobe Fundament mittelfristig wieder in Richtung 70–80% verschoben werden."
+      "badge": "RHR +6 bpm",
+      "text": "Nach dem flotten Lauf am Donnerstag kletterte der Ruhepuls am Samstag auf 52 bpm (Baseline: 46 bpm), während die HRV von 68 auf 58 ms sank. Das autonome Nervensystem zeigt deutliche Ermüdung; Erholung hat Vorrang."
     },
     {
-      "title": "Vegetative Erholung & Belastungsverarbeitung",
-      "type": "warning",
-      "badge": "HRV 58 ms (-11.4)",
-      "text": "Nach dem zügigen Lauf stieg der Ruhepuls auf 52 bpm (+3.2 bpm über Baseline) und die HRV fiel auf 58.0 ms. Bei Ø 13.8 km/Woche erfordern Schwellenreize gezielte Ruhetage zur vollständigen Kompensation."
+      "title": "Reizverteilung im Flexi-Modell",
+      "type": "info",
+      "badge": "57.6% Z1/Z2",
+      "text": "Über den gesamten Zeitraum liegt die Grundlagendisziplin bei 57.6%. Der Lauf am 05.11. deckte mit 33 Min in Z3/Z4 den Schwellenbereich ab. Dieser Reiz ist gewollt, verlangt nun aber wieder rein aerobe Z2-Einheiten zum Ausgleich."
+    },
+    {
+      "title": "Trainingsvolumen & Kontinuität",
+      "type": "info",
+      "badge": "Ø 13.8 km / Wo.",
+      "text": "Mit durchschnittlich 2.1 Läufen pro Woche ist das Volumen noch schmal. Eine Stabilisierung auf verlässliche 3 wöchentliche Läufe bringt im Basisaufbau deutlich mehr physiologische Anpassung als gesteigerte Härte."
     }
   ],
   "recommendations": [
     {
-      "title": "Grundlagenläufe strikt nach Herzfrequenz steuern",
+      "title": "Grundlagenläufe strikt über Herzfrequenz steuern",
       "tag": "Priorität 1: Aerobe Basis",
       "tag_class": "tag-amber",
-      "text": "Halte bei Z2-Läufen den Puls strikt unter 158 bpm. Blende die Pace komplett aus. Sobald die Herzfrequenz an Steigungen ansteigt, gehe zügig, bis der Puls wieder im grünen Bereich ist."
+      "text": "Für Z2-Einheiten gilt die Obergrenze von 158 bpm als striktes Limit. Die Pace auf der Uhr ist zweitrangig. Zieht der Puls an Steigungen über 155 bpm, wird zügig gegangen, bis er wieder im unteren Z2-Bereich ist."
     },
     {
-      "title": "Klare Reiztrennung nach 80/20 & Flexi-Modell",
+      "title": "Klare Trennung der Belastungsreize",
       "tag": "Trainingsstruktur",
       "tag_class": "tag-cyan",
-      "text": "Nutze Schwellenreize nahe der Laktatschwelle (178 bpm) gezielt in Slot 1. Wenn ein Lauf wie am 05.11. zügiger ausfällt, muss die nächste Einheit zwingend regenerativ sein oder pausiert werden."
+      "text": "Einheiten entweder bewusst locker (< 158 bpm) laufen oder gezielt an die Laktatschwelle (168–174 bpm) gehen. 15–20% Schwellenanteil sind im Flexi-Modell sinnvoll, erfordern danach aber zwingend aerobe Entlastungstage."
     },
     {
-      "title": "Behutsamer Umfangsausbau bei stabiler Erholung",
+      "title": "Frequenz vor Einzellänge etablieren",
       "tag": "Umfangsaufbau",
       "tag_class": "tag-green",
-      "text": "Stabilisiere das Pensum bei 2–3 Läufen und 14–18 km pro Woche. Neue Reize erst setzen, wenn Ruhepuls (< 49 bpm) und HRV wieder Normalwerte anzeigen."
+      "text": "Ziel für die nächsten Wochen sind 3 regelmäßige Einheiten (15–18 km Gesamtwochenumfang). Das verteilt die orthopädische Belastung gleichmäßig und baut die aerobe Kapazität ohne Überlastungsspitzen aus."
     }
   ],
   "athlete": {
