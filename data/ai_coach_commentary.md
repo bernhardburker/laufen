@@ -1,11 +1,8 @@
-### Blick auf die Woche
-Die Trainingswoche steht bei 13,6 Kilometern verteilt auf zwei Einheiten. Am Donnerstag warst du mit 7,1 Kilometern zügig unterwegs: 24 Minuten in Zone 3 und fast 9 Minuten in Zone 4. Das war ein solider Schwellenreiz fürs Herzschlagvolumen, hat aber spürbar Körner gekostet. Dein Ruhepuls lag am Samstag bei 52 bpm – sechs Schläge über deiner Baseline von 46 bpm – und die HRV ging auf 58 ms zurück.
+### Status Quo & Erholung
+Die Erholungsphase hat gegriffen. Nach den zwei Tagen mit leicht erhöhtem Puls liegt dein Ruhepuls heute bei 47 bpm (-1.8 bpm unter Baseline) und die HRV ist mit 72 ms wieder voll im grünen Bereich. Der gestrige Grundlagenlauf über 7,9 km war mit einem Durchschnittspuls von 145 bpm und 96,9 % Z1/Z2-Anteil sauber dosiert. Das Tempo von 7:48 min/km hat den Beinen keine zusätzliche Ermüdung aufgeladen, sondern das aerobe Fundament gepflegt.
 
-### Aktuelle Erholung & Stand
-Dass du gestern die Beine hochgelegt hast, war genau die richtige Reaktion auf die vegetativen Werte. Die akute Ermüdung liegt bei ATL 21,2, die Form bei TSB -6,6. Für den aktuellen Basisaufbau ist das eine messbare Beanspruchung, die Zeit zur Anpassung braucht. Solange der morgendliche Ruhepuls nicht wieder Richtung 46 bis 48 bpm sinkt, bleibt jedes Tempotraining im Schrank.
+### Belastungssteuerung für Woche 46
+Mit einem TSB von -6,5 (CTL 15,0 bei ATL 21,5) bist du in einem leichten Ermüdungsbereich, aber das vegetative Nervensystem signalisiert volle Bereitschaft. In Woche 45 lag das Volumen bei 21,5 km über 3 Einheiten. Für dein Niveau im Basisaufbau ist das eine solide Wochenlast, die wir jetzt stabilisieren sollten, ohne sprunghaft Umfänge draufzupacken.
 
-### Wochenaufgabe: Saubere Reiztrennung
-Für die neue Woche peilen wir drei Einheiten an:
-1. Dienstag: Reiner Grundlagenlauf (40 min) strikt unter 158 bpm. Gehpausen an Steigungen nutzen, Pace völlig ignorieren.
-2. Donnerstag: Schwellenreiz (3x 5 min bei 168–174 bpm) nur dann, wenn der Ruhepuls morgens unter 48 bpm liegt. Andernfalls Z2 laufen.
-3. Sonntag: Ruhiger Long Run (50–60 min) im reinen Grundlagenbereich.
+### Wochenaufgabe
+Slot 1 (heute oder Dienstag): Zeit für den wöchentlichen Temporeiz. Nutze die Frische für ein Intervalltraining (z. B. 4 x 3 Minuten im Schwellenbereich an der LTHR um 172–178 bpm mit je 2 Minuten Trabpause). Am Mittwoch oder Donnerstag folgt ein lockerer Z2-Lauf (< 158 bpm), am Wochenende der lange Kanten.

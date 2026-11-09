@@ -148,6 +148,19 @@
     "recommendation": "Akute Erholung priorisieren: Heute vollständiger Ruhetag (rest_day). Keine Belastung, bis Ruhepuls und HRV wieder das gewohnte Niveau erreichen.",
     "target_type": "rest_day",
     "target_hr_max": 158,
+    "status": "erfüllt",
+    "actual": "Am 7. November wurde die Belastung herausgenommen, am 8. November folgte ein disziplinierter Z2-Grundlagenlauf über 7,91 km in 1h 01m (Ø Puls 145 bpm, Max 155 bpm, 96,9 % Z1/Z2).",
+    "effect": "Der Ruhepuls sank von 52 bpm auf 47 bpm, die HRV stieg von 58 ms auf 72 ms. Trotz des leichten TSB-Defizits (-6,5) ist die kardiovaskuläre Erholung vollständig eingetreten, ohne die aerobe Kontinuität zu unterbrechen.",
+    "evaluated_run_ids": [
+      "i207299220"
+    ]
+  },
+  {
+    "id": "cycle-013",
+    "date": "2026-11-09",
+    "recommendation": "Slot 1 (Montag oder Dienstag): Temporeiz setzen via Intervalltraining (4 x 3 Min im Bereich 172–178 bpm, Ein- und Auslaufen in Z1/Z2).",
+    "target_type": "intervals",
+    "target_hr_max": 175,
     "status": "offen",
     "actual": "Ausstehend (wird nach den nächsten Läufen analysiert)",
     "effect": "-"

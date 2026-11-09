@@ -1,55 +1,49 @@
 {
-  "status_title": "Erholung nach Schwellenreiz & Puls-Signal",
-  "status_badge": "Regeneration vor Tempo",
-  "status_level": "warning",
-  "coach_commentary": "### Blick auf die Woche\nDie Trainingswoche steht bei 13,6 Kilometern verteilt auf zwei Einheiten. Am Donnerstag warst du mit 7,1 Kilometern zügig unterwegs: 24 Minuten in Zone 3 und fast 9 Minuten in Zone 4. Das war ein solider Schwellenreiz fürs Herzschlagvolumen, hat aber spürbar Körner gekostet. Dein Ruhepuls lag am Samstag bei 52 bpm – sechs Schläge über deiner Baseline von 46 bpm – und die HRV ging auf 58 ms zurück.\n\n### Aktuelle Erholung & Stand\nDass du gestern die Beine hochgelegt hast, war genau die richtige Reaktion auf die vegetativen Werte. Die akute Ermüdung liegt bei ATL 21,2, die Form bei TSB -6,6. Für den aktuellen Basisaufbau ist das eine messbare Beanspruchung, die Zeit zur Anpassung braucht. Solange der morgendliche Ruhepuls nicht wieder Richtung 46 bis 48 bpm sinkt, bleibt jedes Tempotraining im Schrank.\n\n### Wochenaufgabe: Saubere Reiztrennung\nFür die neue Woche peilen wir drei Einheiten an:\n1. Dienstag: Reiner Grundlagenlauf (40 min) strikt unter 158 bpm. Gehpausen an Steigungen nutzen, Pace völlig ignorieren.\n2. Donnerstag: Schwellenreiz (3x 5 min bei 168–174 bpm) nur dann, wenn der Ruhepuls morgens unter 48 bpm liegt. Andernfalls Z2 laufen.\n3. Sonntag: Ruhiger Long Run (50–60 min) im reinen Grundlagenbereich.",
+  "status_title": "Erholung geglückt & Aerobe Basis stabil",
+  "status_badge": "Autonomes Nervensystem erholt",
+  "status_level": "success",
+  "coach_commentary": "### Status Quo & Erholung\nDie Erholungsphase hat gegriffen. Nach den zwei Tagen mit leicht erhöhtem Puls liegt dein Ruhepuls heute bei 47 bpm (-1.8 bpm unter Baseline) und die HRV ist mit 72 ms wieder voll im grünen Bereich. Der gestrige Grundlagenlauf über 7,9 km war mit einem Durchschnittspuls von 145 bpm und 96,9 % Z1/Z2-Anteil sauber dosiert. Das Tempo von 7:48 min/km hat den Beinen keine zusätzliche Ermüdung aufgeladen, sondern das aerobe Fundament gepflegt.\n\n### Belastungssteuerung für Woche 46\nMit einem TSB von -6,5 (CTL 15,0 bei ATL 21,5) bist du in einem leichten Ermüdungsbereich, aber das vegetative Nervensystem signalisiert volle Bereitschaft. In Woche 45 lag das Volumen bei 21,5 km über 3 Einheiten. Für dein Niveau im Basisaufbau ist das eine solide Wochenlast, die wir jetzt stabilisieren sollten, ohne sprunghaft Umfänge draufzupacken.\n\n### Wochenaufgabe\nSlot 1 (heute oder Dienstag): Zeit für den wöchentlichen Temporeiz. Nutze die Frische für ein Intervalltraining (z. B. 4 x 3 Minuten im Schwellenbereich an der LTHR um 172–178 bpm mit je 2 Minuten Trabpause). Am Mittwoch oder Donnerstag folgt ein lockerer Z2-Lauf (< 158 bpm), am Wochenende der lange Kanten.",
   "history_evaluation": {
     "compliance_status": "erfüllt",
-    "actual_summary": "Am 07.11. wurde der empfohlene Ruhetag konsequent eingehalten. Seit der Vorgabe gab es keine weiteren Läufe, sodass die Beine nach dem zügigen Lauf vom 05.11. Pause hatten.",
-    "effect_analysis": "Der Schwellenlauf vom 05.11. (Load 61, 33 Min in Z3/Z4) führte zu einem messbaren Erholungsbedarf mit RHR 52 bpm (+6 bpm über Baseline) und sinkender HRV (58 ms). Die Form liegt bei TSB -6.6 (CTL 14.6, ATL 21.2).",
-    "next_recommendation": "Heute entweder einen weiteren Ruhetag einlegen oder maximal 30 Minuten sehr locker traben (Zone 1/untere Zone 2, Puls strikt < 145 bpm). Kein Tempotraining, bis der Ruhepuls normalisiert ist.",
-    "next_workout_type": "recovery_run",
-    "next_target_hr": 145,
-    "next_duration_min": 30
+    "actual_summary": "Am 7. November wurde die Belastung herausgenommen, am 8. November folgte ein disziplinierter Z2-Grundlagenlauf über 7,91 km in 1h 01m (Ø Puls 145 bpm, Max 155 bpm, 96,9 % Z1/Z2).",
+    "effect_analysis": "Der Ruhepuls sank von 52 bpm auf 47 bpm, die HRV stieg von 58 ms auf 72 ms. Trotz des leichten TSB-Defizits (-6,5) ist die kardiovaskuläre Erholung vollständig eingetreten, ohne die aerobe Kontinuität zu unterbrechen.",
+    "next_recommendation": "Slot 1 (Montag oder Dienstag): Temporeiz setzen via Intervalltraining (4 x 3 Min im Bereich 172–178 bpm, Ein- und Auslaufen in Z1/Z2).",
+    "next_workout_type": "intervals",
+    "next_target_hr": 175,
+    "next_duration_min": 45
   },
   "insights": [
     {
-      "title": "Vegetatives Feedback & Ruhepuls",
-      "type": "warning",
-      "badge": "RHR +6 bpm",
-      "text": "Nach dem flotten Lauf am Donnerstag kletterte der Ruhepuls am Samstag auf 52 bpm (Baseline: 46 bpm), während die HRV von 68 auf 58 ms sank. Das autonome Nervensystem zeigt deutliche Ermüdung; Erholung hat Vorrang."
+      "title": "Aerobe Disziplin & Zonen-Treue",
+      "type": "success",
+      "badge": "96.9% Z1/Z2 am 08.11.",
+      "text": "Der jüngste Lauf blieb über die vollen 61 Minuten mit maximal 155 bpm unter der aeroben Obergrenze von 158 bpm. Über den gesamten Beobachtungszeitraum liegt die Z1/Z2-Disziplin bei 58,4 % – hier besteht bei zügigeren Läufen weiterhin Tendenz zum Z3-Drift, die kontrolliert gesteuert werden muss."
     },
     {
-      "title": "Reizverteilung im Flexi-Modell",
+      "title": "Trainingsvolumen & Frequenz",
       "type": "info",
-      "badge": "57.6% Z1/Z2",
-      "text": "Über den gesamten Zeitraum liegt die Grundlagendisziplin bei 57.6%. Der Lauf am 05.11. deckte mit 33 Min in Z3/Z4 den Schwellenbereich ab. Dieser Reiz ist gewollt, verlangt nun aber wieder rein aerobe Z2-Einheiten zum Ausgleich."
-    },
-    {
-      "title": "Trainingsvolumen & Kontinuität",
-      "type": "info",
-      "badge": "Ø 13.8 km / Wo.",
-      "text": "Mit durchschnittlich 2.1 Läufen pro Woche ist das Volumen noch schmal. Eine Stabilisierung auf verlässliche 3 wöchentliche Läufe bringt im Basisaufbau deutlich mehr physiologische Anpassung als gesteigerte Härte."
+      "badge": "Ø 14.8 km / Wo.",
+      "text": "Mit durchschnittlich 2,2 Läufen pro Woche bewegt sich das Pensum im soliden Bereich für den Basisaufbau. Woche 45 brachte 21,5 km und einen Load von 172. Das Ziel für die laufende Woche ist die Konsolidierung der 3 Einheiten ohne übermäßige Umfangssteigerung."
     }
   ],
   "recommendations": [
     {
-      "title": "Grundlagenläufe strikt über Herzfrequenz steuern",
-      "tag": "Priorität 1: Aerobe Basis",
-      "tag_class": "tag-amber",
-      "text": "Für Z2-Einheiten gilt die Obergrenze von 158 bpm als striktes Limit. Die Pace auf der Uhr ist zweitrangig. Zieht der Puls an Steigungen über 155 bpm, wird zügig gegangen, bis er wieder im unteren Z2-Bereich ist."
-    },
-    {
-      "title": "Klare Trennung der Belastungsreize",
-      "tag": "Trainingsstruktur",
+      "title": "Slot 1: Gezielter Schwellenreiz (Intervalle)",
+      "tag": "Priorität 1: Reiz-Setzung",
       "tag_class": "tag-cyan",
-      "text": "Einheiten entweder bewusst locker (< 158 bpm) laufen oder gezielt an die Laktatschwelle (168–174 bpm) gehen. 15–20% Schwellenanteil sind im Flexi-Modell sinnvoll, erfordern danach aber zwingend aerobe Entlastungstage."
+      "text": "Da Ruhepuls (47 bpm) und HRV (72 ms) stabil sind, steht Slot 1 für Qualität offen: 4 x 3 Minuten an der Laktatschwelle (172–178 bpm). Trabpausen strikt einhalten, Ein- und Auslaufen konsequent unter 150 bpm halten."
     },
     {
-      "title": "Frequenz vor Einzellänge etablieren",
+      "title": "Grundlagenläufe rein über Herzfrequenz steuern",
+      "tag": "Aerobe Basis",
+      "tag_class": "tag-amber",
+      "text": "In den Z2-Einheiten bleibt die Pace irrelevant. Maßgeblich ist ausschließlich die Herzfrequenz unter 158 bpm. Bei Anstiegen oder aufkommender Drift sind Gehpausen das Standardmittel, um nicht in Zone 3 abzurutschen."
+    },
+    {
+      "title": "Volumen bei 3 Wochenläufen stabilisieren",
       "tag": "Umfangsaufbau",
       "tag_class": "tag-green",
-      "text": "Ziel für die nächsten Wochen sind 3 regelmäßige Einheiten (15–18 km Gesamtwochenumfang). Das verteilt die orthopädische Belastung gleichmäßig und baut die aerobe Kapazität ohne Überlastungsspitzen aus."
+      "text": "Das Niveau von Woche 45 (ca. 20–22 km verteilt auf 3 Einheiten) halten. Den Long Run am Wochenende auf 8 bis 10 km begrenzen, um den TSB-Wert nach dem Schwellenreiz wieder Richtung neutral zu führen."
     }
   ],
   "athlete": {
