@@ -116,3 +116,51 @@ System integrity is continuously verified through the following test runners and
 | **Decision Trace Inspection** | `./run trace [--athlete <slug>] [--ref-date YYYY-MM-DD]` | Inspects evaluated decision criteria, rejected workout alternatives, and coach directive overrides for any given date. |
 | **Multi-Tenant Dashboard Build** | `./run dashboard --all` | Compiles German-localized HTML dashboards for all active athletes to `dist/<dashboard_slug>/index.html`. |
 | **Live Staging E2E Validation** | `./run test:e2e` | Executes live end-to-end integration tests exclusively against the staging tenant (`berni-test`) to protect production data. |
+
+---
+
+## 5. Open Backlog: Multi-Day Time-Stepping & Agentic Handoff Findings
+
+**Date Identified:** 2026-11-11  
+**Status:** Open (Scheduled for dedicated verification & bugfix session)  
+**Related Implementation Plans:**
+- [`AGENTIC_SIMULATION_PLAN.md`](AGENTIC_SIMULATION_PLAN.md) — On-Demand Agentic Scenario Simulator (`./run simulate`) for stress-testing the real LLM Coach across multi-day trajectories.
+- [`FORESIGHT_ENGINE_PLAN.md`](FORESIGHT_ENGINE_PLAN.md) — Deterministic Athlete Foresight & Forward Projection Engine (`src/analysis/foresight.py`) for 14–28 day load (CTL/ATL/TSB) and deload forecasting.
+
+The following architectural defects and handoff gaps between the LLM Coach ([`src/analysis/ai_coach.py`](../src/analysis/ai_coach.py)), coaching memory ([`src/analysis/coach_history.py`](../src/analysis/coach_history.py)), and deterministic planning engines ([`src/planner/extract_markers.py`](../src/planner/extract_markers.py), [`src/planner/schedule_workout.py`](../src/planner/schedule_workout.py)) were uncovered during multi-day foresight and time-stepping analysis:
+
+### Finding 5.1: Macro AI Coach Drops Directives on Rest, Illness, and Injury Days (`runs_since == []`)
+- **Affected Component:** [`src/analysis/ai_coach.py`](../src/analysis/ai_coach.py#L1082-L1101) (`run_ai_coach`)
+- **Root Cause:** `update_history_with_coach_review()` is guarded by `if runs_since:`. When `ai_coach.py` runs on a rest day, illness day, or injury day where no new run has been completed since the active recommendation's `date`, `runs_since` is empty (`[]`).
+- **Impact:** Even when the LLM detects acute illness/injury (e.g., elevated resting HR, fever/cold notes) and outputs `"next_workout_type": "rest_day"` in `ai_coach_summary.json`, `coach_history.json` is never updated. The prior pre-illness cycle (e.g., `"target_type": "intervals"`) remains `"status": "offen"`, causing downstream planning modules to read a stale directive on subsequent days.
+- **Target Resolution:** Update `run_ai_coach()` and [`src/analysis/coach_history.py`](../src/analysis/coach_history.py) so that rest-day/illness directives from the AI Coach update or supersede the active open cycle in `coach_history.json` even when `runs_since` is empty.
+
+### Finding 5.2: Coach `"rest_day"` Directive Translated into 45m Zone 2 Run by Adaptive Planner
+- **Affected Components:** [`src/planner/extract_markers.py`](../src/planner/extract_markers.py#L597-L600) (`get_coach_context_markers`) and [`src/planner/schedule_workout.py`](../src/planner/schedule_workout.py#L645-L673) (`choose_adaptive_workout`)
+- **Root Cause:** `get_coach_context_markers()` collapses `target_type in ("easy_run", "recovery_run", "rest_day", "long_run")` into a single boolean `unfulfilled_base_directive = True`, which sets `coach_directive_override = True` in `calculate_guardrails()`. In `choose_adaptive_workout()`, `coach_directive_override == True` unconditionally schedules `"Aerober Anker & Grundlagenlauf (45m Z2)"`.
+- **Impact:** When the Macro AI Coach or Stage-4 run review prescribes `"rest_day"` or `"recovery_run"` (30m Z1) in `coach_history.json`, the calendar planner overrides quality slots with a 45-minute Zone 2 run rather than enforcing a rest day (`🛋️ Ruhetag (Coach)`) or a 30m Z1 recovery run.
+- **Target Resolution:** Distinguish `coach_context["target_type"]` (`rest_day` vs. `recovery_run` vs. `easy_run`) in `calculate_guardrails()`, `sync_adaptive_plan()`, and `choose_adaptive_workout()`.
+
+### Finding 5.3: Missing Multi-Session Ramp-Up Memory After Extended Breaks ($\ge 7\text{–}10$ Days) & Threshold Drift
+- **Affected Components:** [`src/planner/schedule_workout.py`](../src/planner/schedule_workout.py#L611-L618) (`choose_adaptive_workout`), [`src/planner/extract_markers.py`](../src/planner/extract_markers.py#L614-L700) (`calculate_guardrails`), [`src/analysis/daily_recommendation.py`](../src/analysis/daily_recommendation.py), and [`src/analysis/decision_trace.py`](../src/analysis/decision_trace.py#L66-L77) (`evaluate_workout_decision`)
+- **Root Cause:**
+  1. Re-entry protection checks only `days_since_last_run` (distance to the single most recent run). After a 10-day illness/injury break, Day $t$ triggers a 30m Z2 re-entry run. On Day $t+2$, `days_since_last_run` drops to `2` while `TSB` is strongly positive (due to 10 days of `ATL` decay). With `is_reentry_run` now `False`, the planner immediately schedules full quality sessions (intervals/threshold) on the second run back.
+  2. Break thresholds diverge across modules: `choose_adaptive_workout()` checks `days_since_last_run >= 7`, whereas `evaluate_workout_decision()` and `daily_recommendation.py` check `days_since >= 10`.
+- **Impact:** Premature high-intensity prescription on the second session after an illness or injury break, and inconsistent decision trace reporting between 7 and 9 days of inactivity.
+- **Target Resolution:** Harmonize the re-entry break threshold across all modules and require a progressive base ramp-up (e.g., $\ge 2$ completed clean aerobic base runs in the last 14 days via `base_anchors_in_last_14d`) before unlocking quality workouts after a break.
+
+### Finding 5.4: Hardcoded Wall-Clock Dates (`date.today()` / `datetime.now()`) in AI Coach & Coach History
+- **Affected Components:** [`src/analysis/ai_coach.py`](../src/analysis/ai_coach.py#L1104-L1110) (`run_ai_coach`), [`src/analysis/ai_coach.py`](../src/analysis/ai_coach.py#L1153-L1270) (`main`), and [`src/analysis/coach_history.py`](../src/analysis/coach_history.py#L171-L225) (`update_history_with_coach_review`)
+- **Root Cause:**
+  1. `update_history_with_coach_review()` stamps new `coach_history.json` entries with `datetime.now().strftime("%Y-%m-%d")` instead of accepting `ref_date`.
+  2. `run_ai_coach()` writes `decision_trace.jsonl` entries with `date.today().isoformat()` instead of `ref_date`.
+  3. `ai_coach.py` CLI (`main()`) lacks a `--ref-date` flag.
+- **Impact:** When running multi-day simulations or historical replays for a simulated date $t \neq \text{today}$, new coaching cycles are stamped with the real wall-clock date, corrupting `find_runs_since(runs, rec_date)` on subsequent simulated days.
+- **Target Resolution:** Add `--ref-date YYYY-MM-DD` to `ai_coach.py` CLI and propagate `ref_date` into `run_ai_coach()` and `update_history_with_coach_review()`.
+
+### Finding 5.5: Future Activity Leak Under `--ref-date` Time-Travel in Planner, Recommendation & AI Coach
+- **Affected Components:** [`src/planner/schedule_workout.py`](../src/planner/schedule_workout.py#L786-L799) (`sync_adaptive_plan`), [`src/analysis/daily_recommendation.py`](../src/analysis/daily_recommendation.py#L34-L59) (`calculate_days_since_last_run`), [`src/planner/extract_markers.py`](../src/planner/extract_markers.py), and [`src/analysis/ai_coach.py`](../src/analysis/ai_coach.py#L539-L615) (`build_coach_prompt`)
+- **Root Cause:** Unlike wellness records (which are filtered by `rec_date <= ref_date`), activity lists loaded from `intervals_activities.json` are not filtered by `start_date_local[:10] <= ref_date.isoformat()`.
+- **Impact:** Stepping through a pre-populated activity history with `--ref-date` leaks future runs into `last_run_date`, `days_since_last_run`, weekly trend tables, and the AI Coach prompt.
+- **Target Resolution:** Enforce a strict `run_date <= ref_date` cutoff across all planning, recommendation, marker extraction, and AI Coach entry points.
+
