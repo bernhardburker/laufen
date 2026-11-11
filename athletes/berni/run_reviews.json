@@ -10234,5 +10234,152 @@
       }
     },
     "analyzed_at": "2026-11-09T07:00:22.294138"
+  },
+  "i208292808": {
+    "id": "i208292808",
+    "date": "2026-11-10T14:20:53",
+    "name": "Gerasdorf bei Wien - Easy Run - Aktive Erholung & Bas",
+    "distance_km": 4.2,
+    "moving_time_s": 2114,
+    "moving_time_str": "35m",
+    "pace_str": "8:23 /km",
+    "avg_hr": 146.0,
+    "max_hr": 154,
+    "cadence_spm": 150.1,
+    "elevation_gain_m": 13.5,
+    "training_load": 35.0,
+    "icu_ctl": 15.129328,
+    "icu_atl": 20.846727,
+    "tsb_at_run": -5.7,
+    "aerobic_ef": 0.817,
+    "z1_z2_pct": 95.7,
+    "zone_breakdown": {
+      "z1": {
+        "name": "Zone 1 (Recovery)",
+        "seconds": 509,
+        "time_str": "8m 29s",
+        "pct": 24.1
+      },
+      "z2": {
+        "name": "Zone 2 (Aerobic)",
+        "seconds": 1517,
+        "time_str": "25m 17s",
+        "pct": 71.7
+      },
+      "z3": {
+        "name": "Zone 3 (Tempo)",
+        "seconds": 90,
+        "time_str": "1m 30s",
+        "pct": 4.3
+      },
+      "z4": {
+        "name": "Zone 4 (Threshold/Schwelle)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      },
+      "z5": {
+        "name": "Zone 5 (VO2max)",
+        "seconds": 0,
+        "time_str": "0s",
+        "pct": 0.0
+      }
+    },
+    "intervals": [
+      "3x 8m3s 146bpm",
+      "1x 2m 142bpm",
+      "1x 3m52s 149bpm",
+      "1x 5m1s 143bpm",
+      "1x 14s 140bpm"
+    ],
+    "intensity_class": "aerobe_basis",
+    "athlete_note": null,
+    "review": {
+      "schema_version": 2,
+      "rating": "optimal",
+      "rating_label": "Optimaler Grundlagenlauf",
+      "summary": "Hervorragende aerobe Zonendisziplin (95.7% in Z1/Z2). Die Herzfrequenz blieb mit Ø 146 bpm verlässlich unter der Z2-Grenze (158 bpm). Z1: 8m 29s, Z2: 25m 17s.",
+      "coach_tip": "Genau dieser Intensitätsbereich stärkt die Kapillarisierung und den Fettstoffwechsel.",
+      "cadence_feedback": "Ø 150 spm ist etwas niedrig. Schrittfrequenz mittelfristig durch kürzere Schritte behutsam Richtung 158–165 spm steigern.",
+      "athlete_note": null,
+      "zone_distribution_text": "Z1: 8m 29s | Z2: 25m 17s | Z3: 1m 30s | Z4: 0s",
+      "stages": {
+        "stage1_physiology": {
+          "headline": "Aerobe Basis: 4.20 km in 35m",
+          "summary": "Herzfrequenz lag bei Ø 146 bpm (Max: 154 bpm). Zonenverteilung: Z1/Z2 95.7%, Z3 1m 30s, Z4 0s. Training Load: 35.",
+          "ef": 0.817,
+          "tsb_at_run": -5.7,
+          "parsed_intervals": [
+            {
+              "raw": "3x 8m3s 146bpm",
+              "reps": 3,
+              "duration_s": 483,
+              "duration_str": "8m 03s",
+              "avg_hr": 146,
+              "role": "recovery"
+            },
+            {
+              "raw": "1x 2m 142bpm",
+              "reps": 1,
+              "duration_s": 134,
+              "duration_str": "2m 14s",
+              "avg_hr": 2,
+              "role": "recovery"
+            },
+            {
+              "raw": "1x 3m52s 149bpm",
+              "reps": 1,
+              "duration_s": 232,
+              "duration_str": "3m 52s",
+              "avg_hr": 149,
+              "role": "recovery"
+            },
+            {
+              "raw": "1x 5m1s 143bpm",
+              "reps": 1,
+              "duration_s": 301,
+              "duration_str": "5m 01s",
+              "avg_hr": 143,
+              "role": "recovery"
+            },
+            {
+              "raw": "1x 14s 140bpm",
+              "reps": 1,
+              "duration_s": 14,
+              "duration_str": "14s",
+              "avg_hr": 140,
+              "role": "recovery"
+            }
+          ]
+        },
+        "stage2_compliance": {
+          "planned_slot": "Slot 1 (Aerobe Basis)",
+          "intent_source": "name",
+          "intended_type": "easy_run",
+          "status": "erfüllt",
+          "status_label": "Erfüllt",
+          "intervals_icu_compliance": 120.68965,
+          "target_comparison": "95.7% in Zone 1/2 bei Ø 146 bpm (Ziel: >= 80% < 158 bpm). Aerobes Fundament optimal gepflegt."
+        },
+        "stage3_optimizations": [
+          {
+            "category": "cadence",
+            "title": "Kadenzökonomie & Gehpausen an Anstiegen",
+            "text": "Schrittfrequenz durch kürzere Schritte behutsam Richtung 158–165 spm steigern und an Anstiegen konsequent ins zügige Gehen wechseln, bevor der Puls über 155 bpm klettert."
+          }
+        ],
+        "stage4_next_run": {
+          "recovery_hours": 24,
+          "tsb_context": "TSB -5.7 (CTL 15.1 / ATL 20.8)",
+          "next_slot": "Slot 2 (Wochenmitte)",
+          "next_workout_type": "easy_run",
+          "target_hr_max": 158,
+          "duration_min": 45,
+          "directive": "Erholung verläuft planmäßig (24h Erholungsfenster). Nächste Einheit: Slot 2 (Wochenmitte). Fokus auf Kadenzökonomie (Schrittfrequenz Richtung 158–165 spm) und Gehpausen an Anstiegen konsequent nutzen.",
+          "optimization_focus": "Kadenzökonomie & Gehpausen an Anstiegen"
+        }
+      }
+    },
+    "analyzed_at": "2026-11-11T07:00:22.863991"
   }
 }

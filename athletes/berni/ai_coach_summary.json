@@ -1,49 +1,49 @@
 {
-  "status_title": "Erholte Basis – Slot 1 für Temporeiz offen",
-  "status_badge": "Erholung gut / Slot 1 offen",
+  "status_title": "Aerobes Fundament gepflegt – Slot 2 flexibel",
+  "status_badge": "Beine frisch / Slot 2 offen",
   "status_level": "info",
-  "coach_commentary": "### Status & Regeneration\nZwei Ruhetage seit dem sauberen Grundlagenlauf vom Sonntag (7,9 km bei 145 bpm) haben gewirkt. Ruhepuls bei 48 bpm und HRV bei 72 ms zeigen, dass das vegetative Nervensystem entspannt ist. Die Beine sind frisch, die Ermüdung (TSB -6.5) liegt im absolut unkritischen Bereich.\n\n### Slot 1: Temporeiz heute offen\nDie gestrige Empfehlung für Slot 1 steht noch aus: Heute am Dienstag besteht das reguläre Zeitfenster für den Temporeiz der Woche. Nach der ruhigen aeroben Einheit vom Wochenende verkraftet der Körper jetzt einen gezielten Schwellenreiz über 4 x 3 Minuten (172–178 bpm). Wichtig bleibt dabei: Vor- und Nachbereitung finden strikt im aeroben Bereich unter 158 bpm statt, die Pausen zwischen den Intervallen dürfen gerne als Gehpausen gestaltet werden.\n\n### Wochenaufgabe\nNutze heute das Zeitfenster für Slot 1 als Intervalltraining oder wähle bei Zeitmangel einen 45-minütigen Z2-Lauf. Für die zweite Wochenhälfte bleiben damit zwei Einheiten: ein flexibler Lauf (Mittwoch bis Freitag) und der lange Grundlagenlauf am Wochenende. Achte bei allen Grundlagenabschnitten kompromisslos auf die Pulsobergrenze von 158 bpm – die Pace ist dabei völlig nebensächlich, Gehpausen an Steigungen sind eingeplant.",
+  "coach_commentary": "### Rückblick & Status\nAm Dienstag stand Slot 1 auf dem Plan. Statt der empfohlenen Intervalle bist du 4,2 km locker in 35 Minuten gelaufen (Ø 146 bpm, 95,7% in Z1/Z2). Der geplante Temporeiz entfiel damit, dafür blieben die Beine frisch und das aerobe Fundament wurde ohne Belastungsspitzen gepflegt. Die Erholungswerte sind stabil: Ruhepuls bei 47 bpm (1,6 bpm unter Baseline), keine Beschwerden und die Form (TSB -5,7) liegt im völlig unkritischen Bereich.\n\n### Slot 2: Flexible Reizwahl\nFür die zweite Wochenhälfte (Mittwoch bis Freitag) steht Slot 2 an. Da die Beine durch den lockeren Dienstagslauf ausgeruht sind, hast du die freie Wahl:\n1. Schwellenreiz nachholen: Ein Lauf über 40–45 Minuten mit ca. 20 Minuten im Schwellenbereich (168–174 bpm), eingerahmt von Ein- und Auslaufen in Z1/Z2.\n2. Ruhige Basis: Ein weiterer Z2-Dauerlauf über 45 Minuten, strikt pulsbasiert unter 158 bpm.\n\n### Wochenaufgabe\nNutze das Zeitfenster bis Freitag für Slot 2 je nach Tagesform und Zeitbudget. Am Wochenende folgt Slot 3 als langer Grundlagenlauf. Halte bei allen Grundlagenteilen den Puls strikt unter 158 bpm – die Pace ist dabei zweitrangig, Gehpausen an Anstiegen sind völlig normal. Ziel bleibt das verlässliche Schließen aller drei Wochen-Slots.",
   "history_evaluation": {
     "compliance_status": "teilweise",
-    "actual_summary": "Seit der Empfehlung vom 09.11. (Intervalltraining für Slot 1) wurde noch kein Lauf absolviert. Das Zeitfenster für Slot 1 (Dienstag) ist heute noch aktiv.",
-    "effect_analysis": "Zwei vollständige Ruhetage nach dem aeroben Lauf vom 08.11. (96.9% Z1/Z2). Die Erholungsparameter (Ruhepuls 48 bpm, HRV 72 ms) sind stabil im grünen Bereich, muskulär und kardiovaskulär besteht volle Bereitschaft.",
-    "next_recommendation": "Slot 1 heute (Dienstag) umsetzen: Intervalltraining mit 4 x 3 Minuten im Schwellenbereich (172–178 bpm), getrennt durch 2 Minuten Trab- oder Gehpause. Ein- und Auslaufen strikt unter 158 bpm.",
-    "next_workout_type": "intervals",
-    "next_target_hr": 178,
+    "actual_summary": "Am 10.11. wurde ein lockerer Grundlagenlauf (4,2 km in 35m, Ø 146 bpm, 95,7% Z1/Z2) absolviert statt des vorgeschlagenen Intervalltrainings für Slot 1.",
+    "effect_analysis": "Der intensive Temporeiz entfiel, wodurch die kardiovaskuläre und muskuläre Belastung minimal blieb (Load 35). Die Beine sind frisch, der Ruhepuls ist mit 47 bpm unauffällig und das aerobe Fundament wurde sauber stabilisiert.",
+    "next_recommendation": "Slot 2 (Mittwoch bis Freitag) flexibel nutzen: Bei frischen Beinen einen Schwellenreiz setzen (45 Min inkl. 20 Min bei 168–174 bpm) oder alternativ eine ruhige Z2-Einheit unter 158 bpm laufen.",
+    "next_workout_type": "tempo_run",
+    "next_target_hr": 174,
     "next_duration_min": 45
   },
   "insights": [
     {
       "title": "Aerobe Basis & Zonen-Disziplin",
       "type": "info",
-      "badge": "58.4% Z1/Z2 gesamt",
-      "text": "Der jüngste Lauf am 08.11. zeigte mit 96.9% in Z1/Z2 und Ø 145 bpm eine saubere aerobe Disziplin. Über den Gesamtzeitraum liegt der Z1/Z2-Anteil bei 58.4%, da Einheiten wie am 05.11. (24m in Z3, 8m in Z4) gezielt Tempo- und Schwellenreize setzten."
+      "badge": "58.8% Z1/Z2",
+      "text": "Die letzten beiden Läufe (08.11. mit 96,9% und 10.11. mit 95,7%) zeigten eine verlässliche Pulsdisziplin unter 158 bpm. Über den gesamten Erfassungszeitraum liegt der Z1/Z2-Anteil bei 58,8%, bedingt durch frühere zügige Läufe wie am 05.11. (24m in Z3, 8m in Z4)."
     },
     {
-      "title": "Trainingsvolumen & Frequenz",
+      "title": "Trainingsvolumen & Kontinuität",
       "type": "info",
-      "badge": "Ø 14.8 km / Wo.",
-      "text": "Mit durchschnittlich 2.2 Läufen pro Woche ist die 3-Einheiten-Struktur noch nicht jede Woche voll ausgeschöpft (W43 und W45 mit je 3 Läufen und über 20 km, W42 und W44 mit je 2 Läufen). Konstanz bei 3 Läufen festigt die Belastungsverträglichkeit."
+      "badge": "Ø 13.3 km / Wo.",
+      "text": "Mit durchschnittlich 2,1 Läufen pro Woche ist die 3-Einheiten-Struktur noch nicht durchgängig gefestigt. Wochen wie W43 und W45 zeigen mit über 20 km das Potenzial; ein verlässliches Füllen aller drei Slots stabilisiert die Belastungstoleranz nachhaltig."
     }
   ],
   "recommendations": [
     {
-      "title": "Grundlagenläufe strikt nach Herzfrequenz steuern",
+      "title": "Grundlagenläufe strikt über Herzfrequenz steuern",
       "tag": "Priorität 1: Aerobe Basis",
       "tag_class": "tag-amber",
-      "text": "Bei allen Z2-Einheiten gilt die Obergrenze von 158 bpm als strikte Schranke. Die Pace ist ein reines Resultat und wird ignoriert; an Steigungen wird bei Annäherung an 158 bpm sofort ins Gehen gewechselt."
+      "text": "Für alle Einheiten in Zone 2 gilt 158 bpm als strikte Obergrenze. Die Pace bleibt ein reines Resultat und wird ignoriert. Bei Pulsanstieg an Steigungen wird ohne Zögern ins Gehen gewechselt."
     },
     {
-      "title": "Reiztrennung im Flexi-Modell einhalten",
+      "title": "Reiztrennung im Flexi-Modell nutzen",
       "tag": "Trainingsstruktur",
       "tag_class": "tag-cyan",
-      "text": "Slot 1 bedient gezielt Schwellen- oder Intervallreize (172–178 bpm), während Slot 3 am Wochenende ein reiner Z2-Dauerlauf unter 158 bpm bleibt. Slot 2 fungiert als flexibles Bindeglied je nach Tagesform."
+      "text": "Slot 1 und 2 bieten Raum für Schwellenreize (168–174 bpm an der Laktatschwelle von 178 bpm), während der Wochenendlauf (Slot 3) als reiner Z2-Dauerlauf für die Fettverbrennung und Sehnenanpassung reserviert bleibt."
     },
     {
-      "title": "Drei Einheiten pro Woche stabilisieren",
+      "title": "Drei Einheiten pro Woche etablieren",
       "tag": "Umfangsaufbau",
       "tag_class": "tag-green",
-      "text": "Ziel für den Basisaufbau ist das verlässliche Schließen aller drei Wochen-Slots, um den Wochenschnitt stabil über 18–20 km zu halten, ohne Einzelsitzungen unverhältnismäßig zu verlängern."
+      "text": "Für das Level Basisaufbau ist Regelmäßigkeit wichtiger als Einzelumfänge. Drei moderate Einheiten verteilen die Last optimal und bringen den Wochenschnitt verlässlich in Richtung 18–20 km."
     }
   ],
   "athlete": {

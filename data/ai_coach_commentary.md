@@ -1,8 +1,10 @@
-### Status & Regeneration
-Zwei Ruhetage seit dem sauberen Grundlagenlauf vom Sonntag (7,9 km bei 145 bpm) haben gewirkt. Ruhepuls bei 48 bpm und HRV bei 72 ms zeigen, dass das vegetative Nervensystem entspannt ist. Die Beine sind frisch, die Ermüdung (TSB -6.5) liegt im absolut unkritischen Bereich.
+### Rückblick & Status
+Am Dienstag stand Slot 1 auf dem Plan. Statt der empfohlenen Intervalle bist du 4,2 km locker in 35 Minuten gelaufen (Ø 146 bpm, 95,7% in Z1/Z2). Der geplante Temporeiz entfiel damit, dafür blieben die Beine frisch und das aerobe Fundament wurde ohne Belastungsspitzen gepflegt. Die Erholungswerte sind stabil: Ruhepuls bei 47 bpm (1,6 bpm unter Baseline), keine Beschwerden und die Form (TSB -5,7) liegt im völlig unkritischen Bereich.
 
-### Slot 1: Temporeiz heute offen
-Die gestrige Empfehlung für Slot 1 steht noch aus: Heute am Dienstag besteht das reguläre Zeitfenster für den Temporeiz der Woche. Nach der ruhigen aeroben Einheit vom Wochenende verkraftet der Körper jetzt einen gezielten Schwellenreiz über 4 x 3 Minuten (172–178 bpm). Wichtig bleibt dabei: Vor- und Nachbereitung finden strikt im aeroben Bereich unter 158 bpm statt, die Pausen zwischen den Intervallen dürfen gerne als Gehpausen gestaltet werden.
+### Slot 2: Flexible Reizwahl
+Für die zweite Wochenhälfte (Mittwoch bis Freitag) steht Slot 2 an. Da die Beine durch den lockeren Dienstagslauf ausgeruht sind, hast du die freie Wahl:
+1. Schwellenreiz nachholen: Ein Lauf über 40–45 Minuten mit ca. 20 Minuten im Schwellenbereich (168–174 bpm), eingerahmt von Ein- und Auslaufen in Z1/Z2.
+2. Ruhige Basis: Ein weiterer Z2-Dauerlauf über 45 Minuten, strikt pulsbasiert unter 158 bpm.
 
 ### Wochenaufgabe
-Nutze heute das Zeitfenster für Slot 1 als Intervalltraining oder wähle bei Zeitmangel einen 45-minütigen Z2-Lauf. Für die zweite Wochenhälfte bleiben damit zwei Einheiten: ein flexibler Lauf (Mittwoch bis Freitag) und der lange Grundlagenlauf am Wochenende. Achte bei allen Grundlagenabschnitten kompromisslos auf die Pulsobergrenze von 158 bpm – die Pace ist dabei völlig nebensächlich, Gehpausen an Steigungen sind eingeplant.
+Nutze das Zeitfenster bis Freitag für Slot 2 je nach Tagesform und Zeitbudget. Am Wochenende folgt Slot 3 als langer Grundlagenlauf. Halte bei allen Grundlagenteilen den Puls strikt unter 158 bpm – die Pace ist dabei zweitrangig, Gehpausen an Anstiegen sind völlig normal. Ziel bleibt das verlässliche Schließen aller drei Wochen-Slots.
