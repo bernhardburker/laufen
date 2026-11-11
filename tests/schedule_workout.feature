@@ -112,3 +112,22 @@ Feature: Schedule structured workouts to Intervals.icu
     When the workout schedule script is executed in dry-run mode with adaptive planning arguments and events-file
     Then the process exits with code 0
     And the calendar events file contains the 10-day future event
+
+  Scenario: Adaptive planner overrules stale placeholder when slot candidate differs and date is not locked
+    Given a mock Intervals.icu event server is running
+    And INTERVALS_API_KEY is configured
+    And an automated easy run placeholder exists in calendar for today
+    And no run occurred yesterday
+    When the workout schedule script is executed with adaptive planning arguments
+    Then the process exits with code 0
+    And the old placeholder is deleted and replaced by candidate workout for today
+
+  Scenario: Adaptive planner preserves existing workout when user locked date
+    Given a mock Intervals.icu event server is running
+    And INTERVALS_API_KEY is configured
+    And an automated easy run placeholder exists in calendar for today
+    And the athlete has a user-locked veto for today in state
+    And no run occurred yesterday
+    When the workout schedule script is executed with adaptive planning arguments
+    Then the process exits with code 0
+    And no new workout event is scheduled for today

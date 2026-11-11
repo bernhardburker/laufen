@@ -31,17 +31,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.analysis.coach_history import load_coach_history
 from src.analysis.trends import filter_runs, format_duration, format_pace, load_activities
-
-
-def load_athlete_profile(file_path: Optional[Path] = None) -> Dict[str, Any]:
-    athlete_path = file_path or (PROJECT_ROOT / "config" / "athlete.json")
-    if athlete_path.is_file():
-        try:
-            with open(athlete_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    return {}
+from src.core.config import load_athlete_profile
 
 
 def format_seconds_to_min_sec(seconds: int | float) -> str:
@@ -284,6 +274,13 @@ def resolve_run_intent(
     hr_profile = (athlete_profile or {}).get("athlete", {}).get("heart_rate", {})
     z2_max = int(hr_profile.get("zones", {}).get("z2_aerobic", {}).get("max") or 158)
     lthr = int(hr_profile.get("lthr") or 178)
+    z4_profile = (
+        hr_profile.get("zones", {}).get("z4_subthreshold")
+        or hr_profile.get("zones", {}).get("z4_threshold")
+        or {}
+    )
+    z4_min = int(z4_profile.get("min") or (lthr - 8 if lthr else 168))
+    z4_max = int(z4_profile.get("max") or (lthr - 1 if lthr else 174))
 
     # Keywords in name
     quality_keywords = ("schwelle", "threshold", "tempo", "intervall", "interval", "speed", "fartlek", "fahrtspiel")
@@ -345,7 +342,7 @@ def resolve_run_intent(
             status = "erfüllt"
             status_label = "Erfüllt"
             target_comparison = (
-                f"{format_seconds_to_min_sec(z4_sec)} in Zone 4 (Ziel: >= 12m @ 168–174 bpm). "
+                f"{format_seconds_to_min_sec(z4_sec)} in Zone 4 (Ziel: >= 12m @ {z4_min}–{z4_max} bpm). "
                 f"Die {format_seconds_to_min_sec(z3_sec)} in Zone 3 resultieren aus Anlauf-Lag und Nachbrenneffekt in den Pausen."
             )
         elif z4_sec >= 360:
@@ -649,6 +646,13 @@ def evaluate_run_deep(
     hr_profile = (athlete_profile or {}).get("athlete", {}).get("heart_rate", {})
     z2_max = int(hr_profile.get("zones", {}).get("z2_aerobic", {}).get("max") or 158)
     lthr = int(hr_profile.get("lthr") or 178)
+    z4_profile = (
+        hr_profile.get("zones", {}).get("z4_subthreshold")
+        or hr_profile.get("zones", {}).get("z4_threshold")
+        or {}
+    )
+    z4_min = int(z4_profile.get("min") or (lthr - 8 if lthr else 168))
+    z4_max = int(z4_profile.get("max") or (lthr - 1 if lthr else 174))
 
     z1_z2_pct = metrics["z1_z2_pct"]
     avg_hr = metrics["avg_hr"]

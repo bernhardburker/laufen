@@ -17,21 +17,11 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
-def load_env_file(filepath: Path) -> None:
-    """Load key-value pairs from a .env file into os.environ if not already present."""
-    if not filepath.is_file():
-        return
-    with open(filepath, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, val = line.split("=", 1)
-            key = key.strip()
-            val = val.strip().strip("'\"")
-            if key not in os.environ and val:
-                os.environ[key] = val
+from src.core.config import load_env_file
 
 
 def fetch_athlete_profile(

@@ -378,6 +378,11 @@ class TelegramBotDriver:
         }
         save_telegram_state(state_path, state)
 
+    def setup_ai_coach_commentary(self, slug: str, commentary: str) -> None:
+        ctx = resolve_athlete_context(slug, project_root=self.tmp_path, registry_path=self.registry_path)
+        ctx.ai_commentary_path.parent.mkdir(parents=True, exist_ok=True)
+        ctx.ai_commentary_path.write_text(commentary, encoding="utf-8")
+
     def send_incoming_text(
         self,
         text: str,
@@ -760,6 +765,23 @@ def then_note_confirmation_keyboard(driver: TelegramBotDriver, chat_id: str):
 def then_activity_updated_on_intervals(driver: TelegramBotDriver, act_id: str, expected_desc: str):
     assert act_id in MockCombinedAPIHandler.updated_activities
     assert MockCombinedAPIHandler.updated_activities[act_id].get("description") == expected_desc
+
+
+@given(parsers.parse('the athlete "{slug}" has AI coach commentary available'))
+def given_athlete_ai_coach_commentary(driver: TelegramBotDriver, slug: str):
+    driver.setup_ai_coach_commentary(
+        slug=slug,
+        commentary="### Wochenauftakt & Status\nSuper solide Trainingswoche!\n\n### Wochenkompass\nWeiter so!",
+    )
+
+
+@then(parsers.parse('the last Telegram message sent to "{chat_id}" does not contain "{text}"'))
+def then_last_message_does_not_contain(driver: TelegramBotDriver, chat_id: str, text: str):
+    msgs = [m for m in MockCombinedAPIHandler.sent_telegram_messages if str(m.get("chat_id")) == chat_id]
+    assert len(msgs) > 0
+    last_text = msgs[-1].get("text", "")
+    assert text not in last_text, f"Unexpected '{text}' found in Telegram message: {last_text}"
+
 
 
 

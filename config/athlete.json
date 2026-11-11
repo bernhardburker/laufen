@@ -40,10 +40,10 @@
         "default_type": "easy_run",
         "preferred_type": "tempo_run",
         "description": "Aerobe Basis (Z2) oder Schwellenlauf (Z4) bei hoher Frische",
-        "target": "40–45m @ Z2 HR (< 158 bpm) oder 3x 8m @ Z4 HR (168-174 bpm)",
+        "target": "40–45m @ Z2 HR (< 158 bpm) oder 3x 8m @ Z4 HR (169-177 bpm)",
         "target_hr_range": [
-          168,
-          174
+          169,
+          177
         ],
         "requires_base_anchor": true
       },

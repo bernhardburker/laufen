@@ -30,6 +30,7 @@ from src.analysis.daily_recommendation import (
     render_daily_recommendation_html,
 )
 from src.analysis.run_reviewer import load_run_reviews
+from src.core.config import load_athlete_profile
 from src.analysis.forecast import (
     calculate_fitness_form_trend,
     generate_training_summary,
@@ -139,17 +140,6 @@ def parse_arguments() -> argparse.Namespace:
         help="Path to calendar events JSON file (default: data/calendar_events.json or CALENDAR_EVENTS_PATH)",
     )
     return parser.parse_args()
-
-
-def load_athlete_profile(file_path: Optional[Path] = None) -> Dict[str, Any]:
-    athlete_path = file_path or (PROJECT_ROOT / "config" / "athlete.json")
-    if athlete_path.is_file():
-        try:
-            with open(athlete_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    return {}
 
 
 def build_table_rows(

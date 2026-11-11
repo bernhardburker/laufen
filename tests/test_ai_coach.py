@@ -36,11 +36,13 @@ class AICoachDriver:
         self.history_file = tmp_path / "coach_history.json"
         self.reviews_file = tmp_path / "run_reviews.json"
         self.wellness_file = tmp_path / "wellness.json"
+        self.events_file = tmp_path / "calendar_events.json"
         self.output_json = tmp_path / "ai_coach_summary.json"
         self.output_md = tmp_path / "ai_coach_commentary.md"
 
         self.activities: List[Dict[str, Any]] = []
         self.wellness: List[Dict[str, Any]] = []
+        self.calendar_events: List[Dict[str, Any]] = []
         self.athlete_profile: Dict[str, Any] = {
             "athlete": {
                 "name": "Berni",
@@ -241,22 +243,61 @@ class AICoachDriver:
         }
         self.llm_client = MockLLMClient(responses=response_dict)
 
-    def generate_prompt(self) -> None:
+    def setup_calendar_dataset(self, workout_name: str) -> None:
+        from datetime import date
+        today_iso = date.today().isoformat()
+        self.calendar_events = [
+            {
+                "id": 999123,
+                "start_date_local": f"{today_iso}T07:00:00",
+                "category": "WORKOUT",
+                "name": workout_name,
+                "description": "8x 1m 05:15/km Pace",
+                "paired_activity_id": None,
+            }
+        ]
+        self.events_file.write_text(
+            json.dumps(self.calendar_events, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+
+    def setup_mock_llm_calendar_response(self) -> None:
+        response_dict = {
+            "status_title": "Intervallreiz & Kadenz",
+            "status_badge": "Intervalle absolviert",
+            "status_level": "success",
+            "coach_commentary": "### Intervall-Training\n8x 1m Speed absolviert wie im Kalender geplant.",
+            "history_evaluation": {
+                "compliance_status": "erfüllt",
+                "actual_summary": "Speed-Intervalle erfolgreich durchgeführt.",
+                "effect_analysis": "Hohe neuromuskuläre Reizung, Z5-Belastung.",
+                "next_recommendation": "Am Wochenende reinen Z2-Long-Run zur Regeneration einplanen.",
+                "next_workout_type": "easy_run",
+                "next_target_hr": 148,
+                "next_duration_min": 50,
+            },
+            "insights": [],
+            "recommendations": [],
+        }
+        self.llm_client = MockLLMClient(responses=response_dict)
+
+    def generate_prompt(self, use_calendar: bool = False) -> None:
         self.prompt = build_coach_prompt(
             activities_file=self.activities_file,
             athlete_file=self.athlete_file,
             history_file=self.history_file,
             reviews_file=self.reviews_file,
             wellness_file=self.wellness_file if self.wellness_file.exists() else None,
+            events_file=self.events_file if (use_calendar or self.events_file.exists()) else None,
         )
 
-    def execute_engine(self, use_wellness: bool = False) -> None:
+    def execute_engine(self, use_wellness: bool = False, use_calendar: bool = False) -> None:
         self.execution_result = run_ai_coach(
             activities_file=self.activities_file,
             athlete_file=self.athlete_file,
             history_file=self.history_file,
             reviews_file=self.reviews_file,
             wellness_file=self.wellness_file if (use_wellness or self.wellness_file.exists()) else None,
+            events_file=self.events_file if (use_calendar or self.events_file.exists()) else None,
             output_json=self.output_json,
             output_md=self.output_md,
             llm_client=self.llm_client,
@@ -494,3 +535,28 @@ def then_prompt_requires_rest(driver: AICoachDriver):
     assert "rest_day" in driver.prompt
     assert "Verletzung" in driver.prompt
     assert "Absolute Priorität" in driver.prompt or "VITAL-WARNUNG" in driver.prompt
+
+
+@given(parsers.parse('a calendar dataset with a scheduled workout "{workout_name}" on today'))
+def given_calendar_dataset(driver: AICoachDriver, workout_name: str):
+    driver.setup_calendar_dataset(workout_name)
+
+
+@given("a mock LLM client providing a coaching response acknowledging scheduled intervals")
+def given_mock_llm_calendar(driver: AICoachDriver):
+    driver.setup_mock_llm_calendar_response()
+
+
+@when("the AI coach prompt is generated with calendar context")
+def when_generate_prompt_calendar(driver: AICoachDriver):
+    driver.generate_prompt(use_calendar=True)
+
+
+@when("the AI coach engine is executed with calendar context")
+def when_execute_with_calendar(driver: AICoachDriver):
+    driver.execute_engine(use_calendar=True)
+
+
+@then("the prompt requires calendar alignment with scheduled workouts")
+def then_prompt_requires_calendar_alignment(driver: AICoachDriver):
+    assert "Kalender-Abstimmung" in driver.prompt or "Trainer-Leitplanke" in driver.prompt

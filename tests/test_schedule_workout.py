@@ -517,4 +517,51 @@ def step_events_file_has_20_day_event(driver: WorkoutScheduleDriver):
     assert any(e.get("id") == 880020 for e in data)
 
 
+@given("an automated easy run placeholder exists in calendar for today")
+def step_easy_run_placeholder_today(driver: WorkoutScheduleDriver):
+    today_iso = driver.test_ref_date.isoformat()
+    MockIntervalsEventHandler.events_db.append({
+        "id": 776655,
+        "category": "WORKOUT",
+        "type": "Run",
+        "name": "Easy Run - Aktive Erholung & Basis (35m Z2)",
+        "start_date_local": f"{today_iso}T07:00:00",
+        "paired_activity_id": None,
+    })
+
+
+@then("the old placeholder is deleted and replaced by candidate workout for today")
+def step_placeholder_deleted_and_replaced(driver: WorkoutScheduleDriver):
+    deletes = [r for r in MockIntervalsEventHandler.received_requests if r.get("method") == "DELETE" and r.get("path", "").endswith("/776655")]
+    assert len(deletes) > 0, f"Expected event 776655 to be deleted. All requests: {MockIntervalsEventHandler.received_requests}"
+    today_iso = driver.test_ref_date.isoformat()
+    posts = [
+        r["payload"] for r in MockIntervalsEventHandler.received_requests
+        if r.get("method") == "POST" and str(r.get("payload", {}).get("start_date_local", "")).startswith(today_iso)
+    ]
+    assert len(posts) > 0, "Expected new candidate workout to be posted for today"
+
+
+@given("the athlete has a user-locked veto for today in state")
+def step_user_locked_veto(driver: WorkoutScheduleDriver):
+    today_iso = driver.test_ref_date.isoformat()
+    state_file = driver.tmp_path / "telegram_state.json"
+    state = {"user_locked_dates": [today_iso]}
+    state_file.write_text(json.dumps(state), encoding="utf-8")
+    driver.env["TELEGRAM_STATE_PATH"] = str(state_file)
+
+
+@then("no new workout event is scheduled for today")
+def step_no_new_workout_scheduled(driver: WorkoutScheduleDriver):
+    deletes = [r for r in MockIntervalsEventHandler.received_requests if r.get("method") == "DELETE"]
+    assert len(deletes) == 0, f"Expected no deletes when locked, got: {deletes}"
+    today_iso = driver.test_ref_date.isoformat()
+    posts = [
+        r["payload"] for r in MockIntervalsEventHandler.received_requests
+        if r.get("method") == "POST" and str(r.get("payload", {}).get("start_date_local", "")).startswith(today_iso)
+    ]
+    assert len(posts) == 0, f"Expected no new POST requests for today, got: {posts}"
+
+
+
 

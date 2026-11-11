@@ -36,10 +36,17 @@ def main():
         api_key = os.environ.get("INTERVALS_API_KEY")
         athlete_id = os.environ.get("INTERVALS_ATHLETE_ID", "0")
         if not api_key or api_key == "YOUR_INTERVALS_API_KEY_HERE":
-            # Fallback auf lokale statische intervals_activities.json falls vorhanden
-            static_file = REPO_ROOT / "data" / "intervals_activities.json"
+            from src.athletes import resolve_athlete_context
+            try:
+                ctx = resolve_athlete_context(athlete_slug=os.environ.get("ATHLETE_SLUG"), project_root=REPO_ROOT)
+                static_file = ctx.activities_path
+            except Exception:
+                static_file = REPO_ROOT / "data" / "intervals_activities.json"
+
             if static_file.exists():
                 activities = json.loads(static_file.read_text(encoding="utf-8"))
+            elif (REPO_ROOT / "data" / "intervals_activities.json").exists():
+                activities = json.loads((REPO_ROOT / "data" / "intervals_activities.json").read_text(encoding="utf-8"))
             else:
                 print(json.dumps({
                     "text": "⚠️ **Intervals.icu API-Key fehlt**: Bitte hinterlege `INTERVALS_API_KEY` in der Bundle-Konfiguration.",

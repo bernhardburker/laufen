@@ -31,21 +31,8 @@ from src.analysis.run_reviewer import (
 )
 from src.analysis.trends import filter_runs, load_activities
 from src.athletes import resolve_athlete_context
+from src.core.config import load_env_file
 from src.integrations.download_intervals import update_intervals_activity
-
-
-def load_env_file(filepath: Path) -> None:
-    if not filepath.is_file():
-        return
-    with open(filepath, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            k, v = line.split("=", 1)
-            k, v = k.strip(), v.strip().strip("'\"")
-            if k not in os.environ and v:
-                os.environ[k] = v
 
 
 def attach_note_to_run(

@@ -16,7 +16,14 @@ def main():
     args = parser.parse_args()
 
     api_key = os.environ.get("INTERVALS_API_KEY")
-    athlete_id = os.environ.get("INTERVALS_ATHLETE_ID", "0")
+    athlete_id = os.environ.get("INTERVALS_ATHLETE_ID")
+    if not athlete_id:
+        try:
+            from src.athletes import resolve_athlete_context
+            ctx = resolve_athlete_context(athlete_slug=os.environ.get("ATHLETE_SLUG"), project_root=REPO_ROOT)
+            athlete_id = ctx.intervals_id
+        except Exception:
+            athlete_id = "0"
 
     if not api_key or api_key == "YOUR_INTERVALS_API_KEY_HERE":
         print(json.dumps({

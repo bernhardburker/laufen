@@ -34,21 +34,7 @@ from src.athletes import (
 from src.integrations.download_intervals import fetch_intervals_activities
 from src.integrations.download_wellness import fetch_intervals_wellness
 from src.integrations.sync_athlete import build_athlete_config, fetch_athlete_profile
-
-
-def load_env_file(filepath: Path) -> None:
-    """Loads key-value pairs from .env into os.environ if not already present."""
-    if not filepath.is_file():
-        return
-    with open(filepath, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            k, v = line.split("=", 1)
-            k, v = k.strip(), v.strip().strip("'\"")
-            if k not in os.environ and v:
-                os.environ[k] = v
+from src.core.config import load_env_file
 
 
 def generate_dashboard_slug(slug: str) -> str:

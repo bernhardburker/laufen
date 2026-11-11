@@ -31,23 +31,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.analysis.decision_trace import append_decision_trace, evaluate_workout_decision
+from src.core.config import load_env_file
 from src.planner.extract_markers import extract_planning_markers
-
-
-def load_env_file(filepath: Path) -> None:
-    """Loads environment variables from a .env file if not already set."""
-    if not filepath.is_file():
-        return
-    with open(filepath, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, val = line.split("=", 1)
-            key = key.strip()
-            val = val.strip().strip("'\"")
-            if key not in os.environ and val:
-                os.environ[key] = val
 
 
 def parse_minutes(val: str) -> int:
@@ -749,6 +734,7 @@ def sync_adaptive_plan(
     history_file: Path | None = None,
     events_file: Path | None = None,
     trace_file: Path | None = None,
+    state_file: Path | None = None,
     evening_preview: bool = False,
 ) -> dict:
     """Dynamically plans next workout, cleans up past uncompleted events, and respects rest days."""
@@ -978,31 +964,7 @@ def sync_adaptive_plan(
     results["target_date"] = target_date.isoformat()
     target_date_iso = target_date.isoformat()
 
-    # Step 3: Check if target_date already has a planned workout
-    existing_on_target = [
-        ev for ev in remaining_events
-        if str(ev.get("start_date_local") or "")[:10] == target_date_iso and ev.get("category") == "WORKOUT"
-    ]
-    unpaired_on_target = [
-        ev for ev in existing_on_target
-        if not ev.get("paired_activity_id")
-    ]
-
-    if unpaired_on_target:
-        ev_name = unpaired_on_target[0].get("name", "Workout")
-        print(f"[BEREITS GEPLANT] Für {target_date_iso} existiert bereits ein Workout: {ev_name}")
-        results["skipped"].append(unpaired_on_target[0])
-        if events_file and not dry_run:
-            events_path = Path(events_file)
-            events_path.parent.mkdir(parents=True, exist_ok=True)
-            all_final = list(remaining_events) + outside_window_events
-            all_final.sort(key=lambda x: str(x.get("start_date_local") or ""))
-            with open(events_path, "w", encoding="utf-8") as f:
-                json.dump(all_final, f, indent=2, ensure_ascii=False)
-        print("=" * 60)
-        return results
-
-    # Step 4: Generate adaptive workout payload & record structured decision trace
+    # Step 3: Determine candidate adaptive workout for target date
     templates_dir = root / "workouts" / "templates"
     name, description = choose_adaptive_workout(
         activities=act_list,
@@ -1017,6 +979,65 @@ def sync_adaptive_plan(
         events_file=Path(events_file) if events_file else None,
         project_root=root,
     )
+
+    # Check if target_date already has a planned workout
+    existing_on_target = [
+        ev for ev in remaining_events
+        if str(ev.get("start_date_local") or "")[:10] == target_date_iso and ev.get("category") == "WORKOUT"
+    ]
+    unpaired_on_target = [
+        ev for ev in existing_on_target
+        if not ev.get("paired_activity_id")
+    ]
+
+    if unpaired_on_target:
+        ev_name = unpaired_on_target[0].get("name", "Workout")
+        ev_id = unpaired_on_target[0].get("id")
+
+        # Check if athlete has manually locked or chosen this date (via Telegram button/feedback)
+        user_locked_dates = set()
+        resolved_state_file = state_file or (
+            Path(os.environ["TELEGRAM_STATE_PATH"]) if os.environ.get("TELEGRAM_STATE_PATH") else None
+        ) or (
+            (sibling_dir / "telegram_state.json")
+            if (sibling_dir and (sibling_dir / "telegram_state.json").is_file())
+            else None
+        )
+        if resolved_state_file and Path(resolved_state_file).is_file():
+            try:
+                st_data = json.loads(Path(resolved_state_file).read_text(encoding="utf-8"))
+                user_locked_dates = set(st_data.get("user_locked_dates") or [])
+            except Exception:
+                user_locked_dates = set()
+
+        is_user_locked = target_date_iso in user_locked_dates
+
+        # If workout matches candidate OR user has explicitly locked this date: keep existing
+        if ev_name == name or is_user_locked:
+            lock_info = " (Benutzer-Veto aktiv)" if is_user_locked else ""
+            print(f"[BEREITS GEPLANT] Für {target_date_iso} existiert bereits ein Workout: {ev_name}{lock_info}")
+            results["skipped"].append(unpaired_on_target[0])
+            if events_file and not dry_run:
+                events_path = Path(events_file)
+                events_path.parent.mkdir(parents=True, exist_ok=True)
+                all_final = list(remaining_events) + outside_window_events
+                all_final.sort(key=lambda x: str(x.get("start_date_local") or ""))
+                with open(events_path, "w", encoding="utf-8") as f:
+                    json.dump(all_final, f, indent=2, ensure_ascii=False)
+            print("=" * 60)
+            return results
+
+        # Slot-dynamischer Coach-Overrule:
+        # Veralteter automatischer Platzhalter wird durch frische Periodisierung / Coach-Vorgabe ersetzt
+        print(f"[COACH-OVERRULE] Automatischer Entwurf auf {target_date_iso} wird aktualisiert:")
+        print(f"  Vorher: {ev_name}")
+        print(f"  Nachher: {name}")
+        if not dry_run and api_key and ev_id:
+            delete_workout_event(ev_id, api_key, athlete_id, api_base_url)
+        remaining_events = [e for e in remaining_events if e.get("id") != ev_id]
+        results["cleaned"].append(unpaired_on_target[0])
+
+    # Step 4: Generate adaptive workout payload & record structured decision trace
 
     markers_for_trace = extract_planning_markers(
         activities_file=activities_file,

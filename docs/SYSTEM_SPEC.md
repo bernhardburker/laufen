@@ -96,7 +96,7 @@ All inter-module JSON schemas and runtime validators are defined in **[`src/core
 | `athlete.json` | [`sync_athlete.py`](../src/integrations/sync_athlete.py), [`onboard_athlete.py`](../src/integrations/onboard_athlete.py) | All planner, analysis & dashboard modules | [`AthleteProfileContract`](../src/core/contracts.py) (`validate_athlete_profile`) |
 | `intervals_activities.json` | [`download_intervals.py`](../src/integrations/download_intervals.py), [`manage_note.py`](../src/integrations/manage_note.py) | `trends.py`, `run_reviewer.py`, `extract_markers.py`, `generate_dashboard.py` | Raw Intervals.icu Activity list |
 | `intervals_wellness.json` | [`download_wellness.py`](../src/integrations/download_wellness.py) | `extract_markers.py`, `ai_coach.py`, `telegram_bot.py`, `generate_dashboard.py` | Raw Intervals.icu Wellness list |
-| `calendar_events.json` | [`download_events.py`](../src/integrations/download_events.py), [`schedule_workout.py`](../src/planner/schedule_workout.py) | `daily_recommendation.py`, `telegram_bot.py`, `generate_dashboard.py` | Intervals.icu Event list |
+| `calendar_events.json` | [`download_events.py`](../src/integrations/download_events.py), [`schedule_workout.py`](../src/planner/schedule_workout.py) | `daily_recommendation.py`, `ai_coach.py`, `telegram_bot.py`, `generate_dashboard.py` | Intervals.icu Event list |
 | `run_reviews.json` | [`run_reviewer.py`](../src/analysis/run_reviewer.py) (`schema_version: 2`) | `ai_coach.py`, `telegram_bot.py`, `generate_dashboard.py` | [`CachedRunReviewRecordContract`](../src/core/contracts.py) / [`RunReviewEvaluationV2Contract`](../src/core/contracts.py) (`validate_run_review_evaluation`) |
 | `coach_history.json` | [`coach_history.py`](../src/analysis/coach_history.py), [`ai_coach.py`](../src/analysis/ai_coach.py) | `run_reviewer.py`, `daily_recommendation.py`, `generate_dashboard.py` | [`CoachCycleEntryContract`](../src/core/contracts.py) (`validate_coach_history`) |
 | `ai_coach_summary.json` & `ai_coach_commentary.md` | [`ai_coach.py`](../src/analysis/ai_coach.py) | `generate_dashboard.py`, `decision_trace.py` | Structured LLM macro summary & Markdown letter |
@@ -142,6 +142,11 @@ sequenceDiagram
 3. **Evening Preview (`evening_briefing_time`)**:
    - Previews tomorrow: rest day if the athlete ran today, otherwise training day.
    - Workouts for today are never deleted in the evening.
+4. **Macro AI Coach On-Demand (`/coach`)**:
+   - Allows athlete to trigger or retrieve the Macro AI Coach weekly commentary & planning guidance on demand via Telegram.
+5. **Slot-Dynamic Coach Overrule & Athlete Veto**:
+   - Automated placeholder workouts on upcoming training days are dynamically updated if a fresh periodization directive from `coach_history.json` or recovered physiological readiness calls for a quality stimulus (Slot 1/2) and all guardrails are green.
+   - Athlete veto priority: Any explicit user choice made via Telegram inline buttons (e.g., "📉 Lockerer", "⏱️ 35 Min", "🛋️ Ruhetag") or text feedback locks the date in `user_locked_dates` in `telegram_state.json`, preventing automated overrules and synchronizing `coach_history.json`.
 
 ---
 

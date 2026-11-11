@@ -1,5 +1,5 @@
 ### Rückblick & Status
-Am Dienstag stand Slot 1 auf dem Plan. Statt der empfohlenen Intervalle bist du 4,2 km locker in 35 Minuten gelaufen (Ø 146 bpm, 95,7% in Z1/Z2). Der geplante Temporeiz entfiel damit, dafür blieben die Beine frisch und das aerobe Fundament wurde ohne Belastungsspitzen gepflegt. Die Erholungswerte sind stabil: Ruhepuls bei 47 bpm (1,6 bpm unter Baseline), keine Beschwerden und die Form (TSB -5,7) liegt im völlig unkritischen Bereich.
+Am Dienstag stand Slot 1 auf dem Plan. Du bist den im Kalender vorgemerkten Grundlagenlauf über 4,2 km in 35 Minuten absolut diszipliniert gelaufen (Ø 146 bpm, 95,7% in Z1/Z2). Die Beine blieben frisch und das aerobe Fundament wurde ohne Belastungsspitzen gepflegt. Die Erholungswerte sind stabil: Ruhepuls bei 47 bpm (1,6 bpm unter Baseline), keine Beschwerden und die Form (TSB -5,7) liegt im völlig unkritischen Bereich.
 
 ### Slot 2: Flexible Reizwahl
 Für die zweite Wochenhälfte (Mittwoch bis Freitag) steht Slot 2 an. Da die Beine durch den lockeren Dienstagslauf ausgeruht sind, hast du die freie Wahl:

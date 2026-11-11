@@ -16,10 +16,10 @@ jobs:
       - name: 📥 Repository auschecken
         uses: actions/checkout@v4
 
-      - name: 📦 Sync Agent Bundle nach ~/dockercontainer/agents/laufen
+      - name: 📦 Sync Agent Bundle nach ~/dockerContainer/agents/laufen
         run: |
           set -euo pipefail
-          TARGET_DIR="$HOME/dockercontainer/agents/laufen"
+          TARGET_DIR="$HOME/dockerContainer/agents/laufen"
           mkdir -p "$TARGET_DIR"
 
           echo "📂 Synchronisiere Agent Bundle (athletes/ & data/ werden geschützt)..."

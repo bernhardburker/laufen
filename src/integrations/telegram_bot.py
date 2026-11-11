@@ -27,7 +27,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.analysis.coach_history import load_coach_history
+from src.analysis.coach_history import (
+    get_open_recommendation,
+    load_coach_history,
+    save_coach_history,
+)
 from src.analysis.run_reviewer import (
     evaluate_run_deep,
     extract_deep_run_metrics,
@@ -835,11 +839,98 @@ def send_post_run_review_for_athlete(
     }
 
 
+def send_macro_coach_summary_for_athlete(
+    ctx: AthleteContext,
+    bot_client: TelegramBotClient,
+    llm_client: Optional[LLMClient] = None,
+    project_root: Optional[Path] = None,
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """Sends the latest Macro AI Coach commentary to the athlete via Telegram."""
+    chat_id = ctx.telegram_chat_id
+    if not chat_id:
+        return {"status": "skipped", "reason": "no_chat_id", "athlete": ctx.slug}
+
+    commentary_text = ""
+    if ctx.ai_commentary_path.is_file():
+        try:
+            commentary_text = ctx.ai_commentary_path.read_text(encoding="utf-8").strip()
+        except Exception:
+            pass
+
+    if not commentary_text:
+        try:
+            from src.analysis.ai_coach import run_ai_coach
+            run_ai_coach(
+                activities_file=ctx.activities_path,
+                profile_file=ctx.athlete_config_path,
+                history_file=ctx.coach_history_path,
+                reviews_file=ctx.run_reviews_path,
+                wellness_file=ctx.wellness_path,
+                output_json=ctx.ai_summary_path,
+                output_md=ctx.ai_commentary_path,
+                llm_client=llm_client,
+                execute=True,
+            )
+            if ctx.ai_commentary_path.is_file():
+                commentary_text = ctx.ai_commentary_path.read_text(encoding="utf-8").strip()
+        except Exception as e:
+            print(f"[WARN] Failed to generate AI Coach commentary for {ctx.slug}: {e}", file=sys.stderr)
+
+    if not commentary_text:
+        fallback_msg = (
+            f"🧠 **AI Coach ({ctx.display_name})**\n\n"
+            "Aktuell liegt noch keine Makro-Coach-Analyse für deine Trainingswoche vor.\n"
+            "Führe `./run coach` aus oder warte auf den nächsten automatischen Lauf."
+        )
+        send_res = {"dry_run": True} if dry_run else bot_client.send_message(chat_id=chat_id, text=fallback_msg)
+        return {"status": "fallback_sent", "athlete": ctx.slug, "telegram_response": send_res}
+
+    header = f"🧠 **AI Coach Analyse & Wochenkompass ({ctx.display_name})**\n\n"
+    max_len = 3900
+    if len(commentary_text) > max_len:
+        commentary_text = commentary_text[:max_len] + "\n\n*(Kommentar gekürzt für Telegram...)*"
+
+    full_message = f"{header}{commentary_text}"
+    send_res = {"dry_run": True} if dry_run else bot_client.send_message(chat_id=chat_id, text=full_message)
+    return {"status": "sent", "athlete": ctx.slug, "telegram_response": send_res}
+
+
 def is_run_feedback_text(text: str) -> bool:
     """Detects whether an incoming user message refers to a completed run, sensations, or subjective notes."""
     tl = text.lower().strip()
     if tl.startswith(("/notiz", "/note", "notiz:", "feedback:", "lauf-notiz:", "lauf-feedback:")):
         return True
+
+    # Planning, wishes, or forward-looking adjustments must never be intercepted as notes
+    planning_phrases = (
+        "morgen",
+        "für morgen",
+        "heute lieber",
+        "würde lieber",
+        "lieber",
+        "probieren",
+        "hineinpassen",
+        "können wir",
+        "kann ich",
+        "wäre cool",
+        "zeit habe",
+        "zeit hätte",
+        "nur 35 min",
+        "nur 30 min",
+        "kürzen",
+        "anpassen",
+        "planen",
+        "verschieben",
+        "wie sieht",
+        "was rät",
+        "was denkst",
+        "firma",
+        "pendel",
+        "arbeitsweg",
+    )
+    if any(p in tl for p in planning_phrases):
+        return False
 
     strong_phrases = (
         "gerade gelaufen",
@@ -847,8 +938,8 @@ def is_run_feedback_text(text: str) -> bool:
         "war laufen",
         "bin gelaufen",
         "heute gelaufen",
-        "beim laufen",
-        "beim lauf",
+        "beim laufen heute",
+        "beim heutigen lauf",
         "nach dem lauf",
         "meine waden",
         "waden begonnen",
@@ -868,9 +959,33 @@ def is_run_feedback_text(text: str) -> bool:
     if any(p in tl for p in strong_phrases):
         return True
 
-    keywords = ("gelaufen", "lauf", "training", "intervall", "schwellen", "wade", "waden", "krampf", "krämpfe", "dehnen")
-    matches = sum(1 for k in keywords if k in tl)
-    return matches >= 2 and any(v in tl for v in ("gelaufen", "lauf", "training", "wade", "waden", "krampf"))
+    # Require explicit sensation/injury/symptom indicators combined with run context
+    symptom_keywords = (
+        "krampf",
+        "krämpfe",
+        "schmerz",
+        "schmerzen",
+        "ziehn",
+        "zerrung",
+        "weh",
+        "übel",
+        "gestochen",
+        "wade",
+        "waden",
+        "achilles",
+    )
+    has_symptom = any(s in tl for s in symptom_keywords)
+    has_run_ref = any(
+        r in tl
+        for r in (
+            "gelaufen",
+            "beim lauf",
+            "nach dem lauf",
+            "nach dem training",
+            "ausgelaufen",
+        )
+    )
+    return has_symptom and has_run_ref
 
 
 def handle_telegram_update(
@@ -1100,6 +1215,10 @@ def handle_telegram_update(
 
         if action_key == "accept":
             w_name = proposal.get("name") or "Dein Training"
+            locked = set(state.get("user_locked_dates") or [])
+            locked.add(target_date_iso)
+            state["user_locked_dates"] = sorted(list(locked))
+            save_telegram_state(state_path, state)
             reply = f"Perfekt, {ctx.display_name}! '{w_name}' ({target_date_iso}) bleibt wie geplant auf Intervals.icu & deiner Garmin-Uhr. Viel Erfolg!"
             bot_client.send_message(chat_id=chat_id, text=reply)
             return {"status": "accepted", "athlete": ctx.slug, "target_date": target_date_iso}
@@ -1115,6 +1234,9 @@ def handle_telegram_update(
                 is_rest_day=True,
             )
             state["current_proposal"] = None
+            locked = set(state.get("user_locked_dates") or [])
+            locked.add(target_date_iso)
+            state["user_locked_dates"] = sorted(list(locked))
             save_telegram_state(state_path, state)
             reply = f"🛋️ Sehr gut, {ctx.display_name}! Der heutige Ruhetag ({target_date_iso}) bleibt fixiert. Gute Erholung!"
             bot_client.send_message(chat_id=chat_id, text=reply)
@@ -1146,6 +1268,9 @@ def handle_telegram_update(
                 is_rest_day=True,
             )
             state["current_proposal"] = None
+            locked = set(state.get("user_locked_dates") or [])
+            locked.add(target_date_iso)
+            state["user_locked_dates"] = sorted(list(locked))
             save_telegram_state(state_path, state)
             reply = f"🛋️ Verstanden, {ctx.display_name}! Ich habe das geplante Workout am {target_date_iso} aus Intervals.icu entfernt und als Ruhetag eingetragen. Genieße deinen Ruhetag!"
             bot_client.send_message(chat_id=chat_id, text=reply)
@@ -1338,6 +1463,17 @@ def handle_telegram_update(
         )
         return {"status": "review_sent", "athlete": ctx.slug, "result": res}
 
+    # On-demand Macro AI Coach commentary: /coach, /makro, /macro, /kommentar
+    if text.lower() in ("/coach", "/makro", "/macro", "/kommentar"):
+        res = send_macro_coach_summary_for_athlete(
+            ctx=ctx,
+            bot_client=bot_client,
+            llm_client=llm_client,
+            project_root=root,
+            dry_run=dry_run,
+        )
+        return {"status": "coach_sent", "athlete": ctx.slug, "result": res}
+
     # On-demand evening preview: /abend, /preview, /evening
     if text.lower() in ("/abend", "/preview", "/evening"):
         res = send_evening_preview_for_athlete(
@@ -1493,6 +1629,11 @@ def _process_athlete_feedback_text(
     proposal = state.get("current_proposal") or {}
     target_date_iso = proposal.get("target_date") or today.isoformat()
 
+    # If athlete mentions "morgen" / "tomorrow", and target_date_iso was today:
+    tl = user_text.lower()
+    if any(m in tl for m in ("morgen", "tomorrow")) and target_date_iso == today.isoformat():
+        target_date_iso = (today + datetime.timedelta(days=1)).isoformat()
+
     markers = extract_planning_markers(
         activities_file=ctx.activities_path,
         wellness_file=ctx.wellness_path,
@@ -1532,7 +1673,26 @@ def _process_athlete_feedback_text(
             "event_id": scheduled_ev.get("id"),
             "is_rest_day_today": False,
         }
+        locked = set(state.get("user_locked_dates") or [])
+        locked.add(target_date_iso)
+        state["user_locked_dates"] = sorted(list(locked))
         save_telegram_state(state_path, state)
+
+        # Synchronize open Coach cycle if athlete explicitly requested easier / easy_run
+        if ctx.coach_history_path and ctx.coach_history_path.is_file():
+            try:
+                c_history = load_coach_history(ctx.coach_history_path)
+                open_rec = get_open_recommendation(c_history)
+                if open_rec and open_rec.get("status") == "offen":
+                    w_params = intent.workout_params if isinstance(intent.workout_params, dict) else (getattr(intent.workout_params, "__dict__", {}) or {})
+                    w_type = w_params.get("workout_type") or getattr(intent.workout_params, "workout_type", "")
+                    target_mod = w_params.get("target_modality") or getattr(intent.workout_params, "target_modality", "")
+                    if w_type in ("easy_run", "recovery_run") or target_mod in ("easy", "recovery") or any(k in user_text.lower() for k in ("z2", "locker", "ruhig")):
+                        open_rec["target_type"] = "easy_run"
+                        open_rec["recommendation"] = f"{open_rec.get('recommendation', '')} (Vom Athleten per Telegram-Veto auf Grundlagenlauf Z2 angepasst)".strip()
+                        save_coach_history(c_history, ctx.coach_history_path)
+            except Exception:
+                pass
 
         reply_msg = (
             f"{intent.reply_text}\n\n"
@@ -1558,7 +1718,23 @@ def _process_athlete_feedback_text(
             dry_run=dry_run,
         )
         state["current_proposal"] = None
+        locked = set(state.get("user_locked_dates") or [])
+        locked.add(target_date_iso)
+        state["user_locked_dates"] = sorted(list(locked))
         save_telegram_state(state_path, state)
+
+        # Synchronize open Coach cycle if athlete explicitly requested rest day
+        if ctx.coach_history_path and ctx.coach_history_path.is_file():
+            try:
+                c_history = load_coach_history(ctx.coach_history_path)
+                open_rec = get_open_recommendation(c_history)
+                if open_rec and open_rec.get("status") == "offen":
+                    open_rec["target_type"] = "rest_day"
+                    open_rec["recommendation"] = f"{open_rec.get('recommendation', '')} (Vom Athleten per Telegram-Veto auf Ruhetag angepasst)".strip()
+                    save_coach_history(c_history, ctx.coach_history_path)
+            except Exception:
+                pass
+
         bot_client.send_message(chat_id=chat_id, text=intent.reply_text)
         return {
             "status": "rest_day",
@@ -1567,6 +1743,10 @@ def _process_athlete_feedback_text(
         }
 
     elif intent.action == "accept":
+        locked = set(state.get("user_locked_dates") or [])
+        locked.add(target_date_iso)
+        state["user_locked_dates"] = sorted(list(locked))
+        save_telegram_state(state_path, state)
         bot_client.send_message(chat_id=chat_id, text=intent.reply_text)
         return {
             "status": "accepted",
@@ -1884,6 +2064,11 @@ def main() -> None:
         help="Immediately send the post-run coach review for the latest run to the target athlete",
     )
     parser.add_argument(
+        "--coach",
+        action="store_true",
+        help="Immediately send the Macro AI Coach commentary to the target athlete",
+    )
+    parser.add_argument(
         "--once",
         action="store_true",
         help="Process pending Telegram updates and due briefings once, then exit",
@@ -1932,7 +2117,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--llm-provider",
-        default=os.getenv("LLM_PROVIDER"),
+        default=os.getenv("LLM_PROVIDER", "agy"),
         help="Optional LLM provider ('agy', 'gemini', 'mock', or 'none' for heuristic only)",
     )
     parser.add_argument(
@@ -2040,6 +2225,20 @@ def main() -> None:
         print(
             f"✅ Post-run review sent to {ctx.display_name} (Chat ID: {ctx.telegram_chat_id}) "
             f"for activity {res.get('activity_id', 'latest')}."
+        )
+        return
+
+    if args.coach:
+        ctx = resolve_athlete_context(args.athlete, project_root=PROJECT_ROOT)
+        res = send_macro_coach_summary_for_athlete(
+            ctx=ctx,
+            bot_client=bot_client,
+            llm_client=llm,
+            dry_run=args.dry_run,
+            project_root=PROJECT_ROOT,
+        )
+        print(
+            f"✅ Macro AI Coach commentary sent to {ctx.display_name} (Chat ID: {ctx.telegram_chat_id})."
         )
         return
 

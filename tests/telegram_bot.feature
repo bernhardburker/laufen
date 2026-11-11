@@ -177,3 +177,42 @@ Feature: Bidirectional Telegram Coach Bot and Daily Briefing
     When the scheduled post-run review check runs at "2026-10-26T17:45:00"
     Then the last Telegram message sent to "987654321" contains "Coach-Review"
     And the last Telegram message sent to "987654321" contains "Heutiger Nachmittagslauf"
+
+  Scenario: Athlete picks another run to assign subjective note
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has completed a run "act_101" with name "Intervalle" on "2026-10-28"
+    And the athlete "berni" has completed a run "act_102" with name "Dauerlauf" on "2026-10-29"
+    When the Telegram bot receives callback query "note_pick_other" from chat id "987654321"
+    Then the last Telegram message sent to "987654321" contains "Welchem Lauf möchtest du die Notiz zuordnen?"
+    And the last Telegram message sent to "987654321" includes inline keyboard buttons
+
+  Scenario: Athlete cancels pending run note assignment
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    When the Telegram bot receives callback query "note_cancel" from chat id "987654321"
+    Then the last Telegram message sent to "987654321" contains "Notiz wurde verworfen"
+
+  Scenario: Athlete requests on-demand evening preview via command
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    When the Telegram bot receives message "/abend" from chat id "987654321"
+    Then the last Telegram message sent to "987654321" contains "Guten Abend"
+
+  Scenario: Athlete requests on-demand post-run review via command
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has completed a run "act_301" with name "Morgenrunde" on "2026-10-30"
+    When the Telegram bot receives message "/review" from chat id "987654321"
+    Then the last Telegram message sent to "987654321" contains "Coach-Review"
+
+  Scenario: Athlete requests on-demand Macro AI Coach commentary via /coach command
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has AI coach commentary available
+    When the Telegram bot receives message "/coach" from chat id "987654321"
+    Then the last Telegram message sent to "987654321" contains "AI Coach"
+    And the last Telegram message sent to "987654321" contains "Wochenkompass"
+
+  Scenario: Athlete asks for workout adaptation for commute with short intervals and is not intercepted as run note
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has an active briefing proposal on "2026-10-26"
+    When the Telegram bot receives message "Ich glaube ich würde lieber mal kürzere Intervalle probieren. Das Problem für morgen ist eher, dass ich ca 7km Strecke habe. Ich kann zwar abkürzen und mit der ubahn weiter in die Arbeit fahren aber es wäre cool wenn da ein Training hineinpassen würde was auch nicht länger als eine Stunde dauert" from chat id "987654321"
+    Then the last Telegram message sent to "987654321" does not contain "Ich habe folgenden Lauf gefunden"
+    And the last Telegram message sent to "987654321" contains "Speed- & Kadenztraining"
+

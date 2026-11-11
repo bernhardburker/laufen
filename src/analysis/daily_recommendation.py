@@ -24,18 +24,11 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.analysis.coach_history import get_open_recommendation, load_coach_history
 from src.analysis.forecast import calculate_fitness_form_trend
 from src.analysis.trends import filter_runs, load_activities
-from src.planner.extract_markers import has_muscular_or_health_complaint
+from src.core.config import load_athlete_profile
+from src.planner.extract_markers import has_muscular_or_health_complaint, is_quality_run
 
-
-def load_athlete_profile(file_path: Optional[Path] = None) -> Dict[str, Any]:
-    athlete_path = file_path or (PROJECT_ROOT / "config" / "athlete.json")
-    if athlete_path.is_file():
-        try:
-            with open(athlete_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    return {}
+# Shared alias for backward compatibility
+is_quality_workout = is_quality_run
 
 
 def calculate_days_since_last_run(
@@ -105,21 +98,6 @@ def determine_next_quality_type(
         return "intervals"
 
     return preferred_type or choices[0]
-
-
-def is_quality_workout(run: Dict[str, Any]) -> bool:
-    """Returns True if the run is classified as a quality session (intervals, tempo, threshold, race)."""
-    r_type = str(run.get("workout_type") or "").lower()
-    name = str(run.get("name") or "").lower()
-    if any(k in r_type or k in name for k in ("interval", "tempo", "schwelle", "threshold", "speed", "race", "wettkampf")):
-        return True
-    z_times = run.get("icu_hr_zone_times") or []
-    if len(z_times) >= 5:
-        z4_time = z_times[3] if len(z_times) > 3 else 0
-        z5_plus = sum(z_times[4:]) if len(z_times) > 4 else 0
-        if z5_plus > 240 or z4_time > 480:
-            return True
-    return False
 
 
 def is_base_workout(run: Dict[str, Any], z2_max: int = 158) -> bool:
@@ -293,6 +271,7 @@ def resolve_slot_recommendation(
     z2_max: int,
     days_since: int,
     coach_history_rec: Optional[Dict[str, Any]] = None,
+    threshold_hr_range: Optional[Tuple[int, int]] = None,
 ) -> Optional[Dict[str, Any]]:
     """Resolves today's structured workout from weekly_slots dynamically (supports N slots)."""
     if not slots:
@@ -497,8 +476,9 @@ def resolve_slot_recommendation(
         chosen_type = determine_next_quality_type(runs, allowed_types=allowed_types, preferred_type=preferred)
 
         if chosen_type == "tempo_run":
-            hr_range = matching_slot.get("target_hr_range", [168, 174])
-            target_hr = hr_range[1] if isinstance(hr_range, list) and len(hr_range) > 1 else 174
+            fallback_hr_range = list(threshold_hr_range) if threshold_hr_range else [z2_max + 11, z2_max + 19]
+            hr_range = matching_slot.get("target_hr_range") or fallback_hr_range
+            target_hr = hr_range[1] if isinstance(hr_range, list) and len(hr_range) > 1 else fallback_hr_range[1]
             duration = matching_slot.get("duration_min", 40)
             return {
                 "date": ref_date.isoformat(),
@@ -555,8 +535,9 @@ def resolve_slot_recommendation(
         consec_quality = stimulus["consecutive_quality_runs"]
         days_since_base = stimulus["days_since_last_base_run"]
 
-        hr_range = matching_slot.get("target_hr_range", [168, 174])
-        target_quality_hr = hr_range[1] if isinstance(hr_range, list) and len(hr_range) > 1 else 174
+        fallback_hr_range = list(threshold_hr_range) if threshold_hr_range else [z2_max + 11, z2_max + 19]
+        hr_range = matching_slot.get("target_hr_range") or fallback_hr_range
+        target_quality_hr = hr_range[1] if isinstance(hr_range, list) and len(hr_range) > 1 else fallback_hr_range[1]
         quality_duration = matching_slot.get("duration_min", 40)
         base_duration = 45
 
@@ -682,6 +663,15 @@ def generate_daily_recommendation(
     z2_max = int(
         hr_info.get("zones", {}).get("z2_aerobic", {}).get("max") or 158
     )
+    z4_info = (
+        hr_info.get("zones", {}).get("z4_subthreshold")
+        or hr_info.get("zones", {}).get("z4_threshold")
+        or {}
+    )
+    lthr = int(hr_info.get("lthr") or 178)
+    z4_min = int(z4_info.get("min") or (lthr - 8 if lthr else 168))
+    z4_max = int(z4_info.get("max") or (lthr - 1 if lthr else 174))
+    threshold_range = (z4_min, z4_max)
 
     open_rec = get_open_recommendation(history)
     target_hr = int(open_rec.get("target_hr_max") or z2_max) if open_rec else z2_max
@@ -942,6 +932,7 @@ def generate_daily_recommendation(
                 z2_max=z2_max,
                 days_since=days_since,
                 coach_history_rec=open_rec,
+                threshold_hr_range=threshold_range,
             )
             if slot_rec:
                 return _finalize(slot_rec)
@@ -976,6 +967,7 @@ def generate_daily_recommendation(
             z2_max=z2_max,
             days_since=days_since,
             coach_history_rec=open_rec,
+            threshold_hr_range=threshold_range,
         )
         if slot_rec:
             return _finalize(slot_rec)
@@ -1008,6 +1000,7 @@ def generate_daily_recommendation(
             z2_max=z2_max,
             days_since=days_since,
             coach_history_rec=open_rec,
+            threshold_hr_range=threshold_range,
         )
         if slot_rec:
             return _finalize(slot_rec)

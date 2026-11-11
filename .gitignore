@@ -42,6 +42,8 @@ data/*
 !data/ai_coach_summary.json
 !data/ai_coach_commentary.md
 athletes/*/telegram_state.json
+athletes/*/calendar_events.json
+athletes/*/decision_trace.jsonl
 *.fit
 *.tcx
 *.gpx

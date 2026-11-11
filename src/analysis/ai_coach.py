@@ -10,7 +10,7 @@ and structured training summaries.
 from __future__ import annotations
 
 import argparse
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import json
 import re
 import sys
@@ -42,18 +42,8 @@ from src.analysis.trends import (
     format_pace,
     load_activities,
 )
+from src.core.config import load_athlete_profile
 from src.llm import LLMClient, get_llm_client
-
-
-def load_athlete_profile(file_path: Optional[Path] = None) -> Dict[str, Any]:
-    athlete_path = file_path or (PROJECT_ROOT / "config" / "athlete.json")
-    if athlete_path.is_file():
-        try:
-            with open(athlete_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    return {}
 
 
 def extract_athlete_display_name(athlete_info: Dict[str, Any]) -> str:
@@ -405,6 +395,134 @@ def format_coach_wellness_section(context: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def load_calendar_events(events_file: Optional[Path]) -> List[Dict[str, Any]]:
+    """Load calendar events from JSON file safely."""
+    if not events_file or not events_file.is_file():
+        return []
+    try:
+        with open(events_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, list) else []
+    except Exception as e:
+        print(f"Warning: Failed to load calendar events from {events_file}: {e}", file=sys.stderr)
+        return []
+
+
+def extract_coach_calendar_context(
+    calendar_records: Optional[List[Dict[str, Any]]],
+    ref_date: Optional[date] = None,
+) -> Optional[Dict[str, Any]]:
+    """Extract clean, high-signal calendar and planned workout context for AI Coach."""
+    records = calendar_records or []
+    if not records:
+        return None
+
+    ref_d = ref_date or datetime.now().date()
+    ref_iso = ref_d.isoformat()
+
+    dated_events: List[Dict[str, Any]] = []
+    for ev in records:
+        if not isinstance(ev, dict):
+            continue
+        d_str = str(ev.get("start_date_local") or ev.get("date") or "")[:10]
+        if d_str:
+            dated_events.append(ev)
+
+    if not dated_events:
+        return None
+
+    dated_events.sort(key=lambda x: str(x.get("start_date_local") or x.get("date") or ""))
+
+    today_events = [
+        e for e in dated_events
+        if str(e.get("start_date_local") or e.get("date") or "")[:10] == ref_iso
+    ]
+
+    max_upcoming = ref_d + timedelta(days=7)
+    upcoming_events = [
+        e for e in dated_events
+        if ref_iso < str(e.get("start_date_local") or e.get("date") or "")[:10] <= max_upcoming.isoformat()
+    ]
+
+    today_completed = [
+        e for e in today_events
+        if e.get("category") == "WORKOUT" and e.get("paired_activity_id")
+    ]
+    today_planned = [
+        e for e in today_events
+        if e.get("category") == "WORKOUT" and not e.get("paired_activity_id")
+    ]
+    today_rest = [
+        e for e in today_events
+        if (e.get("category") == "NOTE" and "ruhetag" in str(e.get("name") or "").lower())
+        or e.get("category") == "HOLIDAY"
+    ]
+
+    return {
+        "today_date": ref_iso,
+        "today_completed": today_completed,
+        "today_planned": today_planned,
+        "today_rest": today_rest,
+        "upcoming_events": upcoming_events,
+        "all_today_events": today_events,
+    }
+
+
+def format_coach_calendar_section(context: Dict[str, Any]) -> str:
+    """Formats structured calendar indicators into a concise markdown section."""
+    lines = [f"### Kalender & Geplante Einheiten (Intervals.icu / Garmin, Stand: {context['today_date']}):"]
+
+    today_parts = []
+    if context.get("today_completed"):
+        for ev in context["today_completed"]:
+            today_parts.append(
+                f"Absolviertes Workout: \"{ev.get('name')}\" (Paired Activity: {ev.get('paired_activity_id')})"
+            )
+    if context.get("today_planned"):
+        for ev in context["today_planned"]:
+            desc = str(ev.get("description") or "").strip().replace("\n", " | ")
+            if len(desc) > 80:
+                desc = desc[:77] + "..."
+            desc_str = f" [{desc}]" if desc else ""
+            today_parts.append(f"Geplantes Workout: \"{ev.get('name')}\"{desc_str}")
+    if context.get("today_rest"):
+        for ev in context["today_rest"]:
+            today_parts.append(f"Ruhetag-Notiz: \"{ev.get('name')}\"")
+
+    if today_parts:
+        lines.append(f"- Status Heute ({context['today_date']}): {'; '.join(today_parts)}")
+    else:
+        lines.append(f"- Status Heute ({context['today_date']}): Kein Workout oder Ruhetag im Kalender eingetragen")
+
+    upcoming = context.get("upcoming_events", [])
+    if upcoming:
+        lines.append("- Nächste geplante Einheiten im Kalender (kommende 7 Tage):")
+        for ev in upcoming:
+            ev_date = str(ev.get("start_date_local") or ev.get("date") or "")[:10]
+            ev_name = ev.get("name", "Workout")
+            ev_cat = ev.get("category", "WORKOUT")
+            if ev_cat == "NOTE":
+                lines.append(f"  * {ev_date} | Notiz: {ev_name}")
+            else:
+                desc = str(ev.get("description") or "").strip().replace("\n", " | ")
+                if len(desc) > 70:
+                    desc = desc[:67] + "..."
+                desc_str = f" ({desc})" if desc else ""
+                lines.append(f"  * {ev_date} | Workout: {ev_name}{desc_str}")
+    else:
+        lines.append("- Nächste geplante Einheiten: Keine weiteren Einträge in den nächsten 7 Tagen")
+
+    lines.append(
+        "- 💡 Kalender-Abstimmung & Trainer-Leitplanke:\n"
+        "  Beziehe die Einträge im Kalender aktiv in deine Bewertung ein. Wenn der Athlet ein bestimmtes Workout "
+        "geplant hat oder eine Einheit manuell modifiziert hat (z. B. Intervalle statt Schwelle), erkenne diese Absicht an. "
+        "Stimme deine Wochenaufgabe und die nächste Empfehlung ('next_recommendation') auf den realen Kalenderstand ab, "
+        "anstatt im luftleeren Raum zu planen oder Kalendereinträgen zu widersprechen."
+    )
+
+    return "\n".join(lines)
+
+
 def build_coach_prompt(
     activities_file: Path,
     athlete_file: Optional[Path] = None,
@@ -412,6 +530,8 @@ def build_coach_prompt(
     reviews_file: Optional[Path] = None,
     wellness_file: Optional[Path] = None,
     wellness_records: Optional[List[Dict[str, Any]]] = None,
+    events_file: Optional[Path] = None,
+    calendar_records: Optional[List[Dict[str, Any]]] = None,
     save_classification: bool = True,
     ref_date: Optional[date] = None,
 ) -> str:
@@ -435,15 +555,39 @@ def build_coach_prompt(
             cand = athlete_file.parent / "intervals_wellness.json"
             if cand.is_file():
                 target_w = cand
+        if not target_w and activities_file and activities_file.is_file():
+            cand = activities_file.parent / "intervals_wellness.json"
+            if cand.is_file():
+                target_w = cand
         if not target_w:
             cand = PROJECT_ROOT / "data" / "intervals_wellness.json"
             if cand.is_file():
                 target_w = cand
         w_records = load_wellness(target_w) if target_w else []
 
+    # Load calendar events if available
+    cal_records = calendar_records
+    if cal_records is None:
+        target_ev = events_file
+        if not target_ev and athlete_file and athlete_file.is_file():
+            cand = athlete_file.parent / "calendar_events.json"
+            if cand.is_file():
+                target_ev = cand
+        if not target_ev and activities_file and activities_file.is_file():
+            cand = activities_file.parent / "calendar_events.json"
+            if cand.is_file():
+                target_ev = cand
+        if not target_ev:
+            cand = PROJECT_ROOT / "data" / "calendar_events.json"
+            if cand.is_file():
+                target_ev = cand
+        cal_records = load_calendar_events(target_ev) if target_ev else []
+
     ref_d = ref_date or datetime.now().date()
     wellness_ctx = extract_coach_wellness_context(w_records, ref_date=ref_d)
     wellness_section = format_coach_wellness_section(wellness_ctx) if wellness_ctx else ""
+    calendar_ctx = extract_coach_calendar_context(cal_records, ref_date=ref_d)
+    calendar_section = format_coach_calendar_section(calendar_ctx) if calendar_ctx else ""
 
     if not runs:
         return (
@@ -595,8 +739,9 @@ def build_coach_prompt(
 ### Feedback-Schleife & Adaptive Trainingssteuerung:
 Analysiere ehrlich und nüchtern den Abgleich zwischen der letzten Vorgabe und den tatsächlich absolvierten Läufen:
 1. Compliance: Hat der Athlet die Empfehlung befolgt, oder ist er z.B. zu schnell gelaufen, hat einen Tempolauf / Intervalle eingeschoben oder Einheiten ausgelassen?
-2. Adaptive Steuerung: Wenn der Athlet ungeplant einen intensiven Tempolauf oder Schwellenlauf absolviert hat, schimpfe nicht, sondern reagiere adaptiv – plane als Nächstes gezielt eine lockere Einheit / aktive Regeneration (Zone 1/2) ein, um Überlastung zu verhindern.
-3. Physiologischer Effekt: Was lässt sich aus den Daten über die aerobe Entwicklung, Pace/Puls-Verhältnis und Ermüdung (TSB) ablesen?
+2. Kalender- & Plan-Konsistenz: Wenn der Athlet eine Einheit absolviert hat, die dem real im Kalender / Telegram geplanten Workout entsprach (z. B. Grundlagen- oder Erholungslauf), werte dies als "erfüllt". Rüge den Athleten nicht für eine angebliche Planabweichung, wenn er diszipliniert dem Kalenderplan gefolgt ist.
+3. Adaptive Steuerung: Wenn der Athlet ungeplant einen intensiven Tempolauf oder Schwellenlauf absolviert hat, schimpfe nicht, sondern reagiere adaptiv – plane als Nächstes gezielt eine lockere Einheit / aktive Regeneration (Zone 1/2) ein, um Überlastung zu verhindern.
+4. Physiologischer Effekt: Was lässt sich aus den Daten über die aerobe Entwicklung, Pace/Puls-Verhältnis und Ermüdung (TSB) ablesen?
 """
 
     day_name_de = {
@@ -612,10 +757,45 @@ Analysiere ehrlich und nüchtern den Abgleich zwischen der letzten Vorgabe und d
     days_since_base = stimulus["days_since_last_base_run"]
     consec_quality = stimulus["consecutive_quality_runs"]
 
+    z4_profile = (
+        hr_info.get("zones", {}).get("z4_subthreshold")
+        or hr_info.get("zones", {}).get("z4_threshold")
+        or {}
+    )
+    z4_min = int(z4_profile.get("min") or (lthr - 8 if lthr else 168))
+    z4_max = int(z4_profile.get("max") or (lthr - 1 if lthr else 174))
+    threshold_str = f"{z4_min}–{z4_max} bpm"
+
+    if weekly_slots:
+        slot_parts = []
+        for s in weekly_slots:
+            s_num = s.get("slot") or s.get("id") or (len(slot_parts) + 1)
+            days = "/".join(d[:2].capitalize() for d in s.get("allowed_days", []))
+            days_str = f" ({days})" if days else ""
+            role = s.get("role", "")
+            if role == "flexible":
+                slot_parts.append(
+                    f"Slot {s_num}{days_str}: flexibel (Z2 Basis oder Schwelle {threshold_str} bei Frische)"
+                )
+            elif role == "quality":
+                slot_parts.append(f"Slot {s_num}{days_str}: Tempo/Intervalle")
+            elif role == "base_anchor":
+                slot_parts.append(f"Slot {s_num}{days_str}: Z2 Long Run < {z2_max} bpm")
+            else:
+                desc = s.get("description") or s.get("name") or f"Slot {s_num}"
+                slot_parts.append(f"Slot {s_num}{days_str}: {desc}")
+        slots_line = f"- Wochen-Slots ({len(weekly_slots)} Einheiten): " + ", ".join(slot_parts)
+    else:
+        slots_line = (
+            f"- Wochen-Slots (3 Einheiten): Slot 1 (Mo/Di: Tempo/Intervalle), "
+            f"Slot 2 (Mi-Fr: flexibel: Z2 Basis oder Schwelle {threshold_str} bei Frische), "
+            f"Slot 3 (Sa/So: Z2 Long Run < {z2_max} bpm)"
+        )
+
     if training_mode in ("flexi_hybrid", "pyramidal_hybrid"):
         mode_desc = (
             f"- Trainingsmodus: Flexi-Modell (3 flexible Säulen: Basis Z2 ~65–75%, Tempo/Schwelle Z3/Z4 ~15–20%, Spitzen Z5+ ~5–10%)\n"
-            f"- Wochen-Slots (3 Einheiten): Slot 1 (Mo/Di: Tempo/Intervalle), Slot 2 (Mi-Fr: flexibel: Z2 Basis oder Schwelle 168–174 bpm bei Frische), Slot 3 (Sa/So: Z2 Long Run < {z2_max} bpm)\n"
+            f"{slots_line}\n"
             f"- Reiz-Steuerung: Schau nüchtern auf die Daten. Weder rügen noch loben. Ein Schwellen- oder Tempolauf ist gewollt (15–20% Z3/Z4). Wenn an einem Qualitätstag locker gelaufen wurde, beschreibe sachlich: Der Temporeiz entfiel, die Beine blieben frisch. Wenn ein Lauf flotter war als gedacht, beschreibe einfach die Auswirkung auf die Ermüdung und was als Nächstes sinnvoll ist."
         )
     else:
@@ -639,6 +819,8 @@ Analysiere die aktuellen Trainingsdaten des Athleten ({athlete_name}) und erstel
 - **Wellness-, Verletzungs- & Krankheitssteuerung (Absolute Priorität)**:
   Liegen akute Krankheitssymptome, eine gemeldete Verletzung, ein deutlich erhöhter Ruhepuls (>= +4 bpm über Baseline) oder extremer Muskelkater (Soreness >= 4) vor, hat die Gesundheit und Regeneration absoluten Vorrang.
   Verordne in diesem Fall zwingend Pause / Ruhetag ("rest_day") oder allenfalls eine kurze, sehr lockere regenerative Einheit ("recovery_run"). Fordere unter keinen Umständen Tempo-, Schwellen- oder Umfangssteigerungen!
+- **Kalender-Abstimmung & Geplante Workouts (Reale Praxis)**:
+  Beziehe die geplanten Einheiten und Notizen im Kalender aktiv in deine Bewertung ein. Wenn der Athlet ein bestimmtes Training geplant hat oder eine Einheit manuell modifiziert hat (z. B. Intervalle statt Schwelle), erkenne diese Absicht an und richte deine Wochenaufgabe und nächste Empfehlung darauf aus. Vermeide es, im luftleeren Raum Trainingsformen zu fordern, die den Kalendereinträgen frontal widersprechen.
 
 ### Athleten-Profil & Reiz-Benchmark:
 - Aktuelles Datum (Heute): {ref_d.isoformat()} ({day_name_de})
@@ -654,6 +836,7 @@ Analysiere die aktuellen Trainingsdaten des Athleten ({athlete_name}) und erstel
 - Aktuelles Pensum: Ø {avg_weekly_km:.1f} km / Woche bei Ø {avg_runs_per_week:.1f} Läufen
 {history_section}
 {wellness_section}
+{calendar_section}
 
 ### Letzte Aktivitäten:
 {chr(10).join(runs_lines)}
@@ -761,6 +944,8 @@ def run_ai_coach(
     reviews_file: Optional[Path] = None,
     wellness_file: Optional[Path] = None,
     wellness_records: Optional[List[Dict[str, Any]]] = None,
+    events_file: Optional[Path] = None,
+    calendar_records: Optional[List[Dict[str, Any]]] = None,
     output_json: Optional[Path] = None,
     output_md: Optional[Path] = None,
     llm_client: Optional[LLMClient] = None,
@@ -807,6 +992,8 @@ def run_ai_coach(
         reviews_file=rev_path,
         wellness_file=wellness_file,
         wellness_records=wellness_records,
+        events_file=events_file,
+        calendar_records=calendar_records,
         save_classification=not dry_run,
         ref_date=ref_date,
     )
@@ -1055,6 +1242,13 @@ def main() -> int:
         help="Path to intervals_wellness.json (default: auto-detected from athlete or data/)",
     )
     parser.add_argument(
+        "--events",
+        "--calendar",
+        type=Path,
+        default=None,
+        help="Path to calendar_events.json (default: auto-detected from athlete or data/)",
+    )
+    parser.add_argument(
         "--output-prompt",
         type=Path,
         help="Write generated prompt directly to file",
@@ -1082,6 +1276,7 @@ def main() -> int:
                 history_file=args.history,
                 reviews_file=args.reviews,
                 wellness_file=args.wellness,
+                events_file=args.events,
             )
             if args.output_prompt:
                 args.output_prompt.parent.mkdir(parents=True, exist_ok=True)
@@ -1165,6 +1360,7 @@ def main() -> int:
             history_file=args.history,
             reviews_file=args.reviews,
             wellness_file=args.wellness,
+            events_file=args.events,
             output_json=args.output_json,
             output_md=args.output_md,
             llm_client=client,
@@ -1194,6 +1390,7 @@ def main() -> int:
             history_file=args.history,
             reviews_file=args.reviews,
             wellness_file=args.wellness,
+            events_file=args.events,
         )
         if args.output_prompt:
             args.output_prompt.parent.mkdir(parents=True, exist_ok=True)

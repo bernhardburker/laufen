@@ -47,7 +47,7 @@ class CoachIntent:
 
 
 TELEGRAM_COACH_SYSTEM_PROMPT = """You are an intelligent, empathetic German Running Coach communicating with an athlete via Telegram.
-The athlete is responding to their daily workout proposal.
+The athlete is responding to their workout proposal or upcoming training logistics.
 
 Analyze the athlete's message and the current context (readiness markers, guardrails, and currently scheduled workout).
 Return ONLY a valid JSON object (no markdown wrapper outside JSON) with this exact schema:
@@ -56,13 +56,14 @@ Return ONLY a valid JSON object (no markdown wrapper outside JSON) with this exa
   "reply_text": "Friendly, concise German coaching reply (max 3-4 sentences, suitable for Telegram)",
   "workout_params": {
     "type": "easy_run" | "recovery_run" | "long_run" | "intervals" | "tempo_run" | "threshold_intervals" | "micro_threshold" | "progressive_threshold" | "fartlek",
-    "duration": "35m",
-    "warmup": "5m",
-    "cooldown": "5m",
-    "target": "Z2 HR",
-    "reps": 4,
-    "work": "1km",
-    "recovery": "2m",
+    "duration": "45m",
+    "warmup": "15m",
+    "cooldown": "18m",
+    "target": "05:10-05:25/km Pace",
+    "recovery_target": "Z1 HR",
+    "reps": 8,
+    "work": "1m",
+    "recovery": "1m",
     "name": "Optional custom workout title"
   }
 }
@@ -70,9 +71,11 @@ Return ONLY a valid JSON object (no markdown wrapper outside JSON) with this exa
 Rules:
 1. If the athlete says they have less time (e.g. "Habe heute nur 35 min Zeit"), set action="modify", adjust "duration" to "35m" (and if <= 35m, use "warmup": "5m", "cooldown": "5m").
 2. If the athlete feels tired, heavy legs, or sluggish ("Fühle mich schlapp", "schwere Beine", "locker"), set action="modify", downgrade intensity to "easy_run" or "recovery_run" with target "Z2 HR" or "Z1 HR".
-3. If the athlete wants to take a day off, is sick, or cannot run today ("Heute Ruhetag", "krank", "schaffe es heute nicht"), set action="rest_day" and leave workout_params empty {}.
-4. If the athlete confirms the plan ("Passt", "Mach ich so", "Okay", "Super"), set action="accept".
-5. Always respond in German ("Du"-Form) in reply_text.
+3. If the athlete prefers shorter intervals, speed, or commute fitting ("kürzere Intervalle", "1m Intervalle", "Pendelstrecke", "Arbeitsweg"), set action="modify", type="intervals", reps=8, work="1m", recovery="1m", target="05:10-05:25/km Pace", recovery_target="Z1 HR", and set warmup="15m", cooldown="18m".
+4. If the athlete wants to take a day off, is sick, or cannot run today ("Heute Ruhetag", "krank", "schaffe es heute nicht"), set action="rest_day" and leave workout_params empty {}.
+5. If the athlete confirms the plan ("Passt", "Mach ich so", "Okay", "Super"), set action="accept".
+6. If the athlete asks general coaching questions, set action="question" and provide a helpful, concise German answer in reply_text.
+7. Always respond in German ("Du"-Form) in reply_text.
 """
 
 
@@ -218,6 +221,11 @@ def heuristic_parse_intent(
             dur_str = f"{main_min}m"
             custom_name = f"Tempo Run ({final_min}m gesamt)"
             target_str = "Z3-Z4 HR"
+        elif w_type == "intervals":
+            custom_name = "Speed- & Kadenztraining (8x 1m Speed)"
+            target_str = "05:10-05:25/km Pace"
+            warmup_str = "15m" if final_min >= 40 else warmup_str
+            cooldown_str = "18m" if final_min >= 40 else cooldown_str
         else:
             custom_name = f"Training - Angepasst ({dur_str})"
 
@@ -230,12 +238,21 @@ def heuristic_parse_intent(
             "date": target_date,
             "name": custom_name,
         }
+        if w_type == "intervals":
+            params.update({
+                "reps": 8,
+                "work": "1m",
+                "recovery": "1m",
+                "recovery_target": "Z1 HR",
+            })
 
         reasons = []
         if minutes is not None:
             reasons.append(f"auf {final_min} Minuten gekürzt")
         if wants_easier:
             reasons.append("Intensität auf lockeren Grundlagenbereich reduziert")
+        if wants_intervals:
+            reasons.append("auf kurze Speed- & Kadenzintervalle umgestellt")
         reason_str = " und ".join(reasons) if reasons else "angepasst"
 
         return CoachIntent(

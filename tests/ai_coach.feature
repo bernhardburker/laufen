@@ -85,3 +85,23 @@ Feature: Agentic AI Running Coach with Abstracted LLM Pipeline
     Then the execution status is "success"
     And the structured summary JSON file is created and contains status title "Verletzungspause & Regeneration"
     And the coach history is updated with the new cycle recommendation
+
+  Scenario: Generate coach prompt incorporating calendar events and scheduled workouts
+    Given an activities dataset with multiple running activities
+    And an athlete profile for "Berni"
+    And a calendar dataset with a scheduled workout "Speed- & Kadenztraining (8x 1m)" on today
+    When the AI coach prompt is generated with calendar context
+    Then the prompt contains "Kalender & Geplante Einheiten"
+    And the prompt contains "Speed- & Kadenztraining (8x 1m)"
+    And the prompt requires calendar alignment with scheduled workouts
+
+  Scenario: AI coach executes with calendar events file and aligns recommendations
+    Given an activities dataset with multiple running activities
+    And an athlete profile for "Berni"
+    And an active coach memory with an open recommendation from "2026-10-01"
+    And a calendar dataset with a scheduled workout "Speed- & Kadenztraining (8x 1m)" on today
+    And a mock LLM client providing a coaching response acknowledging scheduled intervals
+    When the AI coach engine is executed with calendar context
+    Then the execution status is "success"
+    And the structured summary JSON file is created and contains status title "Intervallreiz & Kadenz"
+    And the coach history is updated with the new cycle recommendation

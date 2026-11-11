@@ -320,7 +320,7 @@ def validate_coach_history(history: Any) -> Tuple[bool, List[str]]:
     if not isinstance(history, list):
         return False, ["coach_history must be a list of cycle entries."]
 
-    valid_statuses = {"offen", "erfüllt", "teilweise", "verfehlt"}
+    valid_statuses = {"offen", "erfüllt", "teilweise", "verfehlt", "angepasst_nach_tempo"}
     for idx, entry in enumerate(history):
         if not isinstance(entry, dict):
             errors.append(f"Cycle entry [{idx}] must be a dictionary.")

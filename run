@@ -128,6 +128,8 @@ case "$COMMAND" in
     exit 0
     ;;
   test)
+    export no_proxy="${no_proxy:+$no_proxy,}127.0.0.1,localhost"
+    export NO_PROXY="${NO_PROXY:+$NO_PROXY,}127.0.0.1,localhost"
     exec "$PYTEST_EXEC" "$WORKSPACE_ROOT/tests" "${REMAINING_ARGS[@]}"
     ;;
   test:e2e|test-e2e)
@@ -234,7 +236,7 @@ case "$COMMAND" in
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/daily_recommendation.py" --input "$ACTIVITIES_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" --events "$CALENDAR_EVENTS_PATH" "${REMAINING_ARGS[@]}"
     ;;
   coach|ai-coach)
-    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/ai_coach.py" --execute --input "$ACTIVITIES_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" --reviews "$RUN_REVIEWS_PATH" --wellness "$WELLNESS_PATH" --output-json "$AI_SUMMARY_PATH" --output-md "$AI_COMMENTARY_PATH" "${REMAINING_ARGS[@]}"
+    exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/ai_coach.py" --execute --input "$ACTIVITIES_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" --reviews "$RUN_REVIEWS_PATH" --wellness "$WELLNESS_PATH" --events "$CALENDAR_EVENTS_PATH" --output-json "$AI_SUMMARY_PATH" --output-md "$AI_COMMENTARY_PATH" "${REMAINING_ARGS[@]}"
     ;;
   review|reviews)
     exec "$PYTHON_EXEC" "$WORKSPACE_ROOT/src/analysis/run_reviewer.py" --input "$ACTIVITIES_PATH" --reviews "$RUN_REVIEWS_PATH" --athlete "$ATHLETE_CONFIG_PATH" --history "$COACH_HISTORY_PATH" "${REMAINING_ARGS[@]}"

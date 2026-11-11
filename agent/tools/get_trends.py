@@ -19,19 +19,28 @@ def main():
 
     data_dir = Path(os.environ.get("AGENT_DATA_DIR", REPO_ROOT / "data"))
     cache_file = data_dir / "activities_cache.json"
-    static_file = REPO_ROOT / "data" / "intervals_activities.json"
+
+    from src.athletes import resolve_athlete_context
+    try:
+        ctx = resolve_athlete_context(athlete_slug=os.environ.get("ATHLETE_SLUG"), project_root=REPO_ROOT)
+        static_file = ctx.activities_path
+    except Exception:
+        static_file = REPO_ROOT / "data" / "intervals_activities.json"
 
     input_file = cache_file if cache_file.exists() else static_file
     if not input_file.exists():
-        print(json.dumps({
-            "text": "Es sind noch keine Aktivitätsdaten vorhanden. Rufe zuerst `get_activities` auf.",
-            "chips": []
-        }))
-        return
+        if (REPO_ROOT / "data" / "intervals_activities.json").exists():
+            input_file = REPO_ROOT / "data" / "intervals_activities.json"
+        else:
+            print(json.dumps({
+                "text": "Es sind noch keine Aktivitätsdaten vorhanden. Rufe zuerst `get_activities` auf.",
+                "chips": []
+            }))
+            return
 
     activities = load_activities(input_file)
     runs = filter_runs(activities)
-    trends = aggregate_weekly_trends(runs, weeks=args.weeks)
+    trends = aggregate_weekly_trends(runs, max_weeks=args.weeks)
 
     table_text = render_trends_table(trends)
     total_km = sum(t["total_distance_km"] for t in trends)
