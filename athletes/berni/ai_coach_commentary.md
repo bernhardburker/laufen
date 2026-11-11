@@ -1,10 +1,8 @@
-### Rückblick & Status
-Am Dienstag stand Slot 1 auf dem Plan. Du bist den im Kalender vorgemerkten Grundlagenlauf über 4,2 km in 35 Minuten absolut diszipliniert gelaufen (Ø 146 bpm, 95,7% in Z1/Z2). Die Beine blieben frisch und das aerobe Fundament wurde ohne Belastungsspitzen gepflegt. Die Erholungswerte sind stabil: Ruhepuls bei 47 bpm (1,6 bpm unter Baseline), keine Beschwerden und die Form (TSB -5,7) liegt im völlig unkritischen Bereich.
+### Status Quo & Beine
+Die letzten beiden Einheiten am 8. und 10. November waren mit über 95 % Zone 1 und 2 saubere Grundlagenläufe. Der Puls blieb mit durchschnittlich 145 und 146 bpm verlässlich unter der Grenze von 158 bpm. Das hat die Beine nach dem zügigen Dauerlauf von letzter Woche wieder vollständig entlastet.
 
-### Slot 2: Flexible Reizwahl
-Für die zweite Wochenhälfte (Mittwoch bis Freitag) steht Slot 2 an. Da die Beine durch den lockeren Dienstagslauf ausgeruht sind, hast du die freie Wahl:
-1. Schwellenreiz nachholen: Ein Lauf über 40–45 Minuten mit ca. 20 Minuten im Schwellenbereich (168–174 bpm), eingerahmt von Ein- und Auslaufen in Z1/Z2.
-2. Ruhige Basis: Ein weiterer Z2-Dauerlauf über 45 Minuten, strikt pulsbasiert unter 158 bpm.
+### Wellness & Regeneration
+Dein Ruhepuls liegt bei 47 bpm (1,6 bpm unter Baseline), die HRV mit 73 ms leicht über dem 14-Tage-Schnitt und der Schlaf war mit 8,2 Stunden und Score 90 erholsam. Der TSB von -5,7 zeigt normale Belastung ohne Übermüdung. Die physiologischen Voraussetzungen für eine intensivere Belastung sind damit gegeben.
 
-### Wochenaufgabe
-Nutze das Zeitfenster bis Freitag für Slot 2 je nach Tagesform und Zeitbudget. Am Wochenende folgt Slot 3 als langer Grundlagenlauf. Halte bei allen Grundlagenteilen den Puls strikt unter 158 bpm – die Pace ist dabei zweitrangig, Gehpausen an Anstiegen sind völlig normal. Ziel bleibt das verlässliche Schließen aller drei Wochen-Slots.
+### Wochenaufgabe: Geplanten Schwellenlauf umsetzen
+Nutze die Frische für den am Donnerstag (12.11.) geplanten Schwellenlauf (3x 8 Min in Zone 4 bei 169–177 bpm). Halte die Trabpausen konsequent ruhig (< 135 bpm). Am Wochenende folgt dann wie gewohnt der lange Grundlagenlauf im Slot 3 strikt unter 158 bpm.
