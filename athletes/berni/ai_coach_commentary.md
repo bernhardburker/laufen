@@ -1,8 +1,8 @@
-### Status Quo & Beine
-Die letzten beiden Einheiten am 8. und 10. November waren mit über 95 % Zone 1 und 2 saubere Grundlagenläufe. Der Puls blieb mit durchschnittlich 145 und 146 bpm verlässlich unter der Grenze von 158 bpm. Das hat die Beine nach dem zügigen Dauerlauf von letzter Woche wieder vollständig entlastet.
+### Aktuelle Lage & Frische
+Die Ruhepuls- und HRV-Werte von heute Morgen (RHR 46 bpm, HRV 80 ms) zeigen, dass der Ruhetag nach dem lockeren 35-Minuten-Lauf vom Dienstag gut verarbeitet ist. Die Beine sind erholt, der TSB liegt mit -5.7 in einem völlig unkritischen Bereich für die Wochenmitte.
 
-### Wellness & Regeneration
-Dein Ruhepuls liegt bei 47 bpm (1,6 bpm unter Baseline), die HRV mit 73 ms leicht über dem 14-Tage-Schnitt und der Schlaf war mit 8,2 Stunden und Score 90 erholsam. Der TSB von -5,7 zeigt normale Belastung ohne Übermüdung. Die physiologischen Voraussetzungen für eine intensivere Belastung sind damit gegeben.
+### Entscheidung für Slot 2
+Im Kalender stehen für heute zwei Optionen: die Schwellenintervalle (4x 4 Min in Zone 4) und der 35-minütige Grundlagenlauf. Aus physiologischer Sicht spricht dank der hohen HRV und des niedrigen Ruhepulses nichts gegen den Qualitätsreiz. Wenn du dich beim Einlaufen frisch fühlst, zieh die 4x 4 Minuten an der Schwelle (169–177 bpm) durch. Merkste beim Aufwärmen schwere Beine, nimmst du ohne Zögern die Z2-Variante unter 158 bpm.
 
-### Wochenaufgabe: Geplanten Schwellenlauf umsetzen
-Nutze die Frische für den am Donnerstag (12.11.) geplanten Schwellenlauf (3x 8 Min in Zone 4 bei 169–177 bpm). Halte die Trabpausen konsequent ruhig (< 135 bpm). Am Wochenende folgt dann wie gewohnt der lange Grundlagenlauf im Slot 3 strikt unter 158 bpm.
+### Wochenaufgabe
+Slot 2 heute oder spätestens morgen sauber nach Plan abschließen (entweder kontrollierte Z4-Intervalle oder Z2-Grundlage). Am Wochenende folgt dann der gewohnte lange Grundlagenlauf (Slot 3) strikt unter 158 bpm, um die Wochenkilometer solide abzurunden.
