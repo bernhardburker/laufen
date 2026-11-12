@@ -1,8 +1,8 @@
-### Aktuelle Lage & Frische
-Die Ruhepuls- und HRV-Werte von heute Morgen (RHR 46 bpm, HRV 80 ms) zeigen, dass der Ruhetag nach dem lockeren 35-Minuten-Lauf vom Dienstag gut verarbeitet ist. Die Beine sind erholt, der TSB liegt mit -5.7 in einem völlig unkritischen Bereich für die Wochenmitte.
+### Aktueller Stand & Erholung
+Die Daten der letzten Tage zeigen ein ruhiges, unaufgeregtes Bild. Dein Ruhepuls liegt mit 48 bpm stabil auf bzw. leicht unter deiner Baseline, und die HRV von 80 ms signalisiert ein erholtes vegetatives Nervensystem. Der letzte Grundlagenlauf vom Dienstag (4,2 km bei 146 bpm) war mit 95,7 % in Zone 1 und 2 trainingsmethodisch sauber ausgeführt: Die Beine blieben frisch, das aerobe Fundament wurde gepflegt und der Kreislauf geschont.
 
-### Entscheidung für Slot 2
-Im Kalender stehen für heute zwei Optionen: die Schwellenintervalle (4x 4 Min in Zone 4) und der 35-minütige Grundlagenlauf. Aus physiologischer Sicht spricht dank der hohen HRV und des niedrigen Ruhepulses nichts gegen den Qualitätsreiz. Wenn du dich beim Einlaufen frisch fühlst, zieh die 4x 4 Minuten an der Schwelle (169–177 bpm) durch. Merkste beim Aufwärmen schwere Beine, nimmst du ohne Zögern die Z2-Variante unter 158 bpm.
+### Trainingssteuerung & Kalenderabgleich
+Mit einer aktuellen Form von TSB -5,7 bist du in einem normalen, leicht ermüdeten Trainingsfenster, das weder Überlastung noch Unterforderung anzeigt. Für das verbleibende Wochenfenster passt der am Samstag (14.11.) geplante Easy Run über 35 Minuten exakt in die Struktur: Nach zwei Tagen ohne Laufreiz geht es darum, die aerobe Kapazität ohne Tempodruck anzusprechen. Lass die Pace komplett außen vor und orientiere dich ausschließlich an der Obergrenze von 148 bpm.
 
 ### Wochenaufgabe
-Slot 2 heute oder spätestens morgen sauber nach Plan abschließen (entweder kontrollierte Z4-Intervalle oder Z2-Grundlage). Am Wochenende folgt dann der gewohnte lange Grundlagenlauf (Slot 3) strikt unter 158 bpm, um die Wochenkilometer solide abzurunden.
+Absolviere am Samstag den geplanten 35-minütigen Grundlagenlauf strikt unter 148 bpm. Nutze an Steigungen bei Bedarf Gehpausen, um den Puls unten zu halten, und plane am Sonntag einen langen, ruhigen Grundlagenlauf zur Festigung des Wochenvolumens.
