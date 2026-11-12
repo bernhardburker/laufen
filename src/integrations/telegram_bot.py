@@ -232,7 +232,11 @@ def format_settings_message(ctx: AthleteContext) -> str:
     )
 
 
-def build_evening_keyboard(target_date_iso: str, is_rest_day: bool = False) -> Dict[str, Any]:
+def build_evening_keyboard(
+    target_date_iso: str,
+    is_rest_day: bool = False,
+    has_multiple_options: bool = False,
+) -> Dict[str, Any]:
     """Builds inline keyboard for evening preview."""
     if is_rest_day:
         return {
@@ -241,6 +245,19 @@ def build_evening_keyboard(target_date_iso: str, is_rest_day: bool = False) -> D
                     {"text": "🛋️ Ruhetag fixieren", "callback_data": f"keep_rest:{target_date_iso}"},
                     {"text": "🏃 Doch Lauf planen", "callback_data": f"run_today:{target_date_iso}"},
                 ]
+            ]
+        }
+    if has_multiple_options:
+        return {
+            "inline_keyboard": [
+                [
+                    {"text": "⚡ Option A: Schwelle", "callback_data": f"accept_a:{target_date_iso}"},
+                    {"text": "🌿 Option B: Z2 Basis", "callback_data": f"accept_b:{target_date_iso}"},
+                ],
+                [
+                    {"text": "⏱️ Nur 35m", "callback_data": f"shorter35:{target_date_iso}"},
+                    {"text": "🛋️ Ruhetag", "callback_data": f"rest:{target_date_iso}"},
+                ],
             ]
         }
     return {
@@ -262,6 +279,7 @@ def format_evening_preview_message(
     target_date_iso: str,
     tomorrow_workout: Optional[Dict[str, Any]] = None,
     is_rest_day: bool = False,
+    all_tomorrow_workouts: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     """Formats evening preview message preparing the athlete mentally and logistically for tomorrow."""
     lines = [
@@ -269,13 +287,31 @@ def format_evening_preview_message(
         f"Hier ist deine Vorschau auf morgen ({target_date_iso}):",
         "",
     ]
-    if is_rest_day or not tomorrow_workout:
+    workouts = all_tomorrow_workouts or ([tomorrow_workout] if tomorrow_workout else [])
+    if is_rest_day or not workouts:
         lines.append("🛋️ **Morgen steht ein Ruhetag an.**")
         lines.append("Zeit für aktive Erholung, Mobility oder einfach die Füße hochlegen.")
         lines.append("Dein Körper verarbeitet die Trainingsreize der letzten Tage.")
+    elif len(workouts) > 1:
+        lines.append("🏃 **Zwei Optionen auf deiner Garmin-Uhr verfügbar (Flexi-Modell):**")
+        for i, w in enumerate(workouts, start=1):
+            w_name = w.get("name") or f"Option {i}"
+            w_desc = str(w.get("description") or "").strip().replace("\n", " | ")
+            if len(w_desc) > 80:
+                w_desc = w_desc[:77] + "..."
+            lines.append(f"• **Option {chr(64+i)}:** {w_name}")
+            if w_desc:
+                lines.append(f"  _{w_desc}_")
+        lines.append("")
+        lines.append("💡 *Du kannst spontan morgen beim Start auf der Uhr wählen, oder hier per Button vorab fixieren.*")
+        lines.append("")
+        lines.append("👟 **Logistik & Vorbereitung:**")
+        lines.append("• Lege dir heute Abend schon Laufkleidung & Schuhe bereit.")
+        lines.append("• Garmin-Uhr und Brustgurt über Nacht laden.")
     else:
-        w_name = tomorrow_workout.get("name") or "Geplanter Trainingslauf"
-        w_desc = str(tomorrow_workout.get("description") or "").strip()
+        w = workouts[0]
+        w_name = w.get("name") or "Geplanter Trainingslauf"
+        w_desc = str(w.get("description") or "").strip()
         lines.append(f"🏃 **Geplantes Training:** {w_name}")
         if w_desc:
             lines.append("")
@@ -697,37 +733,52 @@ def send_evening_preview_for_athlete(
         evening_preview=True,
     )
 
+    all_tomorrow_workouts: List[Dict[str, Any]] = []
     is_rest_day = bool(sync_res.get("is_rest_day_tomorrow", False))
     if is_rest_day:
         tomorrow_workout = None
     else:
         scheduled = sync_res.get("scheduled") or []
         skipped = sync_res.get("skipped") or []
-        workouts = [w for w in (scheduled + skipped) if str(w.get("start_date_local") or "")[:10] == tomorrow_iso]
-        tomorrow_workout = workouts[0] if workouts else None
-        if not tomorrow_workout and events_path.is_file():
+        all_tomorrow_workouts = [w for w in (scheduled + skipped) if str(w.get("start_date_local") or "")[:10] == tomorrow_iso]
+        if events_path.is_file():
             try:
                 ev_list = json.loads(events_path.read_text(encoding="utf-8"))
                 on_tomorrow = [
                     e for e in ev_list
                     if str(e.get("start_date_local") or "")[:10] == tomorrow_iso
                     and e.get("category") == "WORKOUT"
+                    and not e.get("paired_activity_id")
                 ]
-                if on_tomorrow:
-                    tomorrow_workout = on_tomorrow[0]
+                # Merge unique workouts by id or name
+                existing_ids = {str(w.get("id")) for w in all_tomorrow_workouts if w.get("id")}
+                for ev in on_tomorrow:
+                    if str(ev.get("id")) not in existing_ids:
+                        all_tomorrow_workouts.append(ev)
+                        if ev.get("id"):
+                            existing_ids.add(str(ev.get("id")))
             except Exception:
                 pass
+
+        tomorrow_workout = all_tomorrow_workouts[0] if all_tomorrow_workouts else None
         if not tomorrow_workout and (scheduled or skipped):
             if sync_res.get("target_date") == tomorrow_iso:
                 tomorrow_workout = scheduled[0] if scheduled else skipped[0]
+                all_tomorrow_workouts = [tomorrow_workout]
 
+    has_multi = len(all_tomorrow_workouts) > 1
     msg_text = format_evening_preview_message(
         athlete_name=ctx.display_name,
         target_date_iso=tomorrow_iso,
         tomorrow_workout=tomorrow_workout,
         is_rest_day=is_rest_day,
+        all_tomorrow_workouts=all_tomorrow_workouts,
     )
-    keyboard = build_evening_keyboard(tomorrow_iso, is_rest_day=is_rest_day)
+    keyboard = build_evening_keyboard(
+        tomorrow_iso,
+        is_rest_day=is_rest_day,
+        has_multiple_options=has_multi,
+    )
 
     send_res = bot_client.send_message(
         chat_id=ctx.telegram_chat_id,
@@ -1213,8 +1264,12 @@ def handle_telegram_update(
             bot_client.send_message(chat_id=chat_id, text=full_msg, reply_markup=kb)
             return {"status": "setting_toggled", "athlete": ctx.slug, "setting": setting_name}
 
-        if action_key == "accept":
+        if action_key in ("accept", "accept_a", "accept_b"):
             w_name = proposal.get("name") or "Dein Training"
+            if action_key == "accept_a":
+                w_name = "Option A: Schwellenlauf"
+            elif action_key == "accept_b":
+                w_name = "Option B: Z2 Basis"
             locked = set(state.get("user_locked_dates") or [])
             locked.add(target_date_iso)
             state["user_locked_dates"] = sorted(list(locked))

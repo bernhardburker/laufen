@@ -75,13 +75,18 @@ jobs:
           fi
           if [ -n "$INTERVALS_API_KEY" ]; then
             echo "Fetching fresh activities & wellness ($TARGET_FLAG)..."
-            ./run sync $TARGET_FLAG || echo "::warning ::Sync step failed"
+            ./run sync-events $TARGET_FLAG || echo "::warning ::Events sync failed"
+            ./run sync-wellness $TARGET_FLAG || echo "::warning ::Wellness sync failed"
+            ./run sync-profile $TARGET_FLAG || echo "::warning ::Profile sync failed"
             # Maintain legacy root fallback if berni data was updated
             if [ -f "athletes/berni/intervals_activities.json" ]; then
               cp -f athletes/berni/intervals_activities.json data/intervals_activities.json
             fi
             if [ -f "athletes/berni/intervals_wellness.json" ]; then
               cp -f athletes/berni/intervals_wellness.json data/intervals_wellness.json
+            fi
+            if [ -f "athletes/berni/calendar_events.json" ]; then
+              cp -f athletes/berni/calendar_events.json data/calendar_events.json
             fi
           elif [ -f "data/intervals_activities.json" ]; then
             echo "Using existing activity data..."

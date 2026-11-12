@@ -994,48 +994,18 @@ def sync_adaptive_plan(
         ev_name = unpaired_on_target[0].get("name", "Workout")
         ev_id = unpaired_on_target[0].get("id")
 
-        # Check if athlete has manually locked or chosen this date (via Telegram button/feedback)
-        user_locked_dates = set()
-        resolved_state_file = state_file or (
-            Path(os.environ["TELEGRAM_STATE_PATH"]) if os.environ.get("TELEGRAM_STATE_PATH") else None
-        ) or (
-            (sibling_dir / "telegram_state.json")
-            if (sibling_dir and (sibling_dir / "telegram_state.json").is_file())
-            else None
-        )
-        if resolved_state_file and Path(resolved_state_file).is_file():
-            try:
-                st_data = json.loads(Path(resolved_state_file).read_text(encoding="utf-8"))
-                user_locked_dates = set(st_data.get("user_locked_dates") or [])
-            except Exception:
-                user_locked_dates = set()
-
-        is_user_locked = target_date_iso in user_locked_dates
-
-        # If workout matches candidate OR user has explicitly locked this date: keep existing
-        if ev_name == name or is_user_locked:
-            lock_info = " (Benutzer-Veto aktiv)" if is_user_locked else ""
-            print(f"[BEREITS GEPLANT] Für {target_date_iso} existiert bereits ein Workout: {ev_name}{lock_info}")
-            results["skipped"].append(unpaired_on_target[0])
-            if events_file and not dry_run:
-                events_path = Path(events_file)
-                events_path.parent.mkdir(parents=True, exist_ok=True)
-                all_final = list(remaining_events) + outside_window_events
-                all_final.sort(key=lambda x: str(x.get("start_date_local") or ""))
-                with open(events_path, "w", encoding="utf-8") as f:
-                    json.dump(all_final, f, indent=2, ensure_ascii=False)
-            print("=" * 60)
-            return results
-
-        # Slot-dynamischer Coach-Overrule:
-        # Veralteter automatischer Platzhalter wird durch frische Periodisierung / Coach-Vorgabe ersetzt
-        print(f"[COACH-OVERRULE] Automatischer Entwurf auf {target_date_iso} wird aktualisiert:")
-        print(f"  Vorher: {ev_name}")
-        print(f"  Nachher: {name}")
-        if not dry_run and api_key and ev_id:
-            delete_workout_event(ev_id, api_key, athlete_id, api_base_url)
-        remaining_events = [e for e in remaining_events if e.get("id") != ev_id]
-        results["cleaned"].append(unpaired_on_target[0])
+        # An existing planned workout on target date is preserved (never deleted or overwritten blind)
+        print(f"[BEREITS GEPLANT] Für {target_date_iso} existiert bereits ein Workout: {ev_name}")
+        results["skipped"].append(unpaired_on_target[0])
+        if events_file and not dry_run:
+            events_path = Path(events_file)
+            events_path.parent.mkdir(parents=True, exist_ok=True)
+            all_final = list(remaining_events) + outside_window_events
+            all_final.sort(key=lambda x: str(x.get("start_date_local") or ""))
+            with open(events_path, "w", encoding="utf-8") as f:
+                json.dump(all_final, f, indent=2, ensure_ascii=False)
+        print("=" * 60)
+        return results
 
     # Step 4: Generate adaptive workout payload & record structured decision trace
 
