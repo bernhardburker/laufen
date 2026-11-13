@@ -1,49 +1,55 @@
 {
-  "status_title": "Stabile aerobe Basis & planmäßige Erholung",
-  "status_badge": "Basis stabil / Erholung im Soll",
-  "status_level": "success",
-  "coach_commentary": "### Aktueller Stand & Erholung\nDie Daten der letzten Tage zeigen ein ruhiges, unaufgeregtes Bild. Dein Ruhepuls liegt mit 48 bpm stabil auf bzw. leicht unter deiner Baseline, und die HRV von 80 ms signalisiert ein erholtes vegetatives Nervensystem. Der letzte Grundlagenlauf vom Dienstag (4,2 km bei 146 bpm) war mit 95,7 % in Zone 1 und 2 trainingsmethodisch sauber ausgeführt: Die Beine blieben frisch, das aerobe Fundament wurde gepflegt und der Kreislauf geschont.\n\n### Trainingssteuerung & Kalenderabgleich\nMit einer aktuellen Form von TSB -5,7 bist du in einem normalen, leicht ermüdeten Trainingsfenster, das weder Überlastung noch Unterforderung anzeigt. Für das verbleibende Wochenfenster passt der am Samstag (14.11.) geplante Easy Run über 35 Minuten exakt in die Struktur: Nach zwei Tagen ohne Laufreiz geht es darum, die aerobe Kapazität ohne Tempodruck anzusprechen. Lass die Pace komplett außen vor und orientiere dich ausschließlich an der Obergrenze von 148 bpm.\n\n### Wochenaufgabe\nAbsolviere am Samstag den geplanten 35-minütigen Grundlagenlauf strikt unter 148 bpm. Nutze an Steigungen bei Bedarf Gehpausen, um den Puls unten zu halten, und plane am Sonntag einen langen, ruhigen Grundlagenlauf zur Festigung des Wochenvolumens.",
+  "status_title": "Ausgeruhte Ausgangslage & Basisfokus",
+  "status_badge": "Regeneration stabil",
+  "status_level": "info",
+  "coach_commentary": "### Status Quo & Regeneration\nSeit dem lockeren Lauf am Dienstag (4,2 km bei Ø 146 bpm) hast du drei Ruhetage eingelegt. Die Daten zeigen, dass die Pause gut getan hat: Dein Ruhepuls liegt mit 45 bpm deutlich unter der Baseline (-3,2 bpm), und die HRV ist mit Werten um 73–80 ms stabil. Die Frische für das anstehende Wochenende ist damit voll da.\n\n### Kalenderabgleich & Wochenende\nFür Samstag steht laut Kalender ein 35-minütiger Grundlagenlauf (Easy Run) auf dem Plan. Das passt exakt in die Periodisierung: Nach den Ruhetagen reicht ein kurzer, rein aerober Lauf, um das Herz-Kreislauf-System zu aktivieren, ohne vor dem Sonntag unnötig Laktat anzuhäufen. Halte den Puls dabei diszipliniert unter 148 bpm. Wenn es bergauf geht oder der Puls klettert, nimm ohne Zögern Gehpausen rein – das Tempo spielt keine Rolle.\n\n### Wochenaufgabe für nächste Woche\n1. **Slot 1 (Di):** Ein gezielter Temporeiz (z. B. 20 Min im Schwellenbereich bei 170–177 bpm), um die Laktatschwelle anzusprechen.\n2. **Slot 2 & 3:** Den Rest der Woche konsequent aerob unter 148 bpm halten, um das Volumen schrittweise in Richtung 20 km zu stabilisieren.",
   "history_evaluation": {
-    "compliance_status": "erfüllt",
-    "actual_summary": "Seit der Empfehlung vom 11.11. wurden noch keine neuen Läufe absolviert. Die letzte Einheit vom 10.11. war ein disziplinierter Grundlagenlauf über 4,2 km mit 95,7 % Z1/Z2-Anteil.",
-    "effect_analysis": "Die aerobe Entlastung der letzten zwei Tage hat die HRV auf 80 ms ansteigen lassen. Bei einer Fitness von CTL 15,1 und ATL 20,8 liegt die Ermüdung (TSB -5,7) im absolut unkritischen Bereich.",
-    "next_recommendation": "Absolviere den für Samstag im Kalender vorgemerkten Easy Run (35 Min) mit striktem Pulsdeckel bei 148 bpm. Kein Temporeiz, Gehpausen an Anstiegen beibehalten.",
+    "compliance_status": "teilweise",
+    "actual_summary": "Seit der Empfehlung vom 11.11. wurden keine Einheiten absolviert. Die drei Ruhetage haben die Beine nach den 21,5 km aus Woche 45 entlastet.",
+    "effect_analysis": "Der Ruhepuls ist auf 45 bpm gesunken (-3,2 bpm zur Baseline). Die Ermüdung hat sich abgebaut, TSB liegt bei -5,7 mit voller Bereitschaft für aerobe Reize.",
+    "next_recommendation": "Absolviere den für Samstag geplanten 35-minütigen Easy Run mit striktem Pulsdeckel bei 148 bpm. Pace ignorieren, Gehpausen an Steigungen nutzen.",
     "next_workout_type": "easy_run",
     "next_target_hr": 148,
     "next_duration_min": 35
   },
   "insights": [
     {
-      "title": "Aerobe Zonendisziplin in den Einzelläufen",
+      "title": "Aerobe Zonen-Disziplin & Steuerung",
       "type": "success",
-      "badge": "95.7% Z1/Z2 zuletzt",
-      "text": "Während der Gesamtschnitt historisch bei 58,8 % Z1/Z2 liegt, zeigten die jüngsten Grundlagenläufe (10.11. mit 95,7 % und 08.11. mit 96,9 %) eine hervorragende Pulstreue deutlich unter 148 bpm."
+      "badge": "95.7% Z1/Z2",
+      "text": "Beim letzten Lauf am 10.11. lag der Puls im Schnitt bei 146 bpm und zu 95,7% in den Zonen 1 und 2. Das aerobe Fundament wird sauber bedient, wenn das Tempo zweitrangig bleibt."
     },
     {
-      "title": "Trainingsvolumen & Frequenz",
+      "title": "Regenerationsstatus & Frische",
       "type": "info",
-      "badge": "Ø 13.3 km / Wo.",
-      "text": "Mit durchschnittlich 2,1 Läufen und 13,3 km pro Woche ist das Fundament etabliert. Ein dritter fester Wochenlauf (Slot 3 als Long Run) stabilisiert das Volumen kontinuierlich in Richtung 20 km."
+      "badge": "RHR 45 bpm (-3.2)",
+      "text": "Mit einem Ruhepuls von 45 bpm und HRV-Werten um 73–80 ms über die letzten Tage ist die vegetative Erholung vollständig gegeben. Die Belastung der Vorwoche ist verarbeitet."
+    },
+    {
+      "title": "Wochenpensum & Kontinuität",
+      "type": "info",
+      "badge": "4.2 km in W46",
+      "text": "Nach 21,5 km in W45 steht die aktuelle Woche bisher bei einem Lauf. Mit dem geplanten 35-Minuten-Lauf am Samstag und einem Z2-Lauf am Sonntag lässt sich das Wochenpensum solide abrunden."
     }
   ],
   "recommendations": [
     {
-      "title": "Grundlagenläufe strikt nach Herzfrequenz steuern",
+      "title": "Easy Run strikt unter 148 bpm halten",
       "tag": "Priorität 1: Aerobe Basis",
       "tag_class": "tag-amber",
-      "text": "Halte die Herzfrequenz bei Z2-Einheiten strikt unter 148 bpm. Die Pace auf der Uhr ist zweitrangig. Gehpausen an Anstiegen sind erwünscht, um den aeroben Reiz sauber zu halten."
+      "text": "Den anstehenden Lauf am Samstag ausschließlich über den Puls steuern (< 148 bpm). Sobald die Herzfrequenz ansteigt, Pace drosseln oder Gehpausen einlegen."
     },
     {
-      "title": "Klare Reiztrennung nach 80/20",
+      "title": "Wochenende für kontinuierlichen Basisaufbau nutzen",
+      "tag": "Slot 3: Long Run",
+      "tag_class": "tag-green",
+      "text": "Nach dem kurzen Aktivierungslauf am Samstag am Sonntag einen längeren Grundlagenlauf (45–60 Min) anschließen, um das aerobe Wochenvolumen ohne Geschwindigkeitsdruck zu sichern."
+    },
+    {
+      "title": "Temporeiz für kommende Woche vormerken",
       "tag": "Trainingsstruktur",
       "tag_class": "tag-cyan",
-      "text": "Behalte die klare Aufteilung bei: Etwa 80 % des Volumens in Z1/Z2 und maximal eine gezielte Schwellen- oder Tempoeinheit pro Woche (Z3/Z4) an der Laktatschwelle von 178 bpm."
-    },
-    {
-      "title": "Behutsamer Ausbau des Wochenvolumens",
-      "tag": "Umfangsaufbau",
-      "tag_class": "tag-green",
-      "text": "Halte die 3 wöchentlichen Slots verlässlich ein. Steigere das Wochenpensum nicht über Tempo, sondern über eine schrittweise Verlängerung des Wochenendlaufs um 5 bis 10 Minuten."
+      "text": "Da in dieser Woche kein Schwellenlauf stattfand, für nächste Woche in Slot 1 wieder einen gezielten Schwellenreiz (170–177 bpm) einplanen, um die Reiztrennung zu wahren."
     }
   ],
   "athlete": {
