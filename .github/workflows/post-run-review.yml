@@ -1,5 +1,9 @@
 name: Post-Run 4-Stage Physiological Review
 
+permissions:
+  actions: write
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:

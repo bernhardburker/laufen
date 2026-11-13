@@ -1,5 +1,9 @@
 name: AI Coach & Adaptive Calendar Planner
 
+permissions:
+  actions: write
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:
@@ -171,7 +175,8 @@ jobs:
             gh workflow run send-telegram.yml \
               -f athlete="$ATHLETE" \
               -f mode="$MODE" \
-              -f target_date="$TARGET_DATE" || echo "::warning ::Failed to trigger send-telegram.yml"
+              -f target_date="$TARGET_DATE" \
+              -f force="true" || echo "::warning ::Failed to trigger send-telegram.yml"
           fi
           gh workflow run deploy-pages.yml \
             -f athlete="$ATHLETE" || echo "::warning ::Failed to trigger deploy-pages.yml"
