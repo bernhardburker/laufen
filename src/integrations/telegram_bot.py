@@ -17,9 +17,10 @@ import datetime
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 import urllib.error
 import urllib.request
 
@@ -59,8 +60,10 @@ from src.integrations.manage_note import attach_note_to_run
 from src.llm import LLMClient, get_llm_client
 from src.planner.extract_markers import extract_planning_markers
 from src.planner.schedule_workout import (
+    cleanup_unpaired_workouts_on_date,
     load_env_file,
     override_workout_on_date,
+    select_workout_option_on_date,
     sync_adaptive_plan,
 )
 
@@ -167,6 +170,57 @@ def save_telegram_state(state_path: Path, state: Dict[str, Any]) -> None:
     with open(state_path, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
         f.write("\n")
+
+
+def dispatch_github_workflow(
+    workflow_file: str,
+    inputs: Dict[str, str],
+    project_root: Optional[Path] = None,
+    dry_run: bool = False,
+    repo: Optional[str] = None,
+    ref: str = "main",
+) -> Dict[str, Any]:
+    """Dispatches a GitHub Actions workflow via `gh workflow run` with structured key=value inputs."""
+    root = project_root or PROJECT_ROOT
+    target_repo = repo or os.getenv("GITHUB_REPOSITORY", "bernhardburker/laufen")
+    clean_inputs = {str(k): str(v) for k, v in inputs.items() if v is not None and str(v) != ""}
+    cmd = ["gh", "workflow", "run", workflow_file, "--repo", target_repo, "--ref", ref]
+    for k, v in clean_inputs.items():
+        cmd.extend(["-f", f"{k}={v}"])
+
+    if dry_run:
+        return {
+            "ok": True,
+            "dry_run": True,
+            "workflow": workflow_file,
+            "inputs": clean_inputs,
+            "command": cmd,
+        }
+
+    try:
+        res = subprocess.run(
+            cmd,
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=20,
+            check=False,
+        )
+        return {
+            "ok": res.returncode == 0,
+            "returncode": res.returncode,
+            "workflow": workflow_file,
+            "inputs": clean_inputs,
+            "stdout": res.stdout.strip(),
+            "stderr": res.stderr.strip(),
+        }
+    except Exception as exc:
+        return {
+            "ok": False,
+            "workflow": workflow_file,
+            "inputs": clean_inputs,
+            "error": str(exc),
+        }
 
 
 def build_briefing_keyboard(
@@ -822,11 +876,30 @@ def send_post_run_review_for_athlete(
     activity_id: Optional[str] = None,
     project_root: Optional[Path] = None,
     dry_run: bool = False,
+    intervals_api_key: str = "",
+    intervals_api_base: str = "https://intervals.icu/api/v1",
+    note_text: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Generates and sends coach-centric post-run review for a completed activity."""
     root = project_root or PROJECT_ROOT
     if not ctx.telegram_chat_id:
         return {"status": "no_chat_id", "athlete": ctx.slug}
+
+    if note_text and activity_id:
+        try:
+            attach_note_to_run(
+                note_text=note_text,
+                activities_path=ctx.activities_path,
+                reviews_path=ctx.run_reviews_path,
+                activity_id=activity_id,
+                api_key=intervals_api_key,
+                api_base_url=intervals_api_base,
+                athlete_profile_path=ctx.athlete_config_path,
+                coach_history_path=ctx.coach_history_path,
+                dry_run=dry_run,
+            )
+        except Exception:
+            pass
 
     act: Optional[Dict[str, Any]] = activity
     if act is None:
@@ -848,6 +921,20 @@ def send_post_run_review_for_athlete(
         return {"status": "activity_not_found", "athlete": ctx.slug}
 
     act_id = str(act.get("id") or "0")
+    run_date_iso = str(act.get("start_date_local") or "")[:10]
+    if run_date_iso and intervals_api_key and not dry_run:
+        try:
+            cleanup_unpaired_workouts_on_date(
+                target_date_iso=run_date_iso,
+                api_key=intervals_api_key,
+                athlete_id=ctx.intervals_id,
+                api_base_url=intervals_api_base,
+                dry_run=dry_run,
+                events_file=ctx.calendar_events_path,
+            )
+        except Exception:
+            pass
+
     profile = load_athlete_profile(ctx.athlete_config_path)
     metrics = extract_deep_run_metrics(act, profile)
     history = load_coach_history(ctx.coach_history_path) if ctx.coach_history_path.is_file() else []
@@ -1050,12 +1137,17 @@ def handle_telegram_update(
     registry_path: Optional[Path] = None,
     ref_date: Optional[datetime.date] = None,
     dry_run: bool = False,
+    dispatch_mode: bool = False,
+    workflow_dispatcher: Optional[Callable[[str, Dict[str, str]], Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Processes a single incoming Telegram update (text message or callback button click)."""
     root = project_root or PROJECT_ROOT
     today = ref_date or datetime.date.today()
     active_allowed_user_ids = (
         allowed_user_ids if allowed_user_ids is not None else parse_allowed_user_ids()
+    )
+    dispatcher = workflow_dispatcher or (
+        lambda wf, inp: dispatch_github_workflow(wf, inp, project_root=root, dry_run=dry_run)
     )
 
     # Case 1: Inline Keyboard Button Click (callback_query)
@@ -1115,6 +1207,26 @@ def handle_telegram_update(
             if not target_act_id or not note_text:
                 bot_client.send_message(chat_id=chat_id, text="⚠️ Keine ausstehende Notiz gefunden.")
                 return {"status": "no_pending_note", "athlete": ctx.slug}
+
+            if dispatch_mode:
+                state["pending_run_note"] = None
+                state["awaiting_run_note_for_id"] = None
+                save_telegram_state(state_path, state)
+                bot_client.send_message(
+                    chat_id=chat_id,
+                    text="⏳ Speichere deine Notiz und aktualisiere das Coach-Review via GitHub Actions...",
+                )
+                disp_res = dispatcher(
+                    "post-run-review.yml",
+                    {"athlete": ctx.slug, "run_id": str(target_act_id), "note": str(note_text)},
+                )
+                return {
+                    "status": "dispatched",
+                    "workflow": "post-run-review.yml",
+                    "athlete": ctx.slug,
+                    "activity_id": target_act_id,
+                    "dispatch_result": disp_res,
+                }
 
             res = attach_note_to_run(
                 note_text=note_text,
@@ -1264,12 +1376,56 @@ def handle_telegram_update(
             bot_client.send_message(chat_id=chat_id, text=full_msg, reply_markup=kb)
             return {"status": "setting_toggled", "athlete": ctx.slug, "setting": setting_name}
 
+        if dispatch_mode and action_key in (
+            "accept",
+            "accept_a",
+            "accept_b",
+            "keep_rest",
+            "run_today",
+            "rest",
+            "easier",
+            "shorter35",
+        ):
+            bot_client.send_message(
+                chat_id=chat_id,
+                text="⏳ Verarbeite deine Auswahl via GitHub Actions...",
+            )
+            disp_res = dispatcher(
+                "coach-plan.yml",
+                {
+                    "athlete": ctx.slug,
+                    "mode": "adhoc",
+                    "target_date": target_date_iso,
+                    "action": action_key,
+                },
+            )
+            return {
+                "status": "dispatched",
+                "workflow": "coach-plan.yml",
+                "athlete": ctx.slug,
+                "action": action_key,
+                "target_date": target_date_iso,
+                "dispatch_result": disp_res,
+            }
+
         if action_key in ("accept", "accept_a", "accept_b"):
             w_name = proposal.get("name") or "Dein Training"
-            if action_key == "accept_a":
-                w_name = "Option A: Schwellenlauf"
-            elif action_key == "accept_b":
-                w_name = "Option B: Z2 Basis"
+            if action_key in ("accept_a", "accept_b"):
+                opt_letter = "A" if action_key == "accept_a" else "B"
+                sel_res = select_workout_option_on_date(
+                    target_date_iso=target_date_iso,
+                    option=opt_letter,
+                    api_key=intervals_api_key,
+                    athlete_id=ctx.intervals_id,
+                    api_base_url=intervals_api_base,
+                    dry_run=dry_run,
+                    events_file=ctx.calendar_events_path,
+                    project_root=root,
+                )
+                sel_ev = sel_res.get("selected") or {}
+                w_name = sel_ev.get("name") or (
+                    "Option A: Schwellenlauf" if action_key == "accept_a" else "Option B: Z2 Basis"
+                )
             locked = set(state.get("user_locked_dates") or [])
             locked.add(target_date_iso)
             state["user_locked_dates"] = sorted(list(locked))
@@ -1652,6 +1808,33 @@ def handle_telegram_update(
         bot_client.send_message(chat_id=chat_id, text=prompt_text, reply_markup=reply_markup)
         return {"status": "note_proposed", "athlete": ctx.slug, "activity_id": candidate_id}
 
+    if dispatch_mode:
+        proposal = state.get("current_proposal") or {}
+        target_date_iso = proposal.get("target_date") or today.isoformat()
+        if any(m in text.lower() for m in ("morgen", "tomorrow")) and target_date_iso == today.isoformat():
+            target_date_iso = (today + datetime.timedelta(days=1)).isoformat()
+        bot_client.send_message(
+            chat_id=chat_id,
+            text="⏳ Passe dein Workout via GitHub Actions an...",
+        )
+        disp_res = dispatcher(
+            "coach-plan.yml",
+            {
+                "athlete": ctx.slug,
+                "mode": "adhoc",
+                "target_date": target_date_iso,
+                "feedback": text,
+            },
+        )
+        return {
+            "status": "dispatched",
+            "workflow": "coach-plan.yml",
+            "athlete": ctx.slug,
+            "target_date": target_date_iso,
+            "feedback": text,
+            "dispatch_result": disp_res,
+        }
+
     # Natural language feedback -> Coach Intent evaluation & Intervals.icu override
     return _process_athlete_feedback_text(
         user_text=text,
@@ -1825,12 +2008,17 @@ def check_and_send_due_briefings(
     project_root: Optional[Path] = None,
     registry_path: Optional[Path] = None,
     dry_run: bool = False,
+    dispatch_mode: bool = False,
+    workflow_dispatcher: Optional[Callable[[str, Dict[str, str]], Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
     """Checks all active athletes and sends their daily briefing if current time >= briefing_time and not yet sent today."""
     root = project_root or PROJECT_ROOT
     current_dt = now or datetime.datetime.now()
     today_iso = current_dt.date().isoformat()
     current_hm = current_dt.strftime("%H:%M")
+    dispatcher = workflow_dispatcher or (
+        lambda wf, inp: dispatch_github_workflow(wf, inp, project_root=root, dry_run=dry_run)
+    )
 
     sent_results: List[Dict[str, Any]] = []
     athletes = list_registered_athletes(project_root=root, registry_path=registry_path, active_only=True)
@@ -1844,16 +2032,32 @@ def check_and_send_due_briefings(
             continue
         if ctx.briefing_time <= current_hm <= "11:30":
             try:
-                res = send_daily_briefing_for_athlete(
-                    ctx=ctx,
-                    bot_client=bot_client,
-                    intervals_api_key=intervals_api_key,
-                    intervals_api_base=intervals_api_base,
-                    ref_date=current_dt.date(),
-                    dry_run=dry_run,
-                    project_root=root,
-                )
-                sent_results.append(res)
+                if dispatch_mode:
+                    state["last_briefing_date"] = today_iso
+                    save_telegram_state(state_path, state)
+                    disp_res = dispatcher(
+                        "coach-plan.yml",
+                        {"athlete": ctx.slug, "mode": "morning", "target_date": today_iso},
+                    )
+                    sent_results.append({
+                        "status": "dispatched",
+                        "workflow": "coach-plan.yml",
+                        "athlete": ctx.slug,
+                        "mode": "morning",
+                        "target_date": today_iso,
+                        "dispatch_result": disp_res,
+                    })
+                else:
+                    res = send_daily_briefing_for_athlete(
+                        ctx=ctx,
+                        bot_client=bot_client,
+                        intervals_api_key=intervals_api_key,
+                        intervals_api_base=intervals_api_base,
+                        ref_date=current_dt.date(),
+                        dry_run=dry_run,
+                        project_root=root,
+                    )
+                    sent_results.append(res)
             except Exception as e:
                 print(f"[WARN] Briefing for athlete '{ctx.slug}' failed: {e}", file=sys.stderr)
 
@@ -1868,12 +2072,18 @@ def check_and_send_due_evening_previews(
     project_root: Optional[Path] = None,
     registry_path: Optional[Path] = None,
     dry_run: bool = False,
+    dispatch_mode: bool = False,
+    workflow_dispatcher: Optional[Callable[[str, Dict[str, str]], Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
     """Checks all active athletes and sends evening preview if time is reached and enabled."""
     root = project_root or PROJECT_ROOT
     current_dt = now or datetime.datetime.now()
     today_iso = current_dt.date().isoformat()
+    tomorrow_iso = (current_dt.date() + datetime.timedelta(days=1)).isoformat()
     current_hm = current_dt.strftime("%H:%M")
+    dispatcher = workflow_dispatcher or (
+        lambda wf, inp: dispatch_github_workflow(wf, inp, project_root=root, dry_run=dry_run)
+    )
 
     sent_results: List[Dict[str, Any]] = []
     athletes = list_registered_athletes(project_root=root, registry_path=registry_path, active_only=True)
@@ -1887,16 +2097,32 @@ def check_and_send_due_evening_previews(
             continue
         if current_hm >= ctx.evening_briefing_time:
             try:
-                res = send_evening_preview_for_athlete(
-                    ctx=ctx,
-                    bot_client=bot_client,
-                    intervals_api_key=intervals_api_key,
-                    intervals_api_base=intervals_api_base,
-                    ref_date=current_dt.date(),
-                    dry_run=dry_run,
-                    project_root=root,
-                )
-                sent_results.append(res)
+                if dispatch_mode:
+                    state["last_evening_preview_date"] = today_iso
+                    save_telegram_state(state_path, state)
+                    disp_res = dispatcher(
+                        "coach-plan.yml",
+                        {"athlete": ctx.slug, "mode": "evening", "target_date": tomorrow_iso},
+                    )
+                    sent_results.append({
+                        "status": "dispatched",
+                        "workflow": "coach-plan.yml",
+                        "athlete": ctx.slug,
+                        "mode": "evening",
+                        "target_date": tomorrow_iso,
+                        "dispatch_result": disp_res,
+                    })
+                else:
+                    res = send_evening_preview_for_athlete(
+                        ctx=ctx,
+                        bot_client=bot_client,
+                        intervals_api_key=intervals_api_key,
+                        intervals_api_base=intervals_api_base,
+                        ref_date=current_dt.date(),
+                        dry_run=dry_run,
+                        project_root=root,
+                    )
+                    sent_results.append(res)
             except Exception as e:
                 print(f"[WARN] Evening preview for athlete '{ctx.slug}' failed: {e}", file=sys.stderr)
 
@@ -1912,12 +2138,17 @@ def check_and_send_due_post_run_reviews(
     intervals_api_base: str = "https://intervals.icu/api/v1",
     poll_interval_seconds: int = 600,
     now: Optional[datetime.datetime] = None,
+    dispatch_mode: bool = False,
+    workflow_dispatcher: Optional[Callable[[str, Dict[str, str]], Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
     """Checks all active athletes for un-notified completed runs and sends reviews."""
     root = project_root or PROJECT_ROOT
     current_dt = now or datetime.datetime.now()
     today_iso = current_dt.date().isoformat()
     now_ts = current_dt.timestamp()
+    dispatcher = workflow_dispatcher or (
+        lambda wf, inp: dispatch_github_workflow(wf, inp, project_root=root, dry_run=dry_run)
+    )
 
     sent_results: List[Dict[str, Any]] = []
     athletes = list_registered_athletes(project_root=root, registry_path=registry_path, active_only=True)
@@ -2002,12 +2233,31 @@ def check_and_send_due_post_run_reviews(
                 save_telegram_state(state_path, state)
                 continue
 
+            if dispatch_mode:
+                notified.add(latest_id)
+                state["notified_activity_ids"] = sorted(list(notified))
+                save_telegram_state(state_path, state)
+                disp_res = dispatcher(
+                    "post-run-review.yml",
+                    {"athlete": ctx.slug, "run_id": latest_id},
+                )
+                sent_results.append({
+                    "status": "dispatched",
+                    "workflow": "post-run-review.yml",
+                    "athlete": ctx.slug,
+                    "activity_id": latest_id,
+                    "dispatch_result": disp_res,
+                })
+                continue
+
             res = send_post_run_review_for_athlete(
                 ctx=ctx,
                 bot_client=bot_client,
                 activity=latest_run,
                 project_root=root,
                 dry_run=dry_run,
+                intervals_api_key=intervals_api_key or "",
+                intervals_api_base=intervals_api_base,
             )
             sent_results.append(res)
         except Exception as e:
@@ -2028,6 +2278,8 @@ def run_bot_daemon(
     dry_run: bool = False,
     max_loops: Optional[int] = None,
     enable_scheduler: bool = False,
+    dispatch_mode: bool = False,
+    workflow_dispatcher: Optional[Callable[[str, Dict[str, str]], Dict[str, Any]]] = None,
 ) -> None:
     """Runs the long-polling Telegram bot daemon. Scheduled briefings can be enabled via enable_scheduler."""
     root = project_root or PROJECT_ROOT
@@ -2035,6 +2287,8 @@ def run_bot_daemon(
     loops = 0
 
     mode_label = "Long-Polling + Scheduler" if enable_scheduler else "Long-Polling Listener"
+    if dispatch_mode:
+        mode_label += " [GitHub Actions Dispatch Router]"
     print("======================================================================")
     print(f"  Laufen Telegram Coach Bot - Active Daemon ({mode_label})")
     print("======================================================================")
@@ -2050,6 +2304,8 @@ def run_bot_daemon(
                     project_root=root,
                     registry_path=registry_path,
                     dry_run=dry_run,
+                    dispatch_mode=dispatch_mode,
+                    workflow_dispatcher=workflow_dispatcher,
                 )
                 check_and_send_due_evening_previews(
                     bot_client=bot_client,
@@ -2058,6 +2314,8 @@ def run_bot_daemon(
                     project_root=root,
                     registry_path=registry_path,
                     dry_run=dry_run,
+                    dispatch_mode=dispatch_mode,
+                    workflow_dispatcher=workflow_dispatcher,
                 )
                 check_and_send_due_post_run_reviews(
                     bot_client=bot_client,
@@ -2066,6 +2324,8 @@ def run_bot_daemon(
                     dry_run=dry_run,
                     intervals_api_key=intervals_api_key,
                     intervals_api_base=intervals_api_base,
+                    dispatch_mode=dispatch_mode,
+                    workflow_dispatcher=workflow_dispatcher,
                 )
 
             updates = bot_client.get_updates(offset=offset, timeout=poll_timeout)
@@ -2083,6 +2343,8 @@ def run_bot_daemon(
                     project_root=root,
                     registry_path=registry_path,
                     dry_run=dry_run,
+                    dispatch_mode=dispatch_mode,
+                    workflow_dispatcher=workflow_dispatcher,
                 )
         except KeyboardInterrupt:
             print("\n[INFO] Shutting down Telegram Bot daemon.")
@@ -2180,6 +2442,42 @@ def main() -> None:
         default=os.getenv("TELEGRAM_ALLOWED_USER_IDS", ""),
         help="Comma-separated Telegram user IDs allowed to interact with the bot (e.g. '12345678,87654321')",
     )
+    parser.add_argument(
+        "--dispatch-mode",
+        action="store_true",
+        default=os.getenv("TELEGRAM_DISPATCH_MODE", "").lower() in ("1", "true", "yes"),
+        help="Route planning, overrides, and post-run reviews via GitHub Actions workflow_dispatch (`gh workflow run`)",
+    )
+    parser.add_argument(
+        "--apply-adhoc",
+        action="store_true",
+        help="Execute an ad-hoc callback action or free-text workout modification (invoked by coach-plan.yml)",
+    )
+    parser.add_argument(
+        "--target-date",
+        default="",
+        help="Target ISO date YYYY-MM-DD for ad-hoc override",
+    )
+    parser.add_argument(
+        "--action",
+        default="",
+        help="Callback action key (e.g. accept_a, accept_b, easier, shorter35, rest, keep_rest, run_today, refresh_sleep)",
+    )
+    parser.add_argument(
+        "--feedback",
+        default="",
+        help="Free-text athlete constraint for ad-hoc override",
+    )
+    parser.add_argument(
+        "--run-id",
+        default="",
+        help="Specific Intervals.icu activity ID for --review",
+    )
+    parser.add_argument(
+        "--note",
+        default="",
+        help="Subjective run note to attach before running --review",
+    )
 
     args = parser.parse_args()
 
@@ -2220,6 +2518,45 @@ def main() -> None:
             llm = get_llm_client(provider=args.llm_provider)
         except Exception:
             llm = None
+
+    if args.apply_adhoc:
+        ctx = resolve_athlete_context(args.athlete, project_root=PROJECT_ROOT)
+        if not ctx.telegram_chat_id:
+            sys.exit(f"Error: Athlete '{ctx.slug}' has no linked telegram_chat_id.")
+        t_date = args.target_date or datetime.date.today().isoformat()
+        if args.action:
+            cb_data = f"{args.action}:{t_date}" if ":" not in args.action else args.action
+            synth_update: Dict[str, Any] = {
+                "callback_query": {
+                    "id": "",
+                    "data": cb_data,
+                    "message": {"chat": {"id": ctx.telegram_chat_id}},
+                    "from": {"id": ctx.telegram_chat_id},
+                }
+            }
+        elif args.feedback:
+            synth_update = {
+                "message": {
+                    "chat": {"id": ctx.telegram_chat_id},
+                    "from": {"id": ctx.telegram_chat_id},
+                    "text": args.feedback,
+                }
+            }
+        else:
+            sys.exit("Error: --apply-adhoc requires either --action or --feedback.")
+
+        res = handle_telegram_update(
+            update=synth_update,
+            bot_client=bot_client,
+            intervals_api_key=intervals_key,
+            intervals_api_base=args.intervals_api_base,
+            llm_client=llm,
+            project_root=PROJECT_ROOT,
+            dry_run=args.dry_run,
+            dispatch_mode=False,
+        )
+        print(f"✅ Ad-hoc action processed for {ctx.display_name}: {json.dumps(res, ensure_ascii=False)}")
+        return
 
     if args.briefing:
         ctx = resolve_athlete_context(args.athlete, project_root=PROJECT_ROOT)
@@ -2274,6 +2611,10 @@ def main() -> None:
         res = send_post_run_review_for_athlete(
             ctx=ctx,
             bot_client=bot_client,
+            activity_id=args.run_id or None,
+            note_text=args.note or None,
+            intervals_api_key=intervals_key,
+            intervals_api_base=args.intervals_api_base,
             dry_run=args.dry_run,
             project_root=PROJECT_ROOT,
         )
@@ -2311,6 +2652,7 @@ def main() -> None:
             dry_run=args.dry_run,
             max_loops=1,
             enable_scheduler=args.scheduler,
+            dispatch_mode=args.dispatch_mode,
         )
         return
 
@@ -2324,6 +2666,7 @@ def main() -> None:
         project_root=PROJECT_ROOT,
         dry_run=args.dry_run,
         enable_scheduler=args.scheduler,
+        dispatch_mode=args.dispatch_mode,
     )
 
 

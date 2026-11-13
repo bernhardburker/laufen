@@ -551,5 +551,88 @@ def step_no_new_workout_scheduled(driver: WorkoutScheduleDriver):
     assert len(posts) == 0, f"Expected no new POST requests for today, got: {posts}"
 
 
+@given("recent base anchor runs allow threshold on Slot 2")
+def step_recent_base_anchors_allow_threshold(driver: WorkoutScheduleDriver):
+    d1 = (driver.test_ref_date - datetime.timedelta(days=3)).isoformat()
+    d2 = (driver.test_ref_date - datetime.timedelta(days=6)).isoformat()
+    activities = [
+        {
+            "id": "run_base_1",
+            "type": "Run",
+            "start_date_local": f"{d1}T08:00:00",
+            "name": "Long Run Z2",
+            "distance": 8000.0,
+            "moving_time": 3000,
+            "average_heartrate": 148.0,
+            "icu_training_load": 40.0,
+            "icu_ctl": 25.0,
+            "icu_atl": 22.0,
+            "icu_hr_zone_times": [600, 2300, 100, 0, 0, 0, 0],
+        },
+        {
+            "id": "run_base_2",
+            "type": "Run",
+            "start_date_local": f"{d2}T08:00:00",
+            "name": "Easy Run Z2",
+            "distance": 7500.0,
+            "moving_time": 2800,
+            "average_heartrate": 146.0,
+            "icu_training_load": 38.0,
+            "icu_ctl": 25.0,
+            "icu_atl": 21.0,
+            "icu_hr_zone_times": [500, 2200, 100, 0, 0, 0, 0],
+        },
+    ]
+    act_path = driver.tmp_path / "activities.json"
+    act_path.write_text(json.dumps(activities), encoding="utf-8")
+
+
+@when("the workout schedule script is executed with adaptive dual-options arguments")
+def step_run_adaptive_dual_options(driver: WorkoutScheduleDriver):
+    act_path = driver.tmp_path / "activities.json"
+    driver.run_schedule(
+        [
+            "--adaptive-plan",
+            "--dual-options",
+            "--ref-date",
+            driver.test_ref_date.isoformat(),
+            "--activities-file",
+            str(act_path),
+        ],
+        use_mock_api=True,
+    )
+
+
+@when(parsers.parse('Option "{opt}" is selected for today via the workout schedule script'))
+def step_select_option_today(driver: WorkoutScheduleDriver, opt: str):
+    driver.run_schedule(
+        [
+            "--select-option",
+            opt,
+            "--date",
+            driver.test_ref_date.isoformat(),
+        ],
+        use_mock_api=True,
+    )
+
+
+@then("the mock server received a DELETE request for Option A")
+def step_delete_received_for_option_a():
+    deletes = [r for r in MockIntervalsEventHandler.received_requests if r.get("method") == "DELETE"]
+    assert len(deletes) >= 1, f"Expected DELETE request for Option A, got: {MockIntervalsEventHandler.received_requests}"
+
+
+@then("only Option B remains in the mock calendar for today")
+def step_only_option_b_remains(driver: WorkoutScheduleDriver):
+    today_iso = driver.test_ref_date.isoformat()
+    remaining = [
+        e for e in MockIntervalsEventHandler.events_db
+        if str(e.get("start_date_local") or "").startswith(today_iso)
+    ]
+    assert len(remaining) == 1, f"Expected 1 remaining workout, found: {remaining}"
+    assert "2B" in remaining[0].get("name", "") or "Z2" in remaining[0].get("name", "")
+
+
+
 
 

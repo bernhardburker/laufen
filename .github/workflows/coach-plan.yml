@@ -1,0 +1,177 @@
+name: AI Coach & Adaptive Calendar Planner
+
+on:
+  workflow_dispatch:
+    inputs:
+      athlete:
+        description: 'Target athlete slug (leave empty for default athlete berni)'
+        required: false
+        type: string
+        default: 'berni'
+      mode:
+        description: 'Execution mode (morning, evening, or adhoc)'
+        required: true
+        type: choice
+        options:
+          - morning
+          - evening
+          - adhoc
+        default: 'morning'
+      target_date:
+        description: 'Target ISO date YYYY-MM-DD (optional)'
+        required: false
+        type: string
+        default: ''
+      action:
+        description: 'Telegram callback action key for adhoc mode (e.g. accept_a, accept_b, easier, shorter35, rest)'
+        required: false
+        type: string
+        default: ''
+      feedback:
+        description: 'Free-text athlete feedback for adhoc mode'
+        required: false
+        type: string
+        default: ''
+
+concurrency:
+  group: coach-plan-${{ inputs.athlete || 'berni' }}
+  cancel-in-progress: false
+
+jobs:
+  coach-and-plan:
+    name: 🧠 Coach & Plan (${{ inputs.mode }} - ${{ inputs.athlete || 'berni' }})
+    runs-on: ${{ vars.RUNNER_OVERRIDE || 'self-hosted' }}
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        run: |
+          chmod +x ./init.sh ./run
+          ./init.sh
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Restore persistent athlete state from Burkerserver volume
+        run: |
+          PERSIST_DIR="$HOME/dockerContainer/laufen"
+          if [ -d "$PERSIST_DIR/athletes" ]; then
+            cp -rf "$PERSIST_DIR/athletes/"* athletes/ 2>/dev/null || true
+          fi
+          if [ -f "$PERSIST_DIR/.env" ] && [ ! -f ".env" ]; then
+            cp -f "$PERSIST_DIR/.env" .env
+          fi
+
+      - name: Sync Intervals.icu telemetry & calendar events
+        env:
+          INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
+          ATHLETE: ${{ inputs.athlete || 'berni' }}
+        run: |
+          ./run wellness --athlete "$ATHLETE" || echo "::warning ::Wellness sync reported a warning"
+          ./run events --athlete "$ATHLETE" || echo "::warning ::Events sync reported a warning"
+          ./run sync-profile --athlete "$ATHLETE" || echo "::warning ::Profile sync reported a warning"
+          eval "$(.venv/bin/python src/athletes.py --env "$ATHLETE")"
+          .venv/bin/python src/integrations/download_intervals.py --output "$ACTIVITIES_PATH" --athlete-id "$INTERVALS_ATHLETE_ID" || echo "::warning ::Activities sync reported a warning"
+
+      - name: Run 4-Stage Deterministic Run Review Cache Update
+        if: ${{ inputs.mode != 'adhoc' }}
+        env:
+          ATHLETE: ${{ inputs.athlete || 'berni' }}
+        run: |
+          ./run review --athlete "$ATHLETE" || echo "::warning ::Run review cache update reported a warning"
+
+      - name: Execute Macro AI Coach Pipeline
+        if: ${{ inputs.mode != 'adhoc' }}
+        continue-on-error: true
+        env:
+          AGY_MODEL: ${{ vars.AGY_MODEL || 'Gemini 3.8 Flash (Medium)' }}
+          AGY_TIMEOUT: '3m'
+          ATHLETE: ${{ inputs.athlete || 'berni' }}
+        run: |
+          chmod +x .github/scripts/run-ai-coach.sh
+          ./.github/scripts/run-ai-coach.sh \
+            "athletes/$ATHLETE/intervals_activities.json" \
+            "athletes/$ATHLETE/ai_coach_commentary.md" \
+            "athletes/$ATHLETE/athlete.json" || true
+
+      - name: Execute Adaptive Calendar Planning or Ad-hoc Override
+        env:
+          INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ATHLETE: ${{ inputs.athlete || 'berni' }}
+          MODE: ${{ inputs.mode }}
+          TARGET_DATE: ${{ inputs.target_date }}
+          ACTION_KEY: ${{ inputs.action }}
+          FEEDBACK_TEXT: ${{ inputs.feedback }}
+        run: |
+          eval "$(.venv/bin/python src/athletes.py --env "$ATHLETE")"
+          if [ "$MODE" = "evening" ]; then
+            .venv/bin/python src/planner/schedule_workout.py \
+              --adaptive-plan \
+              --evening-preview \
+              --dual-options \
+              --athlete-id "$INTERVALS_ATHLETE_ID" \
+              --activities-file "$ACTIVITIES_PATH" \
+              --events-file "$CALENDAR_EVENTS_PATH"
+          elif [ "$MODE" = "morning" ]; then
+            .venv/bin/python src/planner/schedule_workout.py \
+              --adaptive-plan \
+              --athlete-id "$INTERVALS_ATHLETE_ID" \
+              --activities-file "$ACTIVITIES_PATH" \
+              --events-file "$CALENDAR_EVENTS_PATH"
+          elif [ "$MODE" = "adhoc" ]; then
+            CMD_ARGS=(--apply-adhoc --athlete "$ATHLETE")
+            if [ -n "$TARGET_DATE" ]; then
+              CMD_ARGS+=(--target-date "$TARGET_DATE")
+            fi
+            if [ -n "$ACTION_KEY" ]; then
+              CMD_ARGS+=(--action "$ACTION_KEY")
+            fi
+            if [ -n "$FEEDBACK_TEXT" ]; then
+              CMD_ARGS+=(--feedback "$FEEDBACK_TEXT")
+            fi
+            .venv/bin/python src/integrations/telegram_bot.py "${CMD_ARGS[@]}"
+          fi
+
+      - name: Publish Decision Trace & Coach Commentary to Job Summary
+        if: always()
+        env:
+          ATHLETE: ${{ inputs.athlete || 'berni' }}
+        run: |
+          echo "## 🧭 Decision Trace ($ATHLETE)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          ./run trace --athlete "$ATHLETE" >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          if [ -f "athletes/$ATHLETE/ai_coach_commentary.md" ]; then
+            echo "## 🤖 Macro AI Coach ($ATHLETE)" >> "$GITHUB_STEP_SUMMARY"
+            cat "athletes/$ATHLETE/ai_coach_commentary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Persist updated state to Burkerserver volume
+        if: always()
+        run: |
+          PERSIST_DIR="$HOME/dockerContainer/laufen"
+          if [ -d "$PERSIST_DIR" ]; then
+            mkdir -p "$PERSIST_DIR/athletes" "$PERSIST_DIR/data"
+            cp -rf athletes/* "$PERSIST_DIR/athletes/" 2>/dev/null || true
+            if [ -f "athletes/berni/intervals_activities.json" ]; then
+              cp -f athletes/berni/intervals_activities.json "$PERSIST_DIR/data/intervals_activities.json" 2>/dev/null || true
+            fi
+          fi
+
+      - name: Trigger Downstream Notification & Dashboard Workflows
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ATHLETE: ${{ inputs.athlete || 'berni' }}
+          MODE: ${{ inputs.mode }}
+          TARGET_DATE: ${{ inputs.target_date }}
+        run: |
+          if [ "$MODE" = "morning" ] || [ "$MODE" = "evening" ]; then
+            gh workflow run send-telegram.yml \
+              -f athlete="$ATHLETE" \
+              -f mode="$MODE" \
+              -f target_date="$TARGET_DATE" || echo "::warning ::Failed to trigger send-telegram.yml"
+          fi
+          gh workflow run deploy-pages.yml \
+            -f athlete="$ATHLETE" || echo "::warning ::Failed to trigger deploy-pages.yml"

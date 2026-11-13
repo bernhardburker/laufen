@@ -1,43 +1,27 @@
 name: Deploy Dashboard to GitHub Pages
 
 on:
-  # Daily scheduled execution triggered locally via burkerserver crontab (0 7 * * *) via workflow_dispatch
-  # schedule:
-  #   - cron: '0 5 * * *'
-
-  # Allows manual refresh trigger from GitHub Actions tab
   workflow_dispatch:
     inputs:
       athlete:
-        description: 'Target athlete slug (leave empty to process all active athletes)'
+        description: 'Target athlete slug (leave empty to build all active athletes)'
         required: false
         type: string
         default: ''
-      force_full_history:
-        description: 'Download full history (from 2000-01-01)'
-        required: false
-        type: boolean
-        default: false
 
-
-  # Trigger build & deploy when templates, visualization, or workflow scripts change
   push:
     branches:
       - main
     paths:
-      - 'src/**'
+      - 'src/visualization/**'
       - 'templates/**'
       - '.github/workflows/deploy-pages.yml'
-      - '.github/scripts/**'
-      - 'config/**'
 
-# Set permissions for GitHub Pages deployment and coach history persistence
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment
 concurrency:
   group: 'pages'
   cancel-in-progress: false
@@ -48,154 +32,40 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ${{ vars.RUNNER_OVERRIDE || 'self-hosted' }}
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Initialize environment and install dependencies
+      - name: Initialize environment
         run: |
-          chmod +x ./init.sh
+          chmod +x ./init.sh ./run
           ./init.sh
-          echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
-      - name: Fetch activities and wellness from Intervals.icu
-        env:
-          INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
-          INTERVALS_ATHLETE_ID: ${{ secrets.INTERVALS_ATHLETE_ID || '0' }}
-          TARGET_ATHLETE: ${{ inputs.athlete }}
+      - name: Restore latest athlete artifacts from Burkerserver volume
         run: |
-          mkdir -p data dist
-          if [ -n "$TARGET_ATHLETE" ]; then
-            TARGET_FLAG="--athlete $TARGET_ATHLETE"
-          else
-            TARGET_FLAG="--all"
+          PERSIST_DIR="$HOME/dockerContainer/laufen"
+          if [ -d "$PERSIST_DIR/athletes" ]; then
+            cp -rf "$PERSIST_DIR/athletes/"* athletes/ 2>/dev/null || true
           fi
-          if [ -n "$INTERVALS_API_KEY" ]; then
-            echo "Fetching fresh activities & wellness ($TARGET_FLAG)..."
-            ./run sync-events $TARGET_FLAG || echo "::warning ::Events sync failed"
-            ./run sync-wellness $TARGET_FLAG || echo "::warning ::Wellness sync failed"
-            ./run sync-profile $TARGET_FLAG || echo "::warning ::Profile sync failed"
-            # Maintain legacy root fallback if berni data was updated
-            if [ -f "athletes/berni/intervals_activities.json" ]; then
-              cp -f athletes/berni/intervals_activities.json data/intervals_activities.json
-            fi
-            if [ -f "athletes/berni/intervals_wellness.json" ]; then
-              cp -f athletes/berni/intervals_wellness.json data/intervals_wellness.json
-            fi
-            if [ -f "athletes/berni/calendar_events.json" ]; then
-              cp -f athletes/berni/calendar_events.json data/calendar_events.json
-            fi
-          elif [ -f "data/intervals_activities.json" ]; then
-            echo "Using existing activity data..."
-          else
-            echo "::warning ::No INTERVALS_API_KEY secret configured and no data file found."
-            echo "[]" > data/intervals_activities.json
-          fi
-
-      - name: Review unanalyzed runs and update cache
-        env:
-          TARGET_ATHLETE: ${{ inputs.athlete }}
-        run: |
-          if [ -n "$TARGET_ATHLETE" ]; then
-            ./run review --athlete "$TARGET_ATHLETE" || echo "::warning ::Run review failed"
-          else
-            ./run review --all || echo "::warning ::Run review failed"
-          fi
-
-      - name: Generate Agentic AI Coach Reviews (agy)
-        id: ai_coach
-        continue-on-error: true
-        env:
-          AGY_MODEL: ${{ vars.AGY_MODEL || 'Gemini 3.8 Flash (Medium)' }}
-          AGY_TIMEOUT: '3m'
-          TARGET_ATHLETE: ${{ inputs.athlete }}
-        run: |
-          chmod +x .github/scripts/run-ai-coach.sh
-          if [ -n "$TARGET_ATHLETE" ]; then
-            SLUGS="$TARGET_ATHLETE"
-          else
-            SLUGS="$(python3 src/athletes.py --list-slugs)"
-          fi
-          for slug in $SLUGS; do
-            echo "==> Running AI Coach for athlete: $slug"
-            ./.github/scripts/run-ai-coach.sh \
-              "athletes/$slug/intervals_activities.json" \
-              "athletes/$slug/ai_coach_commentary.md" \
-              "athletes/$slug/athlete.json" || true
-          done
-          if [ -f "athletes/berni/ai_coach_commentary.md" ]; then
-            cp -f athletes/berni/ai_coach_commentary.md data/ai_coach_commentary.md
-          fi
-
-      - name: Publish AI Coach Reviews to Job Summary
-        if: always()
-        run: |
-          for f in athletes/*/ai_coach_commentary.md; do
-            if [ -f "$f" ]; then
-              slug="$(basename "$(dirname "$f")")"
-              echo "## 🤖 KI-Laufcoach Analyse: $slug (Antigravity AI)" >> "$GITHUB_STEP_SUMMARY"
-              cat "$f" >> "$GITHUB_STEP_SUMMARY"
-              echo "" >> "$GITHUB_STEP_SUMMARY"
-            fi
-          done
-
-      - name: Persist Coach Artifacts to Repository
-        if: always()
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action [Coach Memory]"
-          FILES_TO_CHECK="athletes/*/coach_history.json athletes/*/run_reviews.json athletes/*/ai_coach_summary.json athletes/*/ai_coach_commentary.md data/coach_history.json data/run_reviews.json data/ai_coach_summary.json data/ai_coach_commentary.md"
-          EXISTING_FILES=""
-          for f in $FILES_TO_CHECK; do
-            if [ -f "$f" ]; then
-              EXISTING_FILES="$EXISTING_FILES $f"
-            fi
-          done
-          if [ -n "$EXISTING_FILES" ] && ! git diff --quiet HEAD -- $EXISTING_FILES; then
-            echo "Persisting updated coach artifacts to repository: $EXISTING_FILES"
-            git add $EXISTING_FILES
-            git commit -m "chore(coach): update multi-athlete coach artifacts [skip ci]"
-            for attempt in 1 2 3; do
-              echo "Push attempt $attempt..."
-              git pull --rebase origin main || true
-              if git push origin main; then
-                echo "Successfully pushed coach updates to main."
-                break
-              fi
-              sleep 2
-            done
-          else
-            echo "No changes in coach artifacts to persist."
+          if [ -d "$PERSIST_DIR/data" ]; then
+            mkdir -p data
+            cp -rf "$PERSIST_DIR/data/"* data/ 2>/dev/null || true
           fi
 
       - name: Generate HTML Dashboards
-        env:
-          TARGET_ATHLETE: ${{ inputs.athlete }}
         run: |
-          if [ -n "$TARGET_ATHLETE" ]; then
-            ./run dashboard --athlete "$TARGET_ATHLETE"
-          else
-            ./run dashboard --all
-          fi
+          mkdir -p dist
+          ./run dashboard --all
 
-      - name: Synchronize latest Coach artifacts to Burkerserver
-        if: success() && github.event_name != 'push'
+      - name: Synchronize generated dashboards to local Burkerserver directory
+        if: success()
         run: |
-          set -euo pipefail
           TARGET_DIR="$HOME/dockerContainer/laufen"
           if [ -d "$TARGET_DIR" ]; then
-            echo "Synchronisiere neueste Coach-Artefakte nach $TARGET_DIR..."
-            if [ -d "athletes" ]; then
-              cp -rf athletes/* "$TARGET_DIR/athletes/" 2>/dev/null || true
-            fi
-            if [ -d "data" ]; then
-              cp -rf data/* "$TARGET_DIR/data/" 2>/dev/null || true
-            fi
-          else
-            echo "Lokales Zielverzeichnis $TARGET_DIR nicht gefunden; überspringe Synchronisation."
+            mkdir -p "$TARGET_DIR/dist"
+            cp -rf dist/* "$TARGET_DIR/dist/" 2>/dev/null || true
           fi
 
       - name: Setup Pages

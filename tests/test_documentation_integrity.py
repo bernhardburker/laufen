@@ -41,6 +41,7 @@ class DocumentationIntegrityDriver:
         "docs/ARCHITECTURE_REVIEW_AND_FINDINGS.md",
         "docs/AGENTIC_SIMULATION_PLAN.md",
         "docs/FORESIGHT_ENGINE_PLAN.md",
+        "docs/WORKFLOW_DISPATCH_ARCHITECTURE_PLAN.md",
         "docs/archive/README.md",
         "tests/README.md",
         ".agents/skills/workout-scheduler/SKILL.md",

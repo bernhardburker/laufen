@@ -1,0 +1,92 @@
+name: Post-Run 4-Stage Physiological Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      athlete:
+        description: 'Target athlete slug'
+        required: true
+        type: string
+        default: 'berni'
+      run_id:
+        description: 'Intervals.icu Activity ID (leave empty for latest run)'
+        required: false
+        type: string
+        default: ''
+      note:
+        description: 'Optional subjective athlete note to attach and evaluate'
+        required: false
+        type: string
+        default: ''
+
+concurrency:
+  group: post-run-review-${{ inputs.athlete || 'berni' }}-${{ inputs.run_id || 'latest' }}
+  cancel-in-progress: false
+
+jobs:
+  review-run:
+    name: 🏃 Post-Run Review (${{ inputs.athlete }} - ${{ inputs.run_id || 'latest' }})
+    runs-on: ${{ vars.RUNNER_OVERRIDE || 'self-hosted' }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        run: |
+          chmod +x ./init.sh ./run
+          ./init.sh
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Restore persistent athlete state from Burkerserver volume
+        run: |
+          PERSIST_DIR="$HOME/dockerContainer/laufen"
+          if [ -d "$PERSIST_DIR/athletes" ]; then
+            cp -rf "$PERSIST_DIR/athletes/"* athletes/ 2>/dev/null || true
+          fi
+          if [ -f "$PERSIST_DIR/.env" ] && [ ! -f ".env" ]; then
+            cp -f "$PERSIST_DIR/.env" .env
+          fi
+
+      - name: Download fresh activities & events from Intervals.icu
+        env:
+          INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
+          ATHLETE: ${{ inputs.athlete }}
+        run: |
+          eval "$(.venv/bin/python src/athletes.py --env "$ATHLETE")"
+          .venv/bin/python src/integrations/download_intervals.py --output "$ACTIVITIES_PATH" --athlete-id "$INTERVALS_ATHLETE_ID"
+          ./run events --athlete "$ATHLETE" || true
+
+      - name: Evaluate 4-Stage Review & Send Telegram Summary
+        env:
+          INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ATHLETE: ${{ inputs.athlete }}
+          RUN_ID: ${{ inputs.run_id }}
+          NOTE_TEXT: ${{ inputs.note }}
+        run: |
+          ./run review --athlete "$ATHLETE"
+          CMD_ARGS=(--review --athlete "$ATHLETE" --force)
+          if [ -n "$RUN_ID" ]; then
+            CMD_ARGS+=(--run-id "$RUN_ID")
+          fi
+          if [ -n "$NOTE_TEXT" ]; then
+            CMD_ARGS+=(--note "$NOTE_TEXT")
+          fi
+          .venv/bin/python src/integrations/telegram_bot.py "${CMD_ARGS[@]}"
+
+      - name: Persist updated reviews & state to Burkerserver volume
+        if: always()
+        run: |
+          PERSIST_DIR="$HOME/dockerContainer/laufen"
+          if [ -d "$PERSIST_DIR/athletes" ]; then
+            cp -rf athletes/* "$PERSIST_DIR/athletes/" 2>/dev/null || true
+          fi
+
+      - name: Trigger Dashboard Rebuild
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ATHLETE: ${{ inputs.athlete }}
+        run: |
+          gh workflow run deploy-pages.yml -f athlete="$ATHLETE" || echo "::warning ::Failed to trigger deploy-pages.yml"

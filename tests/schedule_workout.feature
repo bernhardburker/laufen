@@ -121,3 +121,17 @@ Feature: Schedule structured workouts to Intervals.icu
     When the workout schedule script is executed with adaptive planning arguments
     Then the process exits with code 0
     And no new workout event is scheduled for today
+
+  Scenario: Adaptive planner with dual-options schedules both Option A and Option B on a fresh flexible Slot 2 day and allows selecting Option B
+    Given a mock Intervals.icu event server is running
+    And INTERVALS_API_KEY is configured
+    And recent base anchor runs allow threshold on Slot 2
+    When the workout schedule script is executed with adaptive dual-options arguments
+    Then the process exits with code 0
+    And one scheduled event name contains "Slot 2A"
+    And one scheduled event name contains "Slot 2B"
+    When Option "B" is selected for today via the workout schedule script
+    Then the process exits with code 0
+    And the mock server received a DELETE request for Option A
+    And only Option B remains in the mock calendar for today
+

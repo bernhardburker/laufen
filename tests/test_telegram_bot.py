@@ -169,6 +169,13 @@ class TelegramBotDriver:
             api_base_url=self.base_url,
         )
         self.allowed_user_ids: Optional[List[str]] = None
+        self.dispatch_mode: bool = False
+        self.dispatched_workflows: List[Dict[str, Any]] = []
+
+    def _mock_dispatch(self, workflow_file: str, inputs: Dict[str, str]) -> Dict[str, Any]:
+        entry = {"workflow": workflow_file, "inputs": dict(inputs)}
+        self.dispatched_workflows.append(entry)
+        return {"ok": True, **entry}
 
     def set_allowed_user_ids(self, ids_str: str) -> None:
         self.allowed_user_ids = [i.strip() for i in ids_str.split(",") if i.strip()]
@@ -409,6 +416,8 @@ class TelegramBotDriver:
             project_root=self.tmp_path,
             registry_path=self.registry_path,
             ref_date=datetime.date.fromisoformat(ref_date_str),
+            dispatch_mode=self.dispatch_mode,
+            workflow_dispatcher=self._mock_dispatch,
         )
 
     def send_callback_query(
@@ -437,6 +446,8 @@ class TelegramBotDriver:
             project_root=self.tmp_path,
             registry_path=self.registry_path,
             ref_date=datetime.date.fromisoformat(ref_date_str),
+            dispatch_mode=self.dispatch_mode,
+            workflow_dispatcher=self._mock_dispatch,
         )
 
     def trigger_briefing(self, slug: str, date_str: str, force: bool = False) -> None:
@@ -493,6 +504,8 @@ class TelegramBotDriver:
             now=dt,
             project_root=self.tmp_path,
             registry_path=self.registry_path,
+            dispatch_mode=self.dispatch_mode,
+            workflow_dispatcher=self._mock_dispatch,
         )
 
 
@@ -781,6 +794,45 @@ def then_last_message_does_not_contain(driver: TelegramBotDriver, chat_id: str, 
     assert len(msgs) > 0
     last_text = msgs[-1].get("text", "")
     assert text not in last_text, f"Unexpected '{text}' found in Telegram message: {last_text}"
+
+
+@given("the Telegram bot runs in GitHub Actions dispatch mode")
+def given_bot_in_dispatch_mode(driver: TelegramBotDriver):
+    driver.dispatch_mode = True
+
+
+@then(parsers.parse('the workflow "{wf_name}" was dispatched for athlete "{slug}" with mode "{mode}" and action "{action}"'))
+def then_workflow_dispatched_action(driver: TelegramBotDriver, wf_name: str, slug: str, mode: str, action: str):
+    matching = [
+        d for d in driver.dispatched_workflows
+        if d["workflow"] == wf_name
+        and d["inputs"].get("athlete") == slug
+        and d["inputs"].get("mode") == mode
+        and d["inputs"].get("action") == action
+    ]
+    assert len(matching) >= 1, f"Expected workflow dispatch not found in: {driver.dispatched_workflows}"
+
+
+@then(parsers.parse('the workflow "{wf_name}" was dispatched for athlete "{slug}" with mode "{mode}" and feedback "{feedback}"'))
+def then_workflow_dispatched_feedback(driver: TelegramBotDriver, wf_name: str, slug: str, mode: str, feedback: str):
+    matching = [
+        d for d in driver.dispatched_workflows
+        if d["workflow"] == wf_name
+        and d["inputs"].get("athlete") == slug
+        and d["inputs"].get("mode") == mode
+        and d["inputs"].get("feedback") == feedback
+    ]
+    assert len(matching) >= 1, f"Expected workflow dispatch not found in: {driver.dispatched_workflows}"
+
+
+@then(parsers.parse('the workflow "{wf_name}" was dispatched exactly {count:d} time for run "{run_id}"'))
+def then_workflow_dispatched_run_count(driver: TelegramBotDriver, wf_name: str, count: int, run_id: str):
+    matching = [
+        d for d in driver.dispatched_workflows
+        if d["workflow"] == wf_name and d["inputs"].get("run_id") == run_id
+    ]
+    assert len(matching) == count, f"Expected {count} dispatches for {run_id}, got {len(matching)}: {driver.dispatched_workflows}"
+
 
 
 

@@ -216,3 +216,22 @@ Feature: Bidirectional Telegram Coach Bot and Daily Briefing
     Then the last Telegram message sent to "987654321" does not contain "Ich habe folgenden Lauf gefunden"
     And the last Telegram message sent to "987654321" contains "Speed- & Kadenztraining"
 
+  Scenario: Thin event router in dispatch mode routes inline button clicks and text feedback to coach-plan.yml
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" has an active briefing proposal on "2026-10-26"
+    And the Telegram bot runs in GitHub Actions dispatch mode
+    When the Telegram bot receives callback query "accept_b:2026-10-26" from chat id "987654321"
+    Then the last Telegram message sent to "987654321" contains "GitHub Actions"
+    And the workflow "coach-plan.yml" was dispatched for athlete "berni" with mode "adhoc" and action "accept_b"
+    When the Telegram bot receives message "Habe morgen nur 30 min Zeit" from chat id "987654321"
+    Then the workflow "coach-plan.yml" was dispatched for athlete "berni" with mode "adhoc" and feedback "Habe morgen nur 30 min Zeit"
+
+  Scenario: Thin event router in dispatch mode routes new run detection to post-run-review.yml exactly once
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the Telegram bot runs in GitHub Actions dispatch mode
+    And Intervals.icu has a new completed run "act_disp_99" with name "Schwellenlauf" on "2026-10-26T17:30:00" for "berni"
+    When the scheduled post-run review check runs at "2026-10-26T17:45:00"
+    And the scheduled post-run review check runs at "2026-10-26T17:55:00"
+    Then the workflow "post-run-review.yml" was dispatched exactly 1 time for run "act_disp_99"
+
+

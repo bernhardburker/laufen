@@ -8,7 +8,7 @@ Type=simple
 WorkingDirectory=%h/dockerContainer/laufen
 EnvironmentFile=-%h/dockerContainer/laufen/.env
 Environment=PYTHONUNBUFFERED=1
-ExecStart=%h/dockerContainer/laufen/run bot --scheduler
+ExecStart=%h/dockerContainer/laufen/run bot --scheduler --dispatch-mode
 Restart=always
 RestartSec=10
 

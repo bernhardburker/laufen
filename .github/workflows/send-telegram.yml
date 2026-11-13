@@ -1,0 +1,86 @@
+name: Send Telegram Notification (Briefing & Preview)
+
+on:
+  workflow_dispatch:
+    inputs:
+      athlete:
+        description: 'Target athlete slug'
+        required: true
+        type: string
+        default: 'berni'
+      mode:
+        description: 'Notification mode (morning, evening, or coach_summary)'
+        required: true
+        type: choice
+        options:
+          - morning
+          - evening
+          - coach_summary
+        default: 'morning'
+      target_date:
+        description: 'Optional target ISO date YYYY-MM-DD'
+        required: false
+        type: string
+        default: ''
+      force:
+        description: 'Force sending even if already sent today'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: send-telegram-${{ inputs.athlete || 'berni' }}
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    name: 📲 Send Telegram (${{ inputs.mode }} - ${{ inputs.athlete }})
+    runs-on: ${{ vars.RUNNER_OVERRIDE || 'self-hosted' }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize environment
+        run: |
+          chmod +x ./init.sh ./run
+          ./init.sh
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Restore persistent athlete state from Burkerserver volume
+        run: |
+          PERSIST_DIR="$HOME/dockerContainer/laufen"
+          if [ -d "$PERSIST_DIR/athletes" ]; then
+            cp -rf "$PERSIST_DIR/athletes/"* athletes/ 2>/dev/null || true
+          fi
+          if [ -f "$PERSIST_DIR/.env" ] && [ ! -f ".env" ]; then
+            cp -f "$PERSIST_DIR/.env" .env
+          fi
+
+      - name: Deliver Telegram Notification
+        env:
+          INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ATHLETE: ${{ inputs.athlete }}
+          MODE: ${{ inputs.mode }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          FORCE_FLAG=""
+          if [ "$FORCE" = "true" ]; then
+            FORCE_FLAG="--force"
+          fi
+          if [ "$MODE" = "morning" ]; then
+            ./run briefing --athlete "$ATHLETE" $FORCE_FLAG
+          elif [ "$MODE" = "evening" ]; then
+            ./run evening --athlete "$ATHLETE" $FORCE_FLAG
+          elif [ "$MODE" = "coach_summary" ]; then
+            .venv/bin/python src/integrations/telegram_bot.py --coach --athlete "$ATHLETE" $FORCE_FLAG
+          fi
+
+      - name: Persist updated Telegram state to Burkerserver volume
+        if: always()
+        run: |
+          PERSIST_DIR="$HOME/dockerContainer/laufen"
+          if [ -d "$PERSIST_DIR/athletes" ]; then
+            cp -rf athletes/* "$PERSIST_DIR/athletes/" 2>/dev/null || true
+          fi

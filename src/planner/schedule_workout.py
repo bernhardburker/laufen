@@ -736,6 +736,7 @@ def sync_adaptive_plan(
     trace_file: Path | None = None,
     state_file: Path | None = None,
     evening_preview: bool = False,
+    dual_options: bool = False,
 ) -> dict:
     """Dynamically plans next workout, cleans up past uncompleted events, and respects rest days."""
     root = project_root or Path(__file__).resolve().parent.parent.parent
@@ -1030,32 +1031,57 @@ def sync_adaptive_plan(
     if not dry_run and resolved_trace_file:
         append_decision_trace(decision_trace, resolved_trace_file)
 
-    payload = {
-        "category": "WORKOUT",
-        "start_date_local": f"{target_date_iso}T07:00:00",
-        "type": "Run",
-        "name": name,
-        "description": description,
-    }
-
-    if dry_run:
-        print(f"[DRY-RUN] Plane adaptives Workout: {target_date_iso} | {name}")
-        results["scheduled"].append(payload)
+    payloads_to_schedule: list[dict] = []
+    slot_id_for_target = markers_for_trace.get("periodization", {}).get("slot_id", 2)
+    if dual_options and slot_id_for_target == 2 and "Schwellenlauf" in name:
+        name_a = name if name.startswith("Slot 2A") else f"Slot 2A: {name}"
+        payloads_to_schedule.append({
+            "category": "WORKOUT",
+            "start_date_local": f"{target_date_iso}T07:00:00",
+            "type": "Run",
+            "name": name_a,
+            "description": description,
+        })
+        desc_b = render_template(
+            templates_dir / "easy_run.txt",
+            {"warmup": "10m", "main": "30m", "cooldown": "5m", "target": "Z2 HR"},
+        )
+        payloads_to_schedule.append({
+            "category": "WORKOUT",
+            "start_date_local": f"{target_date_iso}T07:05:00",
+            "type": "Run",
+            "name": "Slot 2B: Aerobe Basis & Z2 Dauerlauf (45m)",
+            "description": desc_b,
+        })
     else:
-        try:
-            res = send_workout_event(
-                payload=payload,
-                api_key=api_key,
-                athlete_id=athlete_id,
-                api_base_url=api_base_url,
-            )
-            ev_id = res.get("id", "neu")
-            payload["id"] = ev_id
-            print(f"[ANGELEGT] {target_date_iso} | {name} (ID: {ev_id})")
+        payloads_to_schedule.append({
+            "category": "WORKOUT",
+            "start_date_local": f"{target_date_iso}T07:00:00",
+            "type": "Run",
+            "name": name,
+            "description": description,
+        })
+
+    for payload in payloads_to_schedule:
+        p_name = payload["name"]
+        if dry_run:
+            print(f"[DRY-RUN] Plane adaptives Workout: {target_date_iso} | {p_name}")
             results["scheduled"].append(payload)
-        except Exception as e:
-            print(f"[FEHLER] Konnte adaptives Workout nicht anlegen: {e}")
-            results.setdefault("errors", []).append({"payload": payload, "error": str(e)})
+        else:
+            try:
+                res = send_workout_event(
+                    payload=payload,
+                    api_key=api_key,
+                    athlete_id=athlete_id,
+                    api_base_url=api_base_url,
+                )
+                ev_id = res.get("id", "neu")
+                payload["id"] = ev_id
+                print(f"[ANGELEGT] {target_date_iso} | {p_name} (ID: {ev_id})")
+                results["scheduled"].append(payload)
+            except Exception as e:
+                print(f"[FEHLER] Konnte adaptives Workout nicht anlegen: {e}")
+                results.setdefault("errors", []).append({"payload": payload, "error": str(e)})
 
     if events_file and not dry_run:
         all_final_events = list(remaining_events) + results.get("scheduled", []) + outside_window_events
@@ -1133,6 +1159,207 @@ def override_workout_on_date(
             scheduled_copy = dict(new_payload)
             scheduled_copy["id"] = res.get("id", "neu")
             result["scheduled"] = scheduled_copy
+
+    return result
+
+
+def select_workout_option_on_date(
+    target_date_iso: str,
+    option: str,
+    api_key: str,
+    athlete_id: str = "0",
+    api_base_url: str = "https://intervals.icu/api/v1",
+    dry_run: bool = False,
+    events_file: Path | None = None,
+    project_root: Path | None = None,
+) -> dict:
+    """Selects Option A or Option B on target_date_iso, deleting the unchosen sibling workout and locking the selection."""
+    root = project_root or Path(__file__).resolve().parent.parent.parent
+    templates_dir = root / "workouts" / "templates"
+    choice = option.strip().upper()
+    if choice not in ("A", "B"):
+        raise ValueError(f"Invalid option '{option}'. Expected 'A' or 'B'.")
+
+    result: dict = {
+        "deleted": [],
+        "selected": None,
+        "scheduled": None,
+        "target_date": target_date_iso,
+        "option": choice,
+    }
+
+    events: list[dict] = []
+    if not dry_run and api_key:
+        events = fetch_existing_events(
+            api_key=api_key,
+            athlete_id=athlete_id,
+            oldest=target_date_iso,
+            newest=target_date_iso,
+            api_base_url=api_base_url,
+        )
+    elif events_file and Path(events_file).is_file():
+        try:
+            all_ev = json.loads(Path(events_file).read_text(encoding="utf-8"))
+            if isinstance(all_ev, list):
+                events = [
+                    e for e in all_ev
+                    if str(e.get("start_date_local") or "")[:10] == target_date_iso
+                ]
+        except Exception:
+            events = []
+
+    unpaired = [
+        ev for ev in events
+        if str(ev.get("start_date_local") or "")[:10] == target_date_iso
+        and ev.get("category") == "WORKOUT"
+        and not ev.get("paired_activity_id")
+    ]
+
+    def _is_option_b(ev: dict) -> bool:
+        n = str(ev.get("name") or "").lower()
+        return ("2b" in n) or ("option b" in n) or ("z2" in n) or ("basis" in n) or ("easy" in n) or ("dauerlauf" in n)
+
+    def _is_option_a(ev: dict) -> bool:
+        n = str(ev.get("name") or "").lower()
+        return ("2a" in n) or ("option a" in n) or ("schwelle" in n) or ("threshold" in n) or ("tempo" in n) or ("intervall" in n)
+
+    chosen_ev: dict | None = None
+    to_delete: list[dict] = []
+
+    if len(unpaired) >= 2:
+        for ev in unpaired:
+            if choice == "A":
+                if _is_option_a(ev) and chosen_ev is None:
+                    chosen_ev = ev
+                elif _is_option_b(ev):
+                    to_delete.append(ev)
+                elif chosen_ev is None:
+                    chosen_ev = ev
+                else:
+                    to_delete.append(ev)
+            else:
+                if _is_option_b(ev) and chosen_ev is None:
+                    chosen_ev = ev
+                elif _is_option_a(ev):
+                    to_delete.append(ev)
+                elif chosen_ev is None and ev != unpaired[0]:
+                    chosen_ev = ev
+                else:
+                    to_delete.append(ev)
+    elif len(unpaired) == 1:
+        only_ev = unpaired[0]
+        if (choice == "A" and _is_option_a(only_ev)) or (choice == "B" and _is_option_b(only_ev)):
+            chosen_ev = only_ev
+        else:
+            to_delete.append(only_ev)
+
+    for ev in to_delete:
+        ev_id = ev.get("id")
+        if not dry_run and api_key and ev_id:
+            delete_workout_event(ev_id, api_key, athlete_id, api_base_url)
+        result["deleted"].append(ev)
+
+    if chosen_ev is not None:
+        result["selected"] = chosen_ev
+    else:
+        # Schedule the requested option explicitly if it was not yet on the calendar
+        if choice == "A":
+            name_new = "Slot 2A: Kontrollierter Schwellenlauf (3x 8m Z4) [LOCKED]"
+            desc_new = render_template(
+                templates_dir / "threshold_intervals.txt",
+                {
+                    "warmup": "10m",
+                    "reps": 3,
+                    "work": "8m",
+                    "work_target": "Z4 HR",
+                    "recovery": "2m",
+                    "recovery_target": "Z1 HR",
+                    "cooldown": "10m",
+                },
+            )
+        else:
+            name_new = "Slot 2B: Aerobe Basis & Z2 Dauerlauf (45m) [LOCKED]"
+            desc_new = render_template(
+                templates_dir / "easy_run.txt",
+                {"warmup": "10m", "main": "30m", "cooldown": "5m", "target": "Z2 HR"},
+            )
+        new_payload = {
+            "category": "WORKOUT",
+            "start_date_local": f"{target_date_iso}T07:00:00",
+            "type": "Run",
+            "name": name_new,
+            "description": desc_new,
+        }
+        if dry_run:
+            fake_p = dict(new_payload)
+            fake_p.setdefault("id", f"dry_run_opt_{choice.lower()}")
+            result["scheduled"] = fake_p
+            result["selected"] = fake_p
+        elif api_key:
+            res = send_workout_event(
+                payload=new_payload,
+                api_key=api_key,
+                athlete_id=athlete_id,
+                api_base_url=api_base_url,
+            )
+            sched_copy = dict(new_payload)
+            sched_copy["id"] = res.get("id", "neu")
+            result["scheduled"] = sched_copy
+            result["selected"] = sched_copy
+
+    if events_file and not dry_run and Path(events_file).is_file():
+        try:
+            ev_path = Path(events_file)
+            all_ev = json.loads(ev_path.read_text(encoding="utf-8"))
+            if isinstance(all_ev, list):
+                deleted_ids = {str(d.get("id")) for d in result["deleted"] if d.get("id")}
+                filtered = [e for e in all_ev if str(e.get("id")) not in deleted_ids]
+                if result["scheduled"]:
+                    filtered.append(result["scheduled"])
+                filtered.sort(key=lambda x: str(x.get("start_date_local") or ""))
+                ev_path.write_text(json.dumps(filtered, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            pass
+
+    return result
+
+
+def cleanup_unpaired_workouts_on_date(
+    target_date_iso: str,
+    api_key: str,
+    athlete_id: str = "0",
+    api_base_url: str = "https://intervals.icu/api/v1",
+    dry_run: bool = False,
+    events_file: Path | None = None,
+) -> dict:
+    """Deletes any remaining unpaired WORKOUT events on target_date_iso (e.g. unchosen sibling option after run completion)."""
+    result: dict = {"cleaned": [], "target_date": target_date_iso}
+    if not dry_run and api_key:
+        events = fetch_existing_events(
+            api_key=api_key,
+            athlete_id=athlete_id,
+            oldest=target_date_iso,
+            newest=target_date_iso,
+            api_base_url=api_base_url,
+        )
+        for ev in events:
+            ev_date = str(ev.get("start_date_local") or "")[:10]
+            if ev_date == target_date_iso and ev.get("category") == "WORKOUT" and not ev.get("paired_activity_id"):
+                ev_id = ev.get("id")
+                if ev_id:
+                    delete_workout_event(ev_id, api_key, athlete_id, api_base_url)
+                    result["cleaned"].append(ev)
+
+    if events_file and not dry_run and Path(events_file).is_file() and result["cleaned"]:
+        try:
+            ev_path = Path(events_file)
+            all_ev = json.loads(ev_path.read_text(encoding="utf-8"))
+            if isinstance(all_ev, list):
+                cleaned_ids = {str(d.get("id")) for d in result["cleaned"] if d.get("id")}
+                filtered = [e for e in all_ev if str(e.get("id")) not in cleaned_ids]
+                ev_path.write_text(json.dumps(filtered, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            pass
 
     return result
 
@@ -1271,6 +1498,26 @@ def main() -> None:
         help="Disable automatic deletion of uncompleted past workouts",
     )
     parser.add_argument(
+        "--evening-preview",
+        action="store_true",
+        help="Plan for tomorrow (evening preview mode) and schedule dual options (A/B) on flexible slots",
+    )
+    parser.add_argument(
+        "--dual-options",
+        action="store_true",
+        help="Schedule both Option A (Quality) and Option B (Z2 Base) on flexible Slot 2 days",
+    )
+    parser.add_argument(
+        "--select-option",
+        choices=["A", "B", "a", "b"],
+        help="Select Option A or Option B on --date, removing the unchosen sibling workout",
+    )
+    parser.add_argument(
+        "--cleanup-unpaired-date",
+        metavar="YYYY-MM-DD",
+        help="Clean up any remaining unpaired sibling workouts on the specified date after a completed run",
+    )
+    parser.add_argument(
         "--markers",
         action="store_true",
         help="Print objective telemetry markers and guardrails for adaptive cognitive planning",
@@ -1329,6 +1576,40 @@ def main() -> None:
             print("=" * 65)
         return
 
+    if args.select_option:
+        api_key = os.getenv("INTERVALS_API_KEY", "")
+        if not api_key and not args.dry_run:
+            sys.exit("Fehler: INTERVALS_API_KEY ist nicht gesetzt.")
+        target_iso = parse_target_date(args.date)
+        res = select_workout_option_on_date(
+            target_date_iso=target_iso,
+            option=args.select_option,
+            api_key=api_key,
+            athlete_id=args.athlete_id,
+            api_base_url=args.api_base,
+            dry_run=args.dry_run,
+            events_file=Path(args.events_file) if args.events_file else None,
+            project_root=project_root,
+        )
+        print(json.dumps(res, indent=2, ensure_ascii=False))
+        return
+
+    if args.cleanup_unpaired_date:
+        api_key = os.getenv("INTERVALS_API_KEY", "")
+        if not api_key and not args.dry_run:
+            sys.exit("Fehler: INTERVALS_API_KEY ist nicht gesetzt.")
+        target_iso = parse_target_date(args.cleanup_unpaired_date)
+        res = cleanup_unpaired_workouts_on_date(
+            target_date_iso=target_iso,
+            api_key=api_key,
+            athlete_id=args.athlete_id,
+            api_base_url=args.api_base,
+            dry_run=args.dry_run,
+            events_file=Path(args.events_file) if args.events_file else None,
+        )
+        print(json.dumps(res, indent=2, ensure_ascii=False))
+        return
+
     if args.adaptive_plan:
         api_key = os.getenv("INTERVALS_API_KEY", "")
         if not api_key and not args.dry_run:
@@ -1352,6 +1633,8 @@ def main() -> None:
             clean_past=not args.no_clean_past,
             activities_file=Path(args.activities_file) if args.activities_file else None,
             events_file=Path(args.events_file) if args.events_file else None,
+            evening_preview=args.evening_preview,
+            dual_options=args.dual_options,
         )
         return
 
