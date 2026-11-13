@@ -222,22 +222,26 @@ The project enforces a two-tier Behavior-Driven Development (BDD) architecture u
 
 All deployments are automated via GitHub Actions (manual deployments via `rsync` or `systemctl` are prohibited by project policy):
 
-1. **[`.github/workflows/deploy-burkerserver.yml`](.github/workflows/deploy-burkerserver.yml)**:
-   - Triggered on push to `main` (for code/config paths) or `workflow_dispatch`.
-   - Runs Tier 1 offline BDD tests (`./run test`) and Tier 2 live E2E staging tests (`./run test:e2e`).
-   - Synchronizes the application bundle to `~/dockerContainer/laufen` on Burkerserver, creates/updates `.venv`, installs and restarts the user systemd unit [`deploy/laufen-telegram-bot.service`](deploy/laufen-telegram-bot.service), and verifies service health.
-2. **[`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml)**:
-   - Runs daily at `05:00 UTC` (`07:00 CET/CEST`), on pushes to `main`, or via `./run dispatch`.
-   - Iterates over all active athletes in `athletes/registry.json`: syncs profile, wellness, activities, calendar events, adaptive workout plan, run reviews, and AI coach summaries; commits updated state back to `main`; deploys multi-tenant dashboards to GitHub Pages (`https://berni-burker.github.io/laufen/`); and mirrors data/dashboards to Burkerserver.
-3. **[`.github/workflows/deploy-agent.yml`](.github/workflows/deploy-agent.yml)**:
+1. **[`.github/workflows/coach-plan.yml`](.github/workflows/coach-plan.yml)**:
+   - Primary planning & coaching workflow (`workflow_dispatch` with `mode=morning|evening|adhoc`). Syncs Intervals.icu telemetry, runs the Macro AI Coach, schedules adaptive workouts (including `--dual-options` Option A/B on flexible Slot 2 evenings) or applies ad-hoc athlete overrides, publishes decision traces to `$GITHUB_STEP_SUMMARY`, and chains [`send-telegram.yml`](.github/workflows/send-telegram.yml) and [`deploy-pages.yml`](.github/workflows/deploy-pages.yml).
+2. **[`.github/workflows/send-telegram.yml`](.github/workflows/send-telegram.yml)**:
+   - Delivers formatted Morning Briefings (`mode=morning`), Evening Previews (`mode=evening`), or Macro Coach summaries (`mode=coach_summary`) with interactive inline keyboards via Telegram.
+3. **[`.github/workflows/post-run-review.yml`](.github/workflows/post-run-review.yml)**:
+   - Triggered by the 10-minute activity poller or subjective athlete notes (`run_id`, `note`). Evaluates the 4-stage physiological review, sends the Telegram summary, and chains [`deploy-pages.yml`](.github/workflows/deploy-pages.yml).
+4. **[`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml)**:
+   - Builds multi-tenant HTML dashboards (`./run dashboard --all`), mirrors `dist/` to Burkerserver, and deploys to GitHub Pages (`https://berni-burker.github.io/laufen/`).
+5. **[`.github/workflows/deploy-burkerserver.yml`](.github/workflows/deploy-burkerserver.yml)**:
+   - Triggered on push to `main` or `workflow_dispatch`. Runs Tier 1 offline BDD tests (`./run test`) and Tier 2 live E2E staging tests (`./run test:e2e`), synchronizes the application bundle to `~/dockerContainer/laufen`, restarts [`deploy/laufen-telegram-bot.service`](deploy/laufen-telegram-bot.service) (`--scheduler --dispatch-mode`), and verifies service health.
+6. **[`.github/workflows/deploy-agent.yml`](.github/workflows/deploy-agent.yml)**:
    - Packages and deploys `agent/`, `src/`, `config/`, and `workouts/` to the personal assistant container on Burkerserver when `agent/**` or `src/**` changes.
 
 ---
 
 ## 📋 Authoritative Specifications & Architecture Audit
 
-- **[`docs/SYSTEM_SPEC.md`](docs/SYSTEM_SPEC.md)**: Authoritative domain specification (Coaching DNA, HR vs. Pace separation, physiological formulas, 24-hour operational lifecycle, and SOLL vs. IST architecture).
+- **[`docs/SYSTEM_SPEC.md`](docs/SYSTEM_SPEC.md)**: Authoritative **SOLL Architecture** & Domain Specification (Core Invariants, Target System & Component Architecture, Coaching DNA, HR vs. Pace separation, physiological formulas, and 24-hour workflow-dispatch lifecycle).
 - **[`src/core/contracts.py`](src/core/contracts.py)**: Executable `TypedDict` data contracts and runtime schema validators.
-- **[`docs/ARCHITECTURE_REVIEW_AND_FINDINGS.md`](docs/ARCHITECTURE_REVIEW_AND_FINDINGS.md)**: Active architecture audit, confirmed bug backlog, missing test matrix, and agreed refactoring roadmap.
+- **[`docs/ARCHITECTURE_REVIEW_AND_FINDINGS.md`](docs/ARCHITECTURE_REVIEW_AND_FINDINGS.md)**: **IST Convergence Status & Path to SOLL** (completed milestones, open multi-day handoff findings 5.1–5.5, and implementation roadmap).
+- **[`docs/WORKFLOW_DISPATCH_ARCHITECTURE_PLAN.md`](docs/WORKFLOW_DISPATCH_ARCHITECTURE_PLAN.md)**: Event-driven GitHub Actions workflow dispatch & thin Telegram event-router architecture.
 - **[`docs/archive/`](docs/archive/README.md)**: Historical design plans and superseded specifications.
 

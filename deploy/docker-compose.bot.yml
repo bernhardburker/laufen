@@ -7,5 +7,5 @@ services:
       - ../:/app
     env_file:
       - ../.env
-    command: ["python3", "src/integrations/telegram_bot.py", "--scheduler"]
+    command: ["python3", "src/integrations/telegram_bot.py", "--scheduler", "--dispatch-mode"]
     restart: unless-stopped

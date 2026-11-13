@@ -234,4 +234,15 @@ Feature: Bidirectional Telegram Coach Bot and Daily Briefing
     And the scheduled post-run review check runs at "2026-10-26T17:55:00"
     Then the workflow "post-run-review.yml" was dispatched exactly 1 time for run "act_disp_99"
 
+  Scenario: Thin event router in dispatch mode dispatches morning briefing without blocking downstream Telegram delivery
+    Given the athlete "berni" is linked to Telegram chat id "987654321" with briefing time "07:00"
+    And the athlete "berni" last ran 2 days ago before "2026-10-26"
+    And the Telegram bot runs in GitHub Actions dispatch mode
+    When the scheduled briefing check runs at "2026-10-26T07:05:00"
+    And the scheduled briefing check runs again at "2026-10-26T07:10:00"
+    Then the workflow "coach-plan.yml" was dispatched exactly 1 time for mode "morning"
+    When the daily briefing is triggered manually for athlete "berni" on "2026-10-26"
+    Then exactly 1 Telegram message was sent to "987654321"
+
+
 

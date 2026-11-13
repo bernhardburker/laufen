@@ -471,6 +471,8 @@ class TelegramBotDriver:
             now=dt,
             project_root=self.tmp_path,
             registry_path=self.registry_path,
+            dispatch_mode=self.dispatch_mode,
+            workflow_dispatcher=self._mock_dispatch,
         )
 
     def run_due_evening_check(self, iso_dt_str: str) -> None:
@@ -482,6 +484,8 @@ class TelegramBotDriver:
             now=dt,
             project_root=self.tmp_path,
             registry_path=self.registry_path,
+            dispatch_mode=self.dispatch_mode,
+            workflow_dispatcher=self._mock_dispatch,
         )
 
     def run_post_run_review_check(self, slug: str) -> None:
@@ -832,6 +836,16 @@ def then_workflow_dispatched_run_count(driver: TelegramBotDriver, wf_name: str, 
         if d["workflow"] == wf_name and d["inputs"].get("run_id") == run_id
     ]
     assert len(matching) == count, f"Expected {count} dispatches for {run_id}, got {len(matching)}: {driver.dispatched_workflows}"
+
+
+@then(parsers.parse('the workflow "{wf_name}" was dispatched exactly {count:d} time for mode "{mode}"'))
+def then_workflow_dispatched_mode_count(driver: TelegramBotDriver, wf_name: str, count: int, mode: str):
+    matching = [
+        d for d in driver.dispatched_workflows
+        if d["workflow"] == wf_name and d["inputs"].get("mode") == mode
+    ]
+    assert len(matching) == count, f"Expected {count} dispatches for mode {mode}, got {len(matching)}: {driver.dispatched_workflows}"
+
 
 
 

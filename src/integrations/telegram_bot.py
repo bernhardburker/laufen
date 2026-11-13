@@ -2028,12 +2028,14 @@ def check_and_send_due_briefings(
             continue
         state_path = ctx.telegram_state_path or (ctx.base_dir / "telegram_state.json")
         state = load_telegram_state(state_path)
-        if state.get("last_briefing_date") == today_iso:
+        if state.get("last_briefing_date") == today_iso or (
+            dispatch_mode and state.get("last_dispatched_briefing_date") == today_iso
+        ):
             continue
         if ctx.briefing_time <= current_hm <= "11:30":
             try:
                 if dispatch_mode:
-                    state["last_briefing_date"] = today_iso
+                    state["last_dispatched_briefing_date"] = today_iso
                     save_telegram_state(state_path, state)
                     disp_res = dispatcher(
                         "coach-plan.yml",
@@ -2093,12 +2095,14 @@ def check_and_send_due_evening_previews(
             continue
         state_path = ctx.telegram_state_path or (ctx.base_dir / "telegram_state.json")
         state = load_telegram_state(state_path)
-        if state.get("last_evening_preview_date") == today_iso:
+        if state.get("last_evening_preview_date") == today_iso or (
+            dispatch_mode and state.get("last_dispatched_evening_date") == today_iso
+        ):
             continue
         if current_hm >= ctx.evening_briefing_time:
             try:
                 if dispatch_mode:
-                    state["last_evening_preview_date"] = today_iso
+                    state["last_dispatched_evening_date"] = today_iso
                     save_telegram_state(state_path, state)
                     disp_res = dispatcher(
                         "coach-plan.yml",

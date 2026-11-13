@@ -1,7 +1,7 @@
 # Implementation Plan: Event- & Workflow-Driven Architecture (GitHub Actions Dispatches)
 
-**Date:** 2026-11-12  
-**Status:** Planned  
+**Date:** 2026-11-13  
+**Status:** Implemented (Phases 1–3 Active on `main`; Phase 4 Staging Verification)  
 **Scope:** Full decoupling of macro coaching, calendar workout scheduling, post-run evaluations, and Telegram notifications into auditable, event-driven GitHub Actions workflows (`workflow_dispatch`).  
 **Authoritative Spec Reference:** [`SYSTEM_SPEC.md`](SYSTEM_SPEC.md) | [`ARCHITECTURE_REVIEW_AND_FINDINGS.md`](ARCHITECTURE_REVIEW_AND_FINDINGS.md)
 
@@ -112,9 +112,9 @@ flowchart TD
      - `mode=adhoc`: Sends the confirmation card for the newly overridden workout or rest day, including a direct link to the GitHub Actions run.
 - **Triggers & Inputs (`workflow_dispatch`):**
   - `athlete` (`string`, required): Target athlete slug.
-  - `mode` (`choice`: `morning` | `evening` | `adhoc` | `coach_summary`, required).
+  - `mode` (`choice`: `morning` | `evening` | `coach_summary`, required).
   - `target_date` (`string`, optional): Target ISO date `YYYY-MM-DD`.
-  - `force` (`boolean`, optional, default: `false`): Override notification toggle in `registry.json`.
+  - `force` (`boolean`, optional, default: `false`): Override notification idempotency when chained from `coach-plan.yml`.
 
 ### C. `post-run-review.yml` (Deterministic 4-Stage Post-Run Specialist)
 
