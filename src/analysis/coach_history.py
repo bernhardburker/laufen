@@ -10,7 +10,7 @@ and calculates multi-week aerobic efficiency trends.
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import json
 from pathlib import Path
 import sys
@@ -21,7 +21,23 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.analysis.trends import calculate_run_metrics, filter_runs, format_duration, format_pace, load_activities
+from src.analysis.trends import (
+    calculate_run_metrics,
+    filter_activities_up_to_date,
+    filter_runs,
+    format_duration,
+    format_pace,
+    load_activities,
+)
+
+
+def _resolve_ref_date_str(ref_date: Optional[date | str] = None) -> str:
+    """Resolves an optional reference date into an ISO YYYY-MM-DD string."""
+    if ref_date is None:
+        return datetime.now().strftime("%Y-%m-%d")
+    if isinstance(ref_date, str):
+        return date.fromisoformat(ref_date[:10]).isoformat()
+    return ref_date.strftime("%Y-%m-%d")
 
 
 def load_coach_history(history_file: Path) -> List[Dict[str, Any]]:
@@ -126,9 +142,11 @@ def initialize_cold_start_history(
     activities: List[Dict[str, Any]],
     athlete_profile: Dict[str, Any],
     history_file: Optional[Path] = None,
+    ref_date: Optional[date | str] = None,
 ) -> List[Dict[str, Any]]:
     """Creates a baseline cold-start history entry if history is empty."""
-    runs = filter_runs(activities)
+    eligible = filter_activities_up_to_date(activities, ref_date) if ref_date is not None else activities
+    runs = filter_runs(eligible)
     athlete_info = athlete_profile.get("athlete", {})
     z2_max = athlete_info.get("heart_rate", {}).get("zones", {}).get("z2_aerobic", {}).get("max", 148)
 
@@ -138,7 +156,7 @@ def initialize_cold_start_history(
     latest_date = (
         str(processed_runs[0].get("date", ""))[:10]
         if processed_runs
-        else datetime.now().strftime("%Y-%m-%d")
+        else _resolve_ref_date_str(ref_date)
     )
 
     total_z1_z2 = sum(r.get("z1_z2_seconds", 0) for r in processed_runs)
@@ -174,10 +192,11 @@ def update_history_with_coach_review(
     runs_since: List[Dict[str, Any]],
     athlete_profile: Optional[Dict[str, Any]] = None,
     history_file: Optional[Path] = None,
+    ref_date: Optional[date | str] = None,
 ) -> List[Dict[str, Any]]:
     """Updates the open history entry with compliance and effect, then appends the next cycle."""
     open_entry = get_open_recommendation(history)
-    today_str = datetime.now().strftime("%Y-%m-%d")
+    today_str = _resolve_ref_date_str(ref_date)
 
     # If an open recommendation exists, close it with the evaluation
     if open_entry:
@@ -252,7 +271,21 @@ def main() -> int:
         action="store_true",
         help="Initialize coach history if currently missing or empty",
     )
+    parser.add_argument(
+        "--ref-date",
+        type=str,
+        default=None,
+        help="Reference date for cold-start initialization (YYYY-MM-DD, defaults to today)",
+    )
     args = parser.parse_args()
+
+    parsed_ref_date: Optional[date] = None
+    if args.ref_date:
+        try:
+            parsed_ref_date = date.fromisoformat(args.ref_date)
+        except ValueError:
+            print(f"Error: Invalid --ref-date '{args.ref_date}'. Expected YYYY-MM-DD.", file=sys.stderr)
+            return 1
 
     history = load_coach_history(args.history)
 
@@ -265,7 +298,9 @@ def main() -> int:
                     profile = json.loads(args.athlete.read_text(encoding="utf-8"))
                 except Exception:
                     profile = {}
-            history = initialize_cold_start_history(activities, profile, args.history)
+            history = initialize_cold_start_history(
+                activities, profile, args.history, ref_date=parsed_ref_date
+            )
             print(f"Initialized cold-start coach history with {len(history)} entries at {args.history}")
             return 0
 

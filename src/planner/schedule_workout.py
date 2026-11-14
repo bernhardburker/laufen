@@ -32,7 +32,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.analysis.decision_trace import append_decision_trace, evaluate_workout_decision
 from src.core.config import load_env_file
-from src.planner.extract_markers import extract_planning_markers
+from src.planner.extract_markers import extract_planning_markers, filter_activities_up_to_date
 
 
 def parse_minutes(val: str) -> int:
@@ -608,6 +608,8 @@ def choose_adaptive_workout(
     project_root: Path | None = None,
 ) -> tuple[str, str]:
     """Returns (workout_name, workout_description) adapted to current recovery state and guardrails."""
+    activities = filter_activities_up_to_date(activities, ref_date)
+
     # 1. Long inactivity break -> gentle re-entry (7+ days per Section 4.2)
     if days_since_last_run >= 7:
         name = "Easy Run - Sanfter Wiedereinstieg (30m)"
@@ -772,7 +774,7 @@ def sync_adaptive_plan(
             except Exception:
                 profile = {}
 
-    # Load activities
+    # Load activities and enforce strict run_date <= ref_date cutoff
     act_list = activities
     if act_list is None:
         act_file = activities_file or (root / "data" / "intervals_activities.json")
@@ -783,6 +785,7 @@ def sync_adaptive_plan(
                 act_list = []
         else:
             act_list = []
+    act_list = filter_activities_up_to_date(act_list or [], today)
 
     # Calculate days since last run
     runs = [a for a in act_list if a.get("type") == "Run"]

@@ -179,7 +179,18 @@ Feature: Daily adaptive training recommendation
     Then the recommendation type is "rest_day"
     And the recommendation headline indicates muscular complaint protection
 
+  Scenario: Ignore future runs after reference date when calculating daily recommendation
+    Given a runner whose last run was two days ago on "2026-10-08" and a future run exists on "2026-10-15"
+    When the daily training recommendation is calculated for "2026-10-10"
+    Then the recommendation type is "workout_day"
+    And the recommended days since last run is 2
 
+  Scenario: Prefer newer activity form over older wellness record and apply rest-day decay
+    Given a runner with a run on "2026-10-21" having CTL 15.0 and ATL 25.0 and older wellness on "2026-10-20" having CTL 20.0 and ATL 10.0
+    When the daily training recommendation is calculated using computed form for "2026-10-22"
+    Then the computed form TSB is negative
 
-
-
+  Scenario: Apply activity-based rest-day decay when wellness has only future or incomplete records
+    Given a runner with a run on "2026-10-19" having CTL 20.0 and ATL 22.0 and wellness on "2026-10-25" having CTL 25.0 and ATL 10.0
+    When the daily training recommendation is calculated using computed form for "2026-10-22"
+    Then the computed form TSB is positive

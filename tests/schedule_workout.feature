@@ -135,3 +135,10 @@ Feature: Schedule structured workouts to Intervals.icu
     And the mock server received a DELETE request for Option A
     And only Option B remains in the mock calendar for today
 
+  Scenario: Adaptive planner ignores future runs beyond --ref-date
+    Given a mock Intervals.icu event server is running
+    And INTERVALS_API_KEY is configured
+    And an activities file with a past run 3 days ago and a future run 2 days ahead of reference date
+    When the workout schedule script is executed with adaptive planning arguments and the test activities file
+    Then the process exits with code 0
+    And one scheduled event has date for today

@@ -249,6 +249,17 @@ def calculate_fitness_form_trend(
       ATL_t = ATL_{t-1} * e^(-1/7)
       TSB_t = CTL_t - ATL_t
     """
+    target_d = None
+    if as_of_date is not None:
+        if isinstance(as_of_date, str):
+            try:
+                target_d = datetime.date.fromisoformat(as_of_date[:10])
+            except Exception:
+                pass
+        elif hasattr(as_of_date, "strftime"):
+            target_d = as_of_date
+    target_iso = target_d.isoformat() if target_d is not None else None
+
     timeline = []
     latest_ctl: Optional[float] = None
     latest_atl: Optional[float] = None
@@ -262,6 +273,8 @@ def calculate_fitness_form_trend(
             continue
         date_str = str(act.get("start_date_local") or act.get("date") or "")[:10]
         if not date_str:
+            continue
+        if target_iso is not None and date_str > target_iso:
             continue
 
         ctl = act.get("icu_ctl")
@@ -290,6 +303,7 @@ def calculate_fitness_form_trend(
     current_ctl = latest_ctl
     current_atl = latest_atl
     data_source = "activities"
+    measurement_date_str = latest_run_date_str
 
     # Check wellness records if provided or if wellness_file exists
     records: Optional[List[Dict[str, Any]]] = wellness_records
@@ -302,40 +316,34 @@ def calculate_fitness_form_trend(
         except Exception:
             records = None
 
-    target_d = None
-    if as_of_date is not None:
-        if isinstance(as_of_date, str):
-            try:
-                target_d = datetime.date.fromisoformat(as_of_date[:10])
-            except Exception:
-                pass
-        elif hasattr(as_of_date, "strftime"):
-            target_d = as_of_date
-
-    # 1. Attempt to resolve from wellness record matching target date
+    # 1. Select the newest eligible measurement across activities and wellness
     if records and target_d:
         target_str = target_d.isoformat()
         dated_records = [
             w for w in records
-            if str(w.get("id") or w.get("date") or "")[:10] <= target_str
+            if str(w.get("id") or w.get("date") or "")[:10]
+            and str(w.get("id") or w.get("date") or "")[:10] <= target_str
             and w.get("ctl") is not None
             and w.get("atl") is not None
         ]
         if dated_records:
             dated_records.sort(key=lambda w: str(w.get("id") or w.get("date") or "")[:10], reverse=True)
             w_latest = dated_records[0]
-            current_ctl = round(float(w_latest["ctl"]), 1)
-            current_atl = round(float(w_latest["atl"]), 1)
-            data_source = "wellness"
+            w_date_str = str(w_latest.get("id") or w_latest.get("date") or "")[:10]
+            if measurement_date_str is None or w_date_str >= measurement_date_str:
+                current_ctl = round(float(w_latest["ctl"]), 1)
+                current_atl = round(float(w_latest["atl"]), 1)
+                data_source = "wellness"
+                measurement_date_str = w_date_str
 
-    # 2. If target date is past latest run and wellness didn't supply it, apply exponential decay
-    elif target_d and latest_run_date_str:
+    # 2. Apply exponential rest-day decay from the selected measurement date to target_d
+    if target_d and measurement_date_str:
         try:
-            last_d = datetime.date.fromisoformat(latest_run_date_str)
+            last_d = datetime.date.fromisoformat(measurement_date_str)
             days_gap = (target_d - last_d).days
             if days_gap > 0:
-                current_ctl = round(latest_ctl * math.exp(-days_gap / 42.0), 1)
-                current_atl = round(latest_atl * math.exp(-days_gap / 7.0), 1)
+                current_ctl = round(current_ctl * math.exp(-days_gap / 42.0), 1)
+                current_atl = round(current_atl * math.exp(-days_gap / 7.0), 1)
                 data_source = "decayed"
         except Exception:
             pass

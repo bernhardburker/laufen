@@ -27,6 +27,30 @@ def load_json_file(file_path: Path) -> Any:
         return None
 
 
+def filter_activities_up_to_date(
+    activities: List[Dict[str, Any]],
+    ref_date: Optional[datetime.date],
+) -> List[Dict[str, Any]]:
+    """Filters activities so only entries with date <= ref_date are returned."""
+    if ref_date is None:
+        return list(activities)
+    ref_iso = ref_date.isoformat()
+    filtered: List[Dict[str, Any]] = []
+    for a in activities:
+        if not isinstance(a, dict):
+            continue
+        d_str = str(a.get("start_date_local") or a.get("date") or "")[:10]
+        if not d_str:
+            continue
+        try:
+            datetime.date.fromisoformat(d_str)
+        except ValueError:
+            continue
+        if d_str <= ref_iso:
+            filtered.append(a)
+    return filtered
+
+
 def is_quality_run(run: Dict[str, Any]) -> bool:
     """Classifies if a run was a quality session (intervals, tempo, threshold, speed, race)."""
     r_type = str(run.get("workout_type") or "").lower()
@@ -276,8 +300,8 @@ def get_readiness_markers(
     if ctl is None or atl is None:
         # Fallback to activities icu_ctl/icu_atl
         runs = [
-            a for a in activities
-            if a.get("type") == "Run" and str(a.get("start_date_local") or a.get("date") or "")[:10] <= ref_date.isoformat()
+            a for a in filter_activities_up_to_date(activities, ref_date)
+            if a.get("type") == "Run"
         ]
         runs.sort(key=lambda a: str(a.get("start_date_local") or a.get("date") or ""), reverse=True)
         if runs and runs[0].get("icu_ctl") is not None and runs[0].get("icu_atl") is not None:
@@ -318,8 +342,8 @@ def get_run_history_markers(
 ) -> Dict[str, Any]:
     """Computes history of recent runs, quality stimulus spacing, base anchor status, and weekly volume."""
     runs = [
-        a for a in activities
-        if a.get("type") == "Run" and str(a.get("start_date_local") or a.get("date") or "")[:10] <= ref_date.isoformat()
+        a for a in filter_activities_up_to_date(activities, ref_date)
+        if a.get("type") == "Run"
     ]
     runs.sort(key=lambda a: str(a.get("start_date_local") or a.get("date") or ""), reverse=True)
 
@@ -780,7 +804,8 @@ def extract_planning_markers(
         (sibling_dir / "calendar_events.json") if (sibling_dir and (sibling_dir / "calendar_events.json").is_file()) else None
     )
 
-    activities = activities_data if activities_data is not None else (load_json_file(act_path) or [])
+    raw_activities = activities_data if activities_data is not None else (load_json_file(act_path) or [])
+    activities = filter_activities_up_to_date(raw_activities, today)
     wellness = wellness_data if wellness_data is not None else (load_json_file(well_path) or [])
     profile = profile_data if profile_data is not None else (load_json_file(prof_path) or {})
     coach_history = history_data if history_data is not None else (load_json_file(hist_path) if hist_path else [])

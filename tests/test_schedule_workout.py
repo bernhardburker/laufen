@@ -196,6 +196,48 @@ class WorkoutScheduleDriver:
             args.extend(["--events-file", str(self.events_file)])
         self.run_schedule(args, use_mock_api=True)
 
+    def setup_future_leak_activities(self, past_days: int, future_days: int) -> None:
+        d_past = (self.test_ref_date - datetime.timedelta(days=past_days)).isoformat()
+        d_future = (self.test_ref_date + datetime.timedelta(days=future_days)).isoformat()
+        activities = [
+            {
+                "id": "run_past",
+                "type": "Run",
+                "start_date_local": f"{d_past}T08:00:00",
+                "name": "Past Base Run",
+                "distance": 7000.0,
+                "moving_time": 2700,
+                "average_heartrate": 148.0,
+                "icu_training_load": 40.0,
+                "icu_hr_zone_times": [600, 2000, 100, 0, 0, 0, 0],
+            },
+            {
+                "id": "run_future",
+                "type": "Run",
+                "start_date_local": f"{d_future}T08:00:00",
+                "name": "Future Run",
+                "distance": 8000.0,
+                "moving_time": 3000,
+                "average_heartrate": 150.0,
+                "icu_training_load": 45.0,
+                "icu_hr_zone_times": [600, 2300, 100, 0, 0, 0, 0],
+            },
+        ]
+        self.future_leak_activities_file = self.tmp_path / "future_leak_activities.json"
+        self.future_leak_activities_file.write_text(json.dumps(activities), encoding="utf-8")
+
+    def run_adaptive_plan_with_future_leak_activities(self) -> None:
+        self.run_schedule(
+            [
+                "--adaptive-plan",
+                "--ref-date",
+                self.test_ref_date.isoformat(),
+                "--activities-file",
+                str(self.future_leak_activities_file),
+            ],
+            use_mock_api=True,
+        )
+
     def setup_future_event_10_days(self) -> None:
         date_10 = (self.test_ref_date + datetime.timedelta(days=10)).isoformat()
         ev = {
@@ -633,6 +675,11 @@ def step_only_option_b_remains(driver: WorkoutScheduleDriver):
     assert "2B" in remaining[0].get("name", "") or "Z2" in remaining[0].get("name", "")
 
 
+@given(parsers.parse('an activities file with a past run {past_days:d} days ago and a future run {future_days:d} days ahead of reference date'))
+def step_activities_file_past_and_future(driver: WorkoutScheduleDriver, past_days: int, future_days: int):
+    driver.setup_future_leak_activities(past_days, future_days)
 
 
-
+@when("the workout schedule script is executed with adaptive planning arguments and the test activities file")
+def step_run_adaptive_with_test_activities(driver: WorkoutScheduleDriver):
+    driver.run_adaptive_plan_with_future_leak_activities()

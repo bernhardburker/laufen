@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """BDD Step definitions and test driver for AI Running Coach with Abstracted LLM Pipeline."""
 
+from datetime import date
 import json
 from pathlib import Path
+import subprocess
 import sys
 from typing import Any, Dict, List, Optional
 
@@ -62,6 +64,7 @@ class AICoachDriver:
         self.execution_result: Optional[Dict[str, Any]] = None
         self.raw_llm_output: str = ""
         self.parsed_response: Optional[Dict[str, Any]] = None
+        self.cli_result: Optional[subprocess.CompletedProcess] = None
 
     def setup_empty_activities(self) -> None:
         self.activities = []
@@ -165,6 +168,100 @@ class AICoachDriver:
             ],
         }
         self.llm_client = MockLLMClient(responses=response_dict)
+
+    def setup_activities_with_past_and_future_run(
+        self, past_name: str, past_date: str, future_name: str, future_date: str
+    ) -> None:
+        self.activities = [
+            {
+                "id": "run-past",
+                "type": "Run",
+                "name": past_name,
+                "start_date_local": f"{past_date}T09:00:00",
+                "distance": 7000.0,
+                "moving_time": 2520,
+                "average_heartrate": 142,
+                "icu_training_load": 48,
+                "icu_hr_zone_times": [300, 1800, 300, 120, 0, 0, 0],
+            },
+            {
+                "id": "run-future",
+                "type": "Run",
+                "name": future_name,
+                "start_date_local": f"{future_date}T09:00:00",
+                "distance": 10000.0,
+                "moving_time": 3000,
+                "average_heartrate": 165,
+                "icu_training_load": 90,
+                "icu_hr_zone_times": [100, 200, 400, 2300, 0, 0, 0],
+            },
+        ]
+        self.activities_file.write_text(
+            json.dumps(self.activities, ensure_ascii=False), encoding="utf-8"
+        )
+
+    def execute_cli_with_ref_date(self, ref_date_str: str) -> None:
+        cmd = [
+            sys.executable,
+            str(PROJECT_ROOT / "src" / "analysis" / "ai_coach.py"),
+            "--execute",
+            "--provider",
+            "mock",
+            "--ref-date",
+            ref_date_str,
+            "--input",
+            str(self.activities_file),
+            "--athlete",
+            str(self.athlete_file),
+            "--history",
+            str(self.history_file),
+            "--reviews",
+            str(self.reviews_file),
+            "--output-json",
+            str(self.output_json),
+            "--output-md",
+            str(self.output_md),
+        ]
+        self.cli_result = subprocess.run(cmd, capture_output=True, text=True)
+
+    def generate_prompt_for_ref_date(self, ref_date_str: str) -> None:
+        self.prompt = build_coach_prompt(
+            activities_file=self.activities_file,
+            athlete_file=self.athlete_file,
+            history_file=self.history_file,
+            reviews_file=self.reviews_file,
+            ref_date=date.fromisoformat(ref_date_str),
+        )
+
+    def assert_cli_exit_code(self, code: int) -> None:
+        assert self.cli_result is not None
+        assert self.cli_result.returncode == code, (
+            f"Expected {code}, got {self.cli_result.returncode}\n"
+            f"STDOUT: {self.cli_result.stdout}\nSTDERR: {self.cli_result.stderr}"
+        )
+
+    def assert_history_open_cycle_and_excludes_future(
+        self, expected_date: str, future_run_id: str
+    ) -> None:
+        history = load_coach_history(self.history_file)
+        assert len(history) >= 2
+        newest = history[-1]
+        assert newest["status"] == "offen"
+        assert newest["date"] == expected_date
+        for entry in history:
+            assert future_run_id not in entry.get("evaluated_run_ids", [])
+
+    def assert_decision_trace_ref_date(self, expected_date: str) -> None:
+        trace_file = self.output_json.parent / "decision_trace.jsonl"
+        assert trace_file.exists()
+        lines = [line for line in trace_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+        assert lines
+        last_entry = json.loads(lines[-1])
+        assert last_entry["reference_date"] == expected_date
+        assert last_entry["target_date"] == expected_date
+
+    def assert_prompt_not_contains(self, text: str) -> None:
+        assert text not in self.prompt
 
     def setup_mock_llm_malformed_response(self) -> None:
         self.llm_client = MockLLMClient(responses="DAS IST KEIN GUELTIGES JSON!")
@@ -560,3 +657,51 @@ def when_execute_with_calendar(driver: AICoachDriver):
 @then("the prompt requires calendar alignment with scheduled workouts")
 def then_prompt_requires_calendar_alignment(driver: AICoachDriver):
     assert "Kalender-Abstimmung" in driver.prompt or "Trainer-Leitplanke" in driver.prompt
+
+
+@given(
+    parsers.parse(
+        'an activities dataset with a run "{past_name}" on "{past_date}" and a future run "{future_name}" on "{future_date}"'
+    )
+)
+def given_activities_with_past_and_future_run(
+    driver: AICoachDriver, past_name: str, past_date: str, future_name: str, future_date: str
+):
+    driver.setup_activities_with_past_and_future_run(past_name, past_date, future_name, future_date)
+
+
+@when(parsers.parse('the AI coach CLI is executed with mock provider and ref-date "{ref_date_str}"'))
+def when_execute_cli_with_ref_date(driver: AICoachDriver, ref_date_str: str):
+    driver.execute_cli_with_ref_date(ref_date_str)
+
+
+@when(parsers.parse('the AI coach prompt is generated for reference date "{ref_date_str}"'))
+def when_generate_prompt_for_ref_date(driver: AICoachDriver, ref_date_str: str):
+    driver.generate_prompt_for_ref_date(ref_date_str)
+
+
+@then(parsers.parse("the CLI process exits with code {code:d}"))
+def then_cli_exits_with_code(driver: AICoachDriver, code: int):
+    driver.assert_cli_exit_code(code)
+
+
+@then(
+    parsers.parse(
+        'the coach history new open cycle has date "{expected_date}" and excludes future run "{future_run_id}"'
+    )
+)
+def then_coach_history_stamped_and_excludes_future(
+    driver: AICoachDriver, expected_date: str, future_run_id: str
+):
+    driver.assert_history_open_cycle_and_excludes_future(expected_date, future_run_id)
+
+
+@then(parsers.parse('the decision trace entry has reference date "{expected_date}"'))
+def then_decision_trace_has_ref_date(driver: AICoachDriver, expected_date: str):
+    driver.assert_decision_trace_ref_date(expected_date)
+
+
+@then(parsers.parse('the prompt does not contain "{text}"'))
+def then_prompt_does_not_contain(driver: AICoachDriver, text: str):
+    driver.assert_prompt_not_contains(text)
+

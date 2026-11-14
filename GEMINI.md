@@ -72,8 +72,12 @@ tests/
 - **Automated Drift Verification**: [`tests/documentation_integrity.feature`](tests/documentation_integrity.feature) runs automatically during `./run test` and fails the build if any markdown file link is broken or uses an absolute path, if any `./run` command is missing from `./run help` or `README.md`, if any workout template is undocumented, or if core module outputs violate [`src/core/contracts.py`](src/core/contracts.py).
 
 ## Verification
-- Whenever scripts, contracts, or documentation are created or edited, execute and pass the test suite before completing the task:
+- Whenever scripts, tests, or contracts are created or edited, execute and pass the test suite before completing the task:
   ```bash
   ./run test
   # or: .venv/bin/pytest tests/
+  ```
+- For pure documentation-only edits (`*.md` files), do **not** trigger full test/verify runs; run only the fast documentation drift check when links, CLI commands, or template references changed:
+  ```bash
+  .venv/bin/pytest tests/test_documentation_integrity.py
   ```

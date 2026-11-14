@@ -105,3 +105,20 @@ Feature: Agentic AI Running Coach with Abstracted LLM Pipeline
     Then the execution status is "success"
     And the structured summary JSON file is created and contains status title "Intervallreiz & Kadenz"
     And the coach history is updated with the new cycle recommendation
+
+  Scenario: AI coach CLI time-travel with --ref-date stamps history and trace and blocks future runs
+    Given an activities dataset with a run "Vergangenheitslauf" on "2026-10-05" and a future run "Zukunftslauf" on "2026-10-20"
+    And an athlete profile for "Berni"
+    And an active coach memory with an open recommendation from "2026-10-01"
+    When the AI coach CLI is executed with mock provider and ref-date "2026-10-10"
+    Then the CLI process exits with code 0
+    And the coach history new open cycle has date "2026-10-10" and excludes future run "run-future"
+    And the decision trace entry has reference date "2026-10-10"
+
+  Scenario: AI coach prompt with ref-date excludes future runs after ref-date
+    Given an activities dataset with a run "Vergangenheitslauf" on "2026-10-05" and a future run "Zukunftslauf" on "2026-10-20"
+    And an athlete profile for "Berni"
+    When the AI coach prompt is generated for reference date "2026-10-10"
+    Then the prompt contains "Vergangenheitslauf"
+    And the prompt does not contain "Zukunftslauf"
+

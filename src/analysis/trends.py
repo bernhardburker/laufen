@@ -12,7 +12,7 @@ import json
 import math
 import os
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -65,6 +65,30 @@ def filter_runs(activities: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         if dist > 0 and duration > 0:
             runs.append(item)
     return runs
+
+
+def filter_activities_up_to_date(
+    activities: List[Dict[str, Any]],
+    ref_date: Optional[Any],
+) -> List[Dict[str, Any]]:
+    """Filters activities so only entries with date <= ref_date are returned."""
+    if ref_date is None:
+        return list(activities)
+    ref_iso = ref_date.isoformat()[:10] if hasattr(ref_date, "isoformat") else str(ref_date)[:10]
+    filtered: List[Dict[str, Any]] = []
+    for item in activities:
+        if not isinstance(item, dict):
+            continue
+        d_str = str(item.get("start_date_local") or item.get("date") or "")[:10]
+        if not d_str:
+            continue
+        try:
+            date.fromisoformat(d_str)
+        except ValueError:
+            continue
+        if d_str <= ref_iso:
+            filtered.append(item)
+    return filtered
 
 
 def format_pace(seconds_per_km: float) -> str:

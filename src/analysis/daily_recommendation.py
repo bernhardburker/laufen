@@ -23,7 +23,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.analysis.coach_history import get_open_recommendation, load_coach_history
 from src.analysis.forecast import calculate_fitness_form_trend
-from src.analysis.trends import filter_runs, load_activities
+from src.analysis.trends import filter_activities_up_to_date, filter_runs, load_activities
 from src.core.config import load_athlete_profile
 from src.planner.extract_markers import has_muscular_or_health_complaint, is_quality_run
 
@@ -39,9 +39,13 @@ def calculate_days_since_last_run(
         return 999
 
     ref = reference_date or date.today()
+    eligible_runs = filter_activities_up_to_date(runs, ref)
+    if not eligible_runs:
+        return 999
+
     # Sort reverse chronological
     sorted_runs = sorted(
-        runs,
+        eligible_runs,
         key=lambda r: str(r.get("start_date_local") or r.get("date") or ""),
         reverse=True,
     )
@@ -652,8 +656,14 @@ def generate_daily_recommendation(
     ref_date = reference_date or date.today()
     ref_date_str = ref_date.strftime("%d.%m.%Y")
 
+    runs = sorted(
+        filter_activities_up_to_date(runs or [], ref_date),
+        key=lambda r: str(r.get("start_date_local") or r.get("date") or ""),
+        reverse=True,
+    )
+
     form = form_data or (
-        calculate_fitness_form_trend(runs, as_of_date=ref_date) if runs else {}
+        calculate_fitness_form_trend(runs, wellness_records=wellness, as_of_date=ref_date) if runs else {}
     )
     tsb = float(form.get("current_tsb", 0.0))
     ctl = float(form.get("latest_ctl", 0.0))

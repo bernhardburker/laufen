@@ -37,6 +37,7 @@ from src.analysis.run_reviewer import load_run_reviews
 from src.analysis.trends import (
     aggregate_weekly_trends,
     calculate_run_metrics,
+    filter_activities_up_to_date,
     filter_runs,
     format_duration,
     format_pace,
@@ -536,7 +537,8 @@ def build_coach_prompt(
     ref_date: Optional[date] = None,
 ) -> str:
     """Prepare a detailed, context-rich prompt for Antigravity AI Coach."""
-    activities = load_activities(activities_file)
+    ref_d = ref_date or datetime.now().date()
+    activities = filter_activities_up_to_date(load_activities(activities_file), ref_d)
     runs = filter_runs(activities)
     athlete_profile = load_athlete_profile(athlete_file)
     athlete_info = athlete_profile.get("athlete", {})
@@ -583,7 +585,6 @@ def build_coach_prompt(
                 target_ev = cand
         cal_records = load_calendar_events(target_ev) if target_ev else []
 
-    ref_d = ref_date or datetime.now().date()
     wellness_ctx = extract_coach_wellness_context(w_records, ref_date=ref_d)
     wellness_section = format_coach_wellness_section(wellness_ctx) if wellness_ctx else ""
     calendar_ctx = extract_coach_calendar_context(cal_records, ref_date=ref_d)
@@ -609,7 +610,11 @@ def build_coach_prompt(
     recent_runs = processed_runs[:6]
 
     trends = aggregate_weekly_trends(runs, max_weeks=8)
-    form_data = calculate_fitness_form_trend(runs)
+    form_data = (
+        calculate_fitness_form_trend(runs, wellness_records=w_records, as_of_date=ref_d)
+        if ref_date is not None
+        else calculate_fitness_form_trend(runs)
+    )
     predictions = predict_race_times(processed_runs, athlete_profile)
 
     # Weekly stats from recent trends
@@ -971,6 +976,9 @@ def run_ai_coach(
     out_json_path = output_json or (PROJECT_ROOT / "data" / "ai_coach_summary.json")
     out_md_path = output_md or (PROJECT_ROOT / "data" / "ai_coach_commentary.md")
 
+    effective_ref = ref_date or date.today()
+    ref_iso = effective_ref.isoformat()
+
     # Step 1: Pre-populate or refresh heuristic run reviews
     if update_reviews_first and activities_file.is_file() and not dry_run:
         try:
@@ -980,6 +988,7 @@ def run_ai_coach(
                 activities_file=activities_file,
                 reviews_file=rev_path,
                 athlete_file=athlete_path,
+                ref_date=ref_date,
             )
         except Exception as e:
             print(f"Warning: Pre-review of activities failed: {e}", file=sys.stderr)
@@ -1016,6 +1025,7 @@ def run_ai_coach(
                         activities_file=activities_file,
                         reviews_file=rev_path,
                         athlete_file=athlete_path,
+                        ref_date=ref_date,
                     )
                 except Exception:
                     pass
@@ -1080,11 +1090,17 @@ def run_ai_coach(
     # Step 5: Update coach history
     history_updated = False
     if "history_evaluation" in parsed and isinstance(parsed["history_evaluation"], dict):
-        activities = load_activities(activities_file) if activities_file.is_file() else []
+        activities = (
+            filter_activities_up_to_date(load_activities(activities_file), effective_ref)
+            if activities_file.is_file()
+            else []
+        )
         runs = filter_runs(activities)
         history = load_coach_history(hist_path)
         if not history and runs:
-            history = initialize_cold_start_history(runs, profile, hist_path)
+            history = initialize_cold_start_history(
+                runs, profile, hist_path, ref_date=effective_ref
+            )
         open_rec = get_open_recommendation(history)
         rec_date = open_rec.get("date", "2000-01-01") if open_rec else "2000-01-01"
         evaluated_ids = get_evaluated_run_ids(history)
@@ -1096,13 +1112,14 @@ def run_ai_coach(
                 runs_since=runs_since,
                 athlete_profile=profile,
                 history_file=hist_path,
+                ref_date=effective_ref,
             )
             history_updated = True
 
         # Append AI Coach decision trace to decision_trace.jsonl
         hist_eval = parsed["history_evaluation"]
         now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        today_iso = date.today().isoformat()
+        today_iso = ref_iso
         trace_entry = {
             "timestamp": now_iso,
             "trigger": "ai_coach",
@@ -1265,8 +1282,25 @@ def main() -> int:
         default=PROJECT_ROOT / "data" / "ai_coach_commentary.md",
         help="Path to write extracted Markdown commentary",
     )
+    parser.add_argument(
+        "--ref-date",
+        type=str,
+        default=None,
+        help="Reference date for evaluation and history updates (YYYY-MM-DD, defaults to today)",
+    )
 
     args = parser.parse_args()
+
+    parsed_ref_date: Optional[date] = None
+    if args.ref_date:
+        try:
+            parsed_ref_date = date.fromisoformat(args.ref_date)
+        except ValueError:
+            print(
+                f"Error: Invalid --ref-date '{args.ref_date}'. Expected YYYY-MM-DD.",
+                file=sys.stderr,
+            )
+            return 1
 
     if args.prepare_prompt:
         try:
@@ -1277,6 +1311,7 @@ def main() -> int:
                 reviews_file=args.reviews,
                 wellness_file=args.wellness,
                 events_file=args.events,
+                ref_date=parsed_ref_date,
             )
             if args.output_prompt:
                 args.output_prompt.parent.mkdir(parents=True, exist_ok=True)
@@ -1318,11 +1353,18 @@ def main() -> int:
 
         # Update coach history if evaluation present
         if "history_evaluation" in parsed and isinstance(parsed["history_evaluation"], dict):
-            activities = load_activities(args.input) if args.input.is_file() else []
+            effective_ref = parsed_ref_date or date.today()
+            activities = (
+                filter_activities_up_to_date(load_activities(args.input), effective_ref)
+                if args.input.is_file()
+                else []
+            )
             runs = filter_runs(activities)
             history = load_coach_history(args.history)
             if not history and runs:
-                history = initialize_cold_start_history(runs, profile, args.history)
+                history = initialize_cold_start_history(
+                    runs, profile, args.history, ref_date=effective_ref
+                )
             open_rec = get_open_recommendation(history)
             rec_date = open_rec.get("date", "2000-01-01") if open_rec else "2000-01-01"
             evaluated_ids = get_evaluated_run_ids(history)
@@ -1334,6 +1376,7 @@ def main() -> int:
                     runs_since=runs_since,
                     athlete_profile=profile,
                     history_file=args.history,
+                    ref_date=effective_ref,
                 )
                 print(f"Coach history successfully updated: {args.history}")
             else:
@@ -1367,6 +1410,7 @@ def main() -> int:
             fallback_on_error=not args.no_fallback,
             dry_run=args.dry_run,
             force=args.force,
+            ref_date=parsed_ref_date,
         )
 
         if result.get("status") == "dry_run":
@@ -1391,6 +1435,7 @@ def main() -> int:
             reviews_file=args.reviews,
             wellness_file=args.wellness,
             events_file=args.events,
+            ref_date=parsed_ref_date,
         )
         if args.output_prompt:
             args.output_prompt.parent.mkdir(parents=True, exist_ok=True)

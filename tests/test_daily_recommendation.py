@@ -58,6 +58,8 @@ class DailyRecommendationDriver:
         self.dashboard_html: str = ""
         self.form_tsb: float = 2.5
         self.calendar_events: Optional[List[Dict[str, Any]]] = None
+        self.wellness: Optional[List[Dict[str, Any]]] = None
+        self.use_computed_form: bool = False
 
         # Paths for dashboard test
         self.activities_file = tmp_path / "activities.json"
@@ -115,17 +117,98 @@ class DailyRecommendationDriver:
         ]
 
     def compute_daily_recommendation(self) -> None:
+        form_arg = None if self.use_computed_form else {
+            "current_tsb": self.form_tsb,
+            "latest_ctl": 15.0,
+            "latest_atl": 12.5,
+        }
         self.recommendation = generate_daily_recommendation(
             runs=self.runs,
             athlete_profile=self.athlete_profile,
             coach_history=self.coach_history,
             reference_date=self.reference_date,
-            form_data={"current_tsb": self.form_tsb, "latest_ctl": 15.0, "latest_atl": 12.5},
+            form_data=form_arg,
             calendar_events=self.calendar_events,
+            wellness=self.wellness,
         )
 
     def set_form_tsb(self, tsb: float) -> None:
         self.form_tsb = tsb
+
+    def setup_past_and_future_runs(self, past_date: str, future_date: str) -> None:
+        self.runs = [
+            {
+                "id": "run-past-cutoff",
+                "type": "Run",
+                "name": "Base Run",
+                "start_date_local": f"{past_date}T07:00:00",
+                "distance": 6000.0,
+                "moving_time": 2800,
+                "average_heartrate": 150.0,
+                "max_heartrate": 159.0,
+                "icu_training_load": 45.0,
+                "icu_hr_zone_times": [1000, 1800, 0, 0, 0, 0, 0],
+            },
+            {
+                "id": "run-future-leak",
+                "type": "Run",
+                "name": "Future Run",
+                "start_date_local": f"{future_date}T07:00:00",
+                "distance": 8000.0,
+                "moving_time": 3200,
+                "average_heartrate": 152.0,
+                "max_heartrate": 162.0,
+                "icu_training_load": 55.0,
+                "icu_hr_zone_times": [800, 2400, 0, 0, 0, 0, 0],
+            },
+        ]
+
+    def assert_days_since_last_run(self, expected_days: int) -> None:
+        assert self.recommendation.get("days_since_last_run") == expected_days
+
+    def setup_run_and_wellness_for_form(
+        self,
+        run_date: str,
+        run_ctl: float,
+        run_atl: float,
+        wellness_date: str,
+        wellness_ctl: float,
+        wellness_atl: float,
+    ) -> None:
+        self.use_computed_form = True
+        self.runs = [
+            {
+                "id": f"run-{run_date}",
+                "type": "Run",
+                "name": "Form Test Run",
+                "start_date_local": f"{run_date}T07:00:00",
+                "distance": 7000.0,
+                "moving_time": 2800,
+                "average_heartrate": 152.0,
+                "max_heartrate": 162.0,
+                "icu_training_load": 45.0,
+                "icu_ctl": run_ctl,
+                "icu_atl": run_atl,
+                "icu_hr_zone_times": [600, 2200, 0, 0, 0, 0, 0],
+            }
+        ]
+        self.wellness = [
+            {
+                "id": wellness_date,
+                "ctl": wellness_ctl,
+                "atl": wellness_atl,
+                "restingHR": 48,
+                "hrv": 65.0,
+                "sleepSecs": 27000,
+            }
+        ]
+
+    def assert_computed_tsb_sign(self, positive: bool) -> None:
+        tsb = float(self.recommendation["tsb"])
+        if positive:
+            assert tsb > 0.0, f"Expected positive TSB, got {tsb}"
+        else:
+            assert tsb < 0.0, f"Expected negative TSB, got {tsb}"
 
     def setup_flexible_slots(self) -> None:
         self.athlete_profile["athlete"]["training_mode"] = "pyramidal_hybrid"
@@ -828,3 +911,60 @@ def then_headline_indicates_muscular_protection(driver: DailyRecommendationDrive
     headline = driver.recommendation.get("headline", "")
     assert "Beschwerdeschutz" in headline or "Muskel" in headline
 
+
+@given(parsers.parse('a runner whose last run was two days ago on "{past_date}" and a future run exists on "{future_date}"'))
+def given_runner_with_past_and_future_run(
+    driver: DailyRecommendationDriver, past_date: str, future_date: str
+) -> None:
+    driver.setup_past_and_future_runs(past_date, future_date)
+
+
+@when(parsers.parse('the daily training recommendation is calculated for "{ref_date_str}"'))
+def when_calc_daily_rec_for_date(driver: DailyRecommendationDriver, ref_date_str: str) -> None:
+    driver.set_reference_date(date.fromisoformat(ref_date_str))
+    driver.compute_daily_recommendation()
+
+
+@then(parsers.parse("the recommended days since last run is {expected_days:d}"))
+def then_recommended_days_since(driver: DailyRecommendationDriver, expected_days: int) -> None:
+    driver.assert_days_since_last_run(expected_days)
+
+
+@given(
+    parsers.parse(
+        'a runner with a run on "{run_date}" having CTL {run_ctl:f} and ATL {run_atl:f} and older wellness on "{wellness_date}" having CTL {wellness_ctl:f} and ATL {wellness_atl:f}'
+    )
+)
+@given(
+    parsers.parse(
+        'a runner with a run on "{run_date}" having CTL {run_ctl:f} and ATL {run_atl:f} and wellness on "{wellness_date}" having CTL {wellness_ctl:f} and ATL {wellness_atl:f}'
+    )
+)
+def given_runner_with_run_and_wellness_form(
+    driver: DailyRecommendationDriver,
+    run_date: str,
+    run_ctl: float,
+    run_atl: float,
+    wellness_date: str,
+    wellness_ctl: float,
+    wellness_atl: float,
+) -> None:
+    driver.setup_run_and_wellness_for_form(
+        run_date, run_ctl, run_atl, wellness_date, wellness_ctl, wellness_atl
+    )
+
+
+@when(parsers.parse('the daily training recommendation is calculated using computed form for "{ref_date_str}"'))
+def when_calc_daily_rec_computed_form(driver: DailyRecommendationDriver, ref_date_str: str) -> None:
+    driver.set_reference_date(date.fromisoformat(ref_date_str))
+    driver.compute_daily_recommendation()
+
+
+@then("the computed form TSB is negative")
+def then_computed_tsb_negative(driver: DailyRecommendationDriver) -> None:
+    driver.assert_computed_tsb_sign(positive=False)
+
+
+@then("the computed form TSB is positive")
+def then_computed_tsb_positive(driver: DailyRecommendationDriver) -> None:
+    driver.assert_computed_tsb_sign(positive=True)

@@ -877,10 +877,18 @@ def review_runs(
     limit: Optional[int] = None,
     recent: Optional[int] = None,
     force: bool = False,
+    ref_date: Optional[datetime.date] = None,
 ) -> Dict[str, Any]:
     """Incrementally review unreviewed runs and persist into review cache."""
     activities = load_activities(activities_file)
     runs = filter_runs(activities)
+    if ref_date is not None:
+        ref_iso = ref_date.isoformat()
+        runs = [
+            r for r in runs
+            if str(r.get("start_date_local") or r.get("date") or "")[:10]
+            and str(r.get("start_date_local") or r.get("date") or "")[:10] <= ref_iso
+        ]
     profile = load_athlete_profile(athlete_file)
     hist_path = history_file or (PROJECT_ROOT / "data" / "coach_history.json")
     history = load_coach_history(hist_path) if hist_path.is_file() else []
@@ -889,7 +897,11 @@ def review_runs(
     reviews = load_run_reviews(reviews_path)
 
     unreviewed = find_unreviewed_runs(runs, reviews, limit=limit, recent=recent, force=force)
-    now_iso = datetime.datetime.now().isoformat()
+    now_iso = (
+        f"{ref_date.isoformat()}T12:00:00"
+        if ref_date is not None
+        else datetime.datetime.now().isoformat()
+    )
 
     added_count = 0
     for run in unreviewed:

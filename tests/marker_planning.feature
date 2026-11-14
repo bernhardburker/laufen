@@ -59,3 +59,9 @@ Feature: 4-Stage Marker-Based Adaptive Workout Planning
     And the trace stdout contains "COACH DECISION TRACE & KRITERIEN-ANALYSE"
     And the trace stdout contains "Verworfen"
     And the trace stdout contains "Aerober Anker & Grundlagenlauf (45m Z2)"
+
+  Scenario: Planning markers exclude future runs beyond reference date
+    Given an athlete with a past run 4 days ago and a future run 3 days after reference date
+    When planning markers are extracted for tomorrow
+    Then the history marker days_since_last_run is 4
+

@@ -175,6 +175,10 @@ class MarkerPlanningDriver:
         w_name, _ = self.selected_workout
         assert expected == w_name, f"Expected '{expected}', got '{w_name}'"
 
+    def assert_history_days_since_last_run(self, expected_days: int) -> None:
+        actual = self.markers_result.get("history", {}).get("days_since_last_run")
+        assert actual == expected_days, f"Expected days_since_last_run={expected_days}, got {actual}"
+
     def run_cli_markers(self, args: List[str]) -> None:
         cmd = [
             str(PROJECT_ROOT / ".venv" / "bin" / "python"),
@@ -426,3 +430,12 @@ def step_trace_stdout_contains(driver: MarkerPlanningDriver, expected: str):
     )
 
 
+@given(parsers.parse('an athlete with a past run {past_days:d} days ago and a future run {future_days:d} days after reference date'))
+def step_athlete_past_and_future_run(driver: MarkerPlanningDriver, past_days: int, future_days: int):
+    driver.add_run(days_ago=past_days, duration_min=45.0, name="Past Easy Run", is_quality=False)
+    driver.add_run(days_ago=-future_days, duration_min=40.0, name="Future Run", is_quality=True, z4_sec=600)
+
+
+@then(parsers.parse("the history marker days_since_last_run is {expected_days:d}"))
+def step_assert_history_days_since(driver: MarkerPlanningDriver, expected_days: int):
+    driver.assert_history_days_since_last_run(expected_days)
