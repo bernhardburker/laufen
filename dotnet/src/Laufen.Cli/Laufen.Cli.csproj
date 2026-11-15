@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>Laufen.Cli</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Laufen.Domain\Laufen.Domain.csproj" />
+    <ProjectReference Include="..\Laufen.Infrastructure\Laufen.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

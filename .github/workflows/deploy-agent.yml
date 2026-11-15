@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths-ignore:
       - '**.md'
+      - 'dotnet/**'
+      - '.github/workflows/dotnet-ci-cd.yml'
   workflow_dispatch:
 
 concurrency:
@@ -31,6 +33,7 @@ jobs:
             --exclude='.git' \
             --exclude='.venv' \
             --exclude='data' \
+            --exclude='dotnet' \
             --exclude='.env' \
             ./ "$TARGET_DIR/"
 

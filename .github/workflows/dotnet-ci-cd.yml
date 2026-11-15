@@ -1,0 +1,69 @@
+name: .NET 11 CI & Shadow CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'dotnet/**'
+      - '.github/workflows/dotnet-ci-cd.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dotnet/**'
+      - '.github/workflows/dotnet-ci-cd.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: dotnet-ci-cd-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: 🧪 .NET 11 CI (Build & Test)
+    runs-on: self-hosted
+    steps:
+      - name: 📥 Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: 🔧 .NET 11 SDK einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: dotnet/global.json
+
+      - name: 📦 Restore
+        run: dotnet restore dotnet/Laufen.sln
+
+      - name: 🏗️ Build (Release)
+        run: dotnet build dotnet/Laufen.sln -c Release --no-restore
+
+      - name: 🧪 Tests ausführen
+        run: dotnet test dotnet/Laufen.sln -c Release --no-build --verbosity normal
+
+  cd:
+    name: 🚀 Deploy .NET Shadow Bundle to Burkerserver
+    needs: [ci]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    concurrency:
+      group: dotnet-cd
+      cancel-in-progress: false
+    runs-on: self-hosted
+    steps:
+      - name: 📥 Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: 🔧 .NET 11 SDK einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: dotnet/global.json
+
+      - name: 📦 Shadow-Bundle nach ~/dockerContainer/laufen-dotnet/bin publishen
+        run: |
+          set -euo pipefail
+          TARGET_DIR="$HOME/dockerContainer/laufen-dotnet/bin"
+          mkdir -p "$TARGET_DIR"
+          dotnet publish dotnet/src/Laufen.Cli/Laufen.Cli.csproj -c Release -o "$TARGET_DIR"
+
+      - name: 🩺 Smoke-Check ausführen
+        run: |
+          set -euo pipefail
+          "$HOME/dockerContainer/laufen-dotnet/bin/Laufen.Cli" --health
