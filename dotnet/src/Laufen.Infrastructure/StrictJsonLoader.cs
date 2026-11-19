@@ -50,6 +50,22 @@ public static class StrictJsonLoader
         return LoadFromFile<AthleteProfileDocument>(profilePath);
     }
 
+    public static IReadOnlyList<CoachHistoryEntry> LoadCoachHistory(WorkspaceLayout layout, string slug)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+        var historyPath = Path.Combine(layout.AthletesDirectory, slug, "coach_history.json");
+        return LoadFromFile<List<CoachHistoryEntry>>(historyPath);
+    }
+
+    public static IReadOnlyList<IntervalsWellnessEntry> LoadIntervalsWellness(WorkspaceLayout layout, string slug)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+        var wellnessPath = Path.Combine(layout.AthletesDirectory, slug, "intervals_wellness.json");
+        return LoadFromFile<List<IntervalsWellnessEntry>>(wellnessPath);
+    }
+
     private static void ValidateNoNullCollectionEntries(object? instance, string path)
     {
         if (instance is null or string)
