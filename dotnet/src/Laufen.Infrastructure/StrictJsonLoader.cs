@@ -66,6 +66,22 @@ public static class StrictJsonLoader
         return LoadFromFile<List<IntervalsWellnessEntry>>(wellnessPath);
     }
 
+    public static IReadOnlyDictionary<string, RunReviewRecord> LoadRunReviews(WorkspaceLayout layout, string slug)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+        var reviewsPath = Path.Combine(layout.AthletesDirectory, slug, "run_reviews.json");
+        return LoadFromFile<Dictionary<string, RunReviewRecord>>(reviewsPath);
+    }
+
+    public static IReadOnlyList<IntervalsActivityEntry> LoadIntervalsActivities(WorkspaceLayout layout, string slug)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+        var activitiesPath = Path.Combine(layout.AthletesDirectory, slug, "intervals_activities.json");
+        return LoadFromFile<List<IntervalsActivityEntry>>(activitiesPath);
+    }
+
     private static void ValidateNoNullCollectionEntries(object? instance, string path)
     {
         if (instance is null or string)

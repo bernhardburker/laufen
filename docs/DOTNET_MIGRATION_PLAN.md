@@ -34,18 +34,26 @@ flowchart LR
     S4 --> S1
 ```
 
+### Loop Execution Constraints (Prompt & Edit Hygiene)
+
+1. **Batch Schema Inspection First (`jq`)**: Before writing or editing C# domain contracts, run **one** combined `jq` query across all target tenant files (`athletes/berni/`, `athletes/berni-test/`) to extract all keys, types, 100%-present vs. optional fields, and timestamp formats (`DateOnly` vs. `DateTime` vs. `DateTimeOffset`). Do not discover optional fields through repeated `dotnet test` edit-fail cycles.
+2. **Single-Pass Code & Test Authoring**: Author the domain model, loader, and tests in one complete pass based on the upfront schema inspection. Never hardcode volatile live-synced values (e.g., `resting_hr`, `max_hr`, zone counts) in contract tests—use physiological range assertions (`Is.InRange(...)`).
+3. **Prefix-Matchable Commands Only**: Never use inline environment-variable prefixes (`VAR=val ...`), shell redirects (`>`), `cp`/`sed` file writes, or chained operators (`&&`, `;`, `||`) in `run_command`. Use native `edit_file`/`write_file` for file edits and clean single-command invocations for tests.
+4. **Single Documentation Update per Loop**: Update Section 3 and Section 4 (`W-xx`) **once** at the end of a completed loop—never incrementally mid-loop.
+
 ---
 
 ## 3. High-Level Horizon (Uncommitted Direction)
 
 Only **Step 1** is defined for immediate execution. Subsequent steps are rough placeholders and will be shaped after evaluating Step 1:
 
-- **Step 1 (Current Focus) — Workspace Skeleton & Real-Data Contract Inspection**:
-  - Create a minimal .NET 11 solution in `dotnet/Laufen.sln` with four projects separated by responsibility: `Laufen.Domain`, `Laufen.Infrastructure`, `Laufen.Cli`, and `Laufen.Tests`.
-  - Load and strictly deserialize the existing JSON files in `athletes/berni/` (`registry.json`, `athlete.json`, `intervals_activities.json`, `intervals_wellness.json`, `run_reviews.json`, `coach_history.json`).
-  - Document all schema mismatches, unexpected `null` fields, and structural weaknesses uncovered by strict typing.
-- **Later Candidates (To Be Evaluated After Step 1)**:
-  - Pure physiological & trend calculations (`report` / weekly metrics).
+- **Step 1 (Completed) — Workspace Skeleton & Real-Data Contract Inspection**:
+  - Created the .NET 11 solution in `dotnet/Laufen.sln` with four projects separated by responsibility: `Laufen.Domain`, `Laufen.Infrastructure`, `Laufen.Cli`, and `Laufen.Tests`.
+  - Loaded and strictly deserialized all core JSON files across `athletes/berni/` and `athletes/berni-test/` (`registry.json`, `athlete.json`, `intervals_activities.json`, `intervals_wellness.json`, `run_reviews.json`, `coach_history.json`).
+  - Documented all schema mismatches, unexpected `null` fields, and structural weaknesses uncovered by strict typing (`W-01`–`W-09`).
+- **Next Candidate (Step 2) — Pure Physiological & Trend Calculations (`report` / Weekly Metrics)**:
+  - Implement pure domain calculations (AEF, weekly volume/zone distribution, Banister CTL/ATL/TSB) in `Laufen.Domain` using the strict `IntervalsActivityEntry`, `IntervalsWellnessEntry`, and `AthleteProfile` contracts, with differential comparison against Python `report` output.
+- **Later Candidates**:
   - Readiness markers & guardrails (`extract_markers`).
   - Workout planning (`schedule_workout` / `daily_recommendation`).
   - Post-run review (`run_reviewer`) & AI Coach (`ai_coach`).
@@ -65,3 +73,6 @@ Only **Step 1** is defined for immediate execution. Subsequent steps are rough p
 | W-04 | Step 1 (`registry.json` & `athlete.json`) | `athletes/registry.json` vs. [`../src/core/contracts.py`](../src/core/contracts.py) | `registry.json` has no `TypedDict` contract in `contracts.py`, and `berni-test` omits `telegram_chat_id` and `briefing_enabled`. | Added `AthleteRegistry` and `AthleteRegistryEntry` in `Laufen.Domain` with nullable `TelegramChatId` and `BriefingEnabled`. |
 | W-05 | Step 1 (`coach_history.json`) | `athletes/berni/coach_history.json`, `athletes/berni-test/coach_history.json` vs. [`../src/core/contracts.py`](../src/core/contracts.py) | Open coaching cycles (`status: "offen"`) omit `evaluated_run_ids`, and `cycle-011` (`berni`) uses undocumented status `"angepasst_nach_tempo"` outside the contract comment (`"offen" \| "erfüllt" \| "teilweise" \| "verfehlt"`). | Modeled `CoachHistoryEntry` with nullable `EvaluatedRunIds` (`IReadOnlyList<string>?`) and `DateOnly` `Date` while keeping `Status` as `string` to avoid silent drops. |
 | W-06 | Step 1 (`intervals_wellness.json`) | `athletes/berni/intervals_wellness.json`, `athletes/berni-test/intervals_wellness.json` vs. [`../src/core/contracts.py`](../src/core/contracts.py) | `intervals_wellness.json` has no `TypedDict` contract in `contracts.py`, and real Intervals.icu payloads exhibit cross-tenant nullability divergence across 47 daily fields: `ctl`, `atl`, `rampRate`, `ctlLoad`, `atlLoad`, `sportInfo`, `restingHR`, `steps`, and `floorsClimbed` are always populated in `berni` but nullable in `berni-test`, whereas `soreness`, `fatigue`, `stress`, and `comments` are populated in `berni-test` and `null` in `berni`. | Modeled all 47 fields and nested `WellnessSportInfo` explicitly in `IntervalsWellnessEntry` with strict `DateOnly` `Id`, `DateTimeOffset` `Updated`, and `T?` for all tenant-nullable metrics. |
+| W-07 | Step 1 (`run_reviews.json`) | `athletes/berni/run_reviews.json`, `athletes/berni-test/run_reviews.json` vs. [`../src/core/contracts.py`](../src/core/contracts.py) | `CachedRunReviewRecordContract` omits `analyzed_at` (`DateTimeOffset`) and top-level `athlete_note` (`string?`), and declares `date: str` without noting it is a local `YYYY-MM-DDTHH:MM:SS` timestamp rather than `DateOnly`. `Stage1PhysiologyContract.parsed_intervals` and `zone_breakdown` are untyped (`Dict[str, Any]`). Cross-tenant & item divergence: `berni-test` omits `compliance_notes` (`stage2_compliance`), `actionable_advice` (`stage3_optimizations`), and top-level `athlete_note`; `cli_command` (`stage3_optimizations`) and `optimization_focus` (`stage4_next_run`) are also absent on older/minimal entries. | Modeled the full 4-stage `RunReviewRecord` hierarchy (`ZoneBreakdownEntry`, `ParsedReviewInterval`, `Stage1Physiology`–`Stage4NextRun`) in `Laufen.Domain` with `DateTime` `Date`, `DateTimeOffset` `AnalyzedAt`, and nullable tenant-optional fields. |
+| W-08 | Step 1 (`intervals_activities.json`) | `athletes/berni/intervals_activities.json`, `athletes/berni-test/intervals_activities.json` vs. [`../src/core/contracts.py`](../src/core/contracts.py) | `intervals_activities.json` has no `TypedDict` contract in `contracts.py` (184 raw Intervals.icu fields per activity in `berni`, `[]` in `berni-test`). Only 4 fields (`id`, `icu_athlete_id`, `source`, `start_date_local`) are guaranteed across all records because Strava-only stubs omit `type`, `name`, `moving_time`, `icu_hr_zones`, etc. Includes stringified `strava_id`, integer `paired_event_id`, local `DateTime` `start_date_local` without offset, and nested `icu_hrr` object. | Modeled all 184 fields and `IntervalsHeartRateRecovery` explicitly in `IntervalsActivityEntry` (`Laufen.Domain`) with strict `JsonUnmappedMemberHandling.Disallow`, only the 4 guaranteed fields `required`, and `JsonElement?` for currently all-null fields. |
+| W-09 | Step 1 (`athlete.json` live sync drift) | `athletes/berni/athlete.json` vs. `dotnet/tests/Laufen.Tests/AthleteContractLoadingTests.cs` | Live `sync-profile` updates physiological baselines and zone counts in `athletes/berni/athlete.json` (`resting_hr` `46 -> 48`, `max_hr` `204 -> 192`, `zones` / `raw_hr_zones` `7 -> 5`). Hardcoding exact values in contract tests causes false failures after profile syncs. | Replaced exact HR and zone-count assertions on live-synced `berni` data with physiological range assertions (`Is.InRange(...)`). |

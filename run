@@ -69,6 +69,7 @@ Commands:
   dispatch [ARGS...] Trigger GitHub Actions dashboard build workflow via dispatch
   test [ARGS...]    Run the automated BDD test suite (100% mocked, offline)
   test:e2e [ARGS...] Run live E2E integration tests against Intervals.icu (berni-test)
+  dotnet-test [ARGS...] Run the isolated .NET 11 test suite (dotnet/Laufen.sln)
   seed [ARGS...]    Seed synthetic wellness & activities for staging athlete (berni-test)
   init [ARGS...]    Inspect system and update environment paths (.paths.env)
   help              Show this help menu
@@ -134,6 +135,12 @@ case "$COMMAND" in
     ;;
   test:e2e|test-e2e)
     exec "$PYTEST_EXEC" -m e2e "$WORKSPACE_ROOT/tests" "${REMAINING_ARGS[@]}"
+    ;;
+  dotnet-test)
+    DOTNET_EXEC="${DOTNET_EXEC:-$(command -v dotnet || echo "$HOME/.dotnet/dotnet")}"
+    export DOTNET_CLI_HOME="${DOTNET_CLI_HOME:-/tmp/dotnet-home}"
+    export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+    exec "$DOTNET_EXEC" test "$WORKSPACE_ROOT/dotnet/Laufen.sln" --no-restore "${REMAINING_ARGS[@]}"
     ;;
   seed)
     if [[ -n "$TARGET_ATHLETE" ]]; then

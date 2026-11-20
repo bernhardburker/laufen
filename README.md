@@ -77,6 +77,7 @@ All commands support `--athlete <slug>` (targets a specific tenant) or `--all` (
 | `./run dispatch [--sync-only]` | Trigger the remote GitHub Actions pipeline via `gh` CLI or REST API |
 | `./run test` | Execute the offline BDD test suite (`pytest -m "not e2e"`) |
 | `./run test:e2e` | Execute live Intervals.icu API contract tests against staging tenant `berni-test` |
+| `./run dotnet-test` | Run the isolated .NET 11 test suite (`dotnet/Laufen.sln`) |
 | `./run init` | Inspect system and update `.paths.env` / `.paths.json` |
 | `./run help` | Display runner command overview |
 
