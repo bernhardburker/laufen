@@ -1671,6 +1671,24 @@
             <canvas id="chartPaceHr"></canvas>
           </div>
         </div>
+
+        <!-- Chart 5: Pace Development per HR Zone (GAP, walking pauses filtered) -->
+        <div class="chart-card full-width">
+          <div class="chart-header">
+            <div>
+              <h2>Pace Development per Heart Rate Zone (GAP)</h2>
+              <span>Grade-adjusted, walking pauses excluded (&ge; 2 min/zone) &middot; Higher = Faster</span>
+              <div id="zonePaceSummaryBadges" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;"></div>
+            </div>
+            <div class="chart-toggle-group" id="zonePaceModeToggle">
+              <button type="button" class="chart-toggle-btn active" data-zp-mode="rolling">Smoothed (5-run avg)</button>
+              <button type="button" class="chart-toggle-btn" data-zp-mode="raw">Individual Runs</button>
+            </div>
+          </div>
+          <div class="chart-container" style="height: 340px;">
+            <canvas id="chartZonePaceTrend"></canvas>
+          </div>
+        </div>
       </section>
 
       <!-- Heart Rate Training Zones Reference -->
@@ -1761,6 +1779,9 @@
   </script>
   <script id="reviewsData" type="application/json">
     {{ REVIEWS_JSON }}
+  </script>
+  <script id="zonePaceTrendsData" type="application/json">
+    {{ ZONE_PACE_TRENDS_JSON }}
   </script>
 
   <!-- Interactive Charts & Search Script -->
@@ -2874,6 +2895,143 @@
             }
           }
         });
+      }
+
+      // =========================================================================
+      // Chart 5: Pace Development per HR Zone (GAP, walking pauses filtered)
+      // =========================================================================
+      let zonePaceTrends = { series: {}, summary: {} };
+      try {
+        const zpEl = document.getElementById('zonePaceTrendsData');
+        if (zpEl && zpEl.textContent) {
+          zonePaceTrends = JSON.parse(zpEl.textContent);
+        }
+      } catch (e) {}
+
+      function formatPaceFromSeconds(sec) {
+        if (sec === null || sec === undefined || isNaN(sec)) return '--:--';
+        const total = Math.round(sec);
+        const m = Math.floor(total / 60);
+        const s = total % 60;
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}/km`;
+      }
+
+      const zpBadgesEl = document.getElementById('zonePaceSummaryBadges');
+      const zpColors = { z1: '#94a3b8', z2: '#22c55e', z3: '#f59e0b', z4: '#ef4444' };
+      const zpLabels = { z1: 'Z1 Recovery', z2: 'Z2 Base', z3: 'Z3 Tempo', z4: 'Z4 Threshold' };
+
+      if (zpBadgesEl && zonePaceTrends && zonePaceTrends.summary) {
+        const badges = [];
+        ['z1', 'z2', 'z3', 'z4'].forEach(zk => {
+          const info = zonePaceTrends.summary[zk];
+          if (!info || !info.count) return;
+          const d = info.delta_s;
+          let deltaStr = '';
+          let deltaColor = '#94a3b8';
+          if (d !== null && d !== undefined && info.count >= 2) {
+            const sign = d > 0 ? '+' : '';
+            deltaStr = ` (${sign}${Math.round(d)}s)`;
+            deltaColor = d < -3 ? '#22c55e' : (d > 3 ? '#ef4444' : '#94a3b8');
+          }
+          badges.push(
+            `<span style="font-size:0.75rem; padding:2px 8px; border-radius:999px; background:rgba(255,255,255,0.06); border:1px solid ${zpColors[zk]}; color:#e2e8f0;">` +
+            `<strong style="color:${zpColors[zk]};">${zk.toUpperCase()}</strong>: ${info.early_avg_str || '--'} &rarr; ${info.recent_avg_str || '--'}` +
+            `<span style="color:${deltaColor}; font-weight:600;">${deltaStr}</span> <span style="opacity:0.65;">(${info.count}x)</span></span>`
+          );
+        });
+        zpBadgesEl.innerHTML = badges.join('');
+      }
+
+      const ctxZonePace = document.getElementById('chartZonePaceTrend');
+      let chartZonePace = null;
+      let zpMode = 'rolling';
+
+      function renderZonePaceChart(mode) {
+        if (!ctxZonePace || !zonePaceTrends || !zonePaceTrends.series) return;
+        if (chartZonePace) {
+          chartZonePace.destroy();
+        }
+        const series = zonePaceTrends.series;
+        const allDatesSet = new Set();
+        ['z1', 'z2', 'z3', 'z4'].forEach(zk => {
+          (series[zk] || []).forEach(pt => allDatesSet.add(pt.date));
+        });
+        const sortedDates = Array.from(allDatesSet).sort();
+        if (sortedDates.length === 0) return;
+
+        const datasets = ['z1', 'z2', 'z3', 'z4'].map(zk => {
+          const pts = series[zk] || [];
+          const byDate = {};
+          pts.forEach(pt => { byDate[pt.date] = pt; });
+          const dataArr = sortedDates.map(d => {
+            const p = byDate[d];
+            if (!p) return null;
+            return mode === 'rolling' ? p.rolling_gap_pace_s_per_km : p.gap_pace_s_per_km;
+          });
+          return {
+            label: zpLabels[zk],
+            data: dataArr,
+            borderColor: zpColors[zk],
+            backgroundColor: zpColors[zk],
+            borderWidth: mode === 'rolling' ? 2.5 : 1.8,
+            pointRadius: mode === 'rolling' ? 3 : 4,
+            tension: 0.25,
+            spanGaps: true,
+            metaByDate: byDate,
+          };
+        });
+
+        chartZonePace = new Chart(ctxZonePace, {
+          type: 'line',
+          data: { labels: sortedDates, datasets: datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+              y: {
+                reverse: true,
+                title: { display: true, text: 'GAP Pace (min/km) – higher = faster' },
+                grid: { color: 'rgba(255,255,255,0.04)' },
+                ticks: {
+                  callback: function(val) { return formatPaceFromSeconds(val); }
+                }
+              }
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    if (ctx.raw === null || ctx.raw === undefined) return null;
+                    const dateKey = sortedDates[ctx.dataIndex];
+                    const pt = ctx.dataset.metaByDate ? ctx.dataset.metaByDate[dateKey] : null;
+                    const paceText = formatPaceFromSeconds(ctx.raw);
+                    if (pt) {
+                      const mins = Math.round((pt.running_seconds || 0) / 60);
+                      return `${ctx.dataset.label}: ${paceText} (Ø ${pt.avg_hr} bpm, ${mins} min)`;
+                    }
+                    return `${ctx.dataset.label}: ${paceText}`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      if (ctxZonePace) {
+        renderZonePaceChart(zpMode);
+        const toggleWrap = document.getElementById('zonePaceModeToggle');
+        if (toggleWrap) {
+          toggleWrap.querySelectorAll('.chart-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              toggleWrap.querySelectorAll('.chart-toggle-btn').forEach(b => b.classList.remove('active'));
+              btn.classList.add('active');
+              zpMode = btn.getAttribute('data-zp-mode') || 'rolling';
+              renderZonePaceChart(zpMode);
+            });
+          });
+        }
       }
 
       // =========================================================================

@@ -30,6 +30,7 @@ from src.analysis.daily_recommendation import (
     render_daily_recommendation_html,
 )
 from src.analysis.run_reviewer import load_run_reviews
+from src.analysis.zone_pace import build_zone_pace_trends
 from src.core.config import load_athlete_profile
 from src.analysis.forecast import (
     calculate_fitness_form_trend,
@@ -779,6 +780,7 @@ def generate_dashboard(
             "ZONES_REFERENCE_HTML": build_zones_reference_html(athlete_profile),
             "FORECAST_JSON": "{}",
             "SUMMARY_JSON": "{}",
+            "ZONE_PACE_TRENDS_JSON": json.dumps({"series": {}, "summary": {}}, ensure_ascii=False),
         }
     else:
         trends = aggregate_weekly_trends(runs, max_weeks=weeks)
@@ -933,6 +935,7 @@ def generate_dashboard(
             "volume_forecast": volume_forecast,
             "form": form_data,
         }
+        zone_pace_trends = build_zone_pace_trends(run_reviews)
 
         context = {
             "DASHBOARD_TITLE": title,
@@ -962,6 +965,7 @@ def generate_dashboard(
             "ZONES_REFERENCE_HTML": build_zones_reference_html(athlete_profile),
             "FORECAST_JSON": json.dumps(forecast_payload, ensure_ascii=False),
             "SUMMARY_JSON": json.dumps(summary_data, ensure_ascii=False),
+            "ZONE_PACE_TRENDS_JSON": json.dumps(zone_pace_trends, ensure_ascii=False),
         }
 
     template_content = template_file.read_text(encoding="utf-8")

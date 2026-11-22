@@ -95,6 +95,85 @@ def fetch_intervals_activities(
         sys.exit(f"Network error while connecting to Intervals.icu: {e.reason}")
 
 
+DEFAULT_STREAM_TYPES = "time,heartrate,velocity_smooth,cadence,fixed_altitude"
+
+
+def fetch_activity_streams(
+    activity_id: str,
+    api_key: str,
+    api_base_url: str = "https://intervals.icu/api/v1",
+    stream_types: str = DEFAULT_STREAM_TYPES,
+) -> dict:
+    """Fetches per-second streams for one activity and returns a compact {type: data} dict."""
+    clean_id = str(activity_id).strip()
+    url = f"{api_base_url.rstrip('/')}/activity/{clean_id}/streams?types={stream_types}"
+    auth_string = f"API_KEY:{api_key}"
+    auth_header = "Basic " + base64.b64encode(auth_string.encode("utf-8")).decode("ascii")
+
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": auth_header,
+            "User-Agent": "Mozilla/5.0 (compatible; LaufenSync/1.0)",
+            "Accept": "application/json",
+        },
+        method="GET",
+    )
+
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        raw = json.loads(resp.read().decode("utf-8"))
+
+    result: dict = {}
+    if isinstance(raw, list):
+        for item in raw:
+            if isinstance(item, dict) and item.get("type") and isinstance(item.get("data"), list):
+                result[str(item["type"])] = item["data"]
+    elif isinstance(raw, dict):
+        result = raw
+    return result
+
+
+def sync_run_streams(
+    activities: list[dict],
+    streams_dir: Path,
+    api_key: str,
+    api_base_url: str = "https://intervals.icu/api/v1",
+) -> tuple[int, int]:
+    """Incrementally downloads streams for Run activities missing a local cache file."""
+    streams_dir.mkdir(parents=True, exist_ok=True)
+    downloaded = 0
+    skipped_or_failed = 0
+
+    for act in activities:
+        if str(act.get("type", "")).lower() != "run":
+            continue
+        act_id = str(act.get("id") or "").strip()
+        if not act_id:
+            continue
+        if act.get("average_heartrate") is None and not act.get("has_heartrate"):
+            continue
+
+        out_file = streams_dir / f"{act_id}.json"
+        if out_file.is_file():
+            continue
+
+        try:
+            streams = fetch_activity_streams(
+                activity_id=act_id,
+                api_key=api_key,
+                api_base_url=api_base_url,
+            )
+            if streams:
+                with open(out_file, "w", encoding="utf-8") as f:
+                    json.dump(streams, f, separators=(",", ":"))
+                downloaded += 1
+        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
+            skipped_or_failed += 1
+            print(f"[WARN] Could not fetch streams for {act_id}: {e}", file=sys.stderr)
+
+    return downloaded, skipped_or_failed
+
+
 def update_intervals_activity(
     activity_id: str,
     api_key: str,
@@ -190,6 +269,11 @@ def main() -> None:
         default=os.getenv("INTERVALS_API_BASE", "https://intervals.icu/api/v1"),
         help="Base URL of Intervals.icu API (default: https://intervals.icu/api/v1)",
     )
+    parser.add_argument(
+        "--skip-streams",
+        action="store_true",
+        help="Skip incremental download of per-second activity streams",
+    )
 
     args = parser.parse_args()
 
@@ -220,6 +304,17 @@ def main() -> None:
 
     print(f"Successfully downloaded {len(activities)} activities and saved to:")
     print(f"-> {output_path}")
+
+    if not args.skip_streams:
+        streams_dir = output_path.parent / "streams"
+        dl_count, err_count = sync_run_streams(
+            activities=activities,
+            streams_dir=streams_dir,
+            api_key=api_key,
+            api_base_url=args.api_base,
+        )
+        if dl_count > 0 or err_count > 0:
+            print(f"-> Streams synced: {dl_count} new, {err_count} skipped/failed ({streams_dir})")
 
     if args.save_individual:
         single_dir = output_path.parent / "activities"

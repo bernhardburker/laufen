@@ -32,6 +32,11 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.analysis.coach_history import load_coach_history
 from src.analysis.trends import filter_runs, format_duration, format_pace, load_activities
 from src.core.config import load_athlete_profile
+from src.analysis.zone_pace import (
+    compute_run_zone_pace_stats,
+    format_pace_seconds,
+    load_activity_stream,
+)
 
 
 def format_seconds_to_min_sec(seconds: int | float) -> str:
@@ -84,7 +89,9 @@ def parse_interval_summary(summary_list: List[str]) -> List[Dict[str, Any]]:
 
 
 def extract_deep_run_metrics(
-    run: Dict[str, Any], athlete_profile: Optional[Dict[str, Any]] = None
+    run: Dict[str, Any],
+    athlete_profile: Optional[Dict[str, Any]] = None,
+    streams_dir: Optional[Path] = None,
 ) -> Dict[str, Any]:
     """Extract exhaustive physiological and mechanical metrics for a single run."""
     distance_m = float(run.get("distance") or 0.0)
@@ -177,6 +184,12 @@ def extract_deep_run_metrics(
         lthr=lthr,
     )
 
+    # Per-second stream zone-pace (GAP) & split stats if cached stream exists
+    zone_pace_stats = None
+    stream_data = load_activity_stream(streams_dir, str(run.get("id") or ""))
+    if stream_data:
+        zone_pace_stats = compute_run_zone_pace_stats(stream_data, athlete_profile)
+
     return {
         "id": str(run.get("id")),
         "date": str(run.get("start_date_local") or "")[:19],
@@ -205,6 +218,7 @@ def extract_deep_run_metrics(
         "intervals": interval_strings,
         "parsed_intervals": parsed_intervals,
         "intensity_class": intensity_class,
+        "zone_pace_stats": zone_pace_stats,
     }
 
 
@@ -673,11 +687,32 @@ def evaluate_run_deep(
     )
 
     # Stage 1: Physiology
+    zone_pace_parts: List[str] = []
+    zp_stats = metrics.get("zone_pace_stats") or {}
+    if zp_stats.get("has_streams"):
+        zp_zones = zp_stats.get("zones") or {}
+        for zk in ("z1", "z2", "z3", "z4"):
+            zd = zp_zones.get(zk)
+            if zd and zd.get("valid_for_trend") and zd.get("gap_pace_str"):
+                zone_pace_parts.append(f"{zk.upper()} {zd['gap_pace_str']}")
+        h1_s = zp_stats.get("first_half_gap_pace_s_per_km")
+        h2_s = zp_stats.get("second_half_gap_pace_s_per_km")
+        split_note = (
+            f" Split 1./2. Hälfte (GAP): {format_pace_seconds(h1_s)} -> {format_pace_seconds(h2_s)}."
+            if h1_s and h2_s
+            else ""
+        )
+    else:
+        split_note = ""
+
+    zp_note = f" GAP-Pace/Zone: {', '.join(zone_pace_parts)}." if zone_pace_parts else ""
+
     stage1 = {
         "headline": f"{metrics['intensity_class'].replace('_', ' ').title()}: {metrics['distance_km']:.2f} km in {metrics['moving_time_str']}",
         "summary": (
             f"Herzfrequenz lag bei Ø {int(round(avg_hr))} bpm (Max: {max_hr} bpm). "
             f"Zonenverteilung: Z1/Z2 {z1_z2_pct}%, Z3 {z3_str}, Z4 {z4_str}. Training Load: {int(round(metrics['training_load']))}."
+            f"{zp_note}{split_note}"
         ),
         "ef": metrics.get("aerobic_ef"),
         "tsb_at_run": metrics.get("tsb_at_run"),
@@ -847,8 +882,9 @@ def find_unreviewed_runs(
     limit: Optional[int] = None,
     recent: Optional[int] = None,
     force: bool = False,
+    streams_dir: Optional[Path] = None,
 ) -> List[Dict[str, Any]]:
-    """Return runs that do not yet have a cached review or require upgrade to schema_version 2."""
+    """Return runs missing a v2 review or missing zone_pace_stats when streams exist."""
     sorted_runs = sorted(runs, key=lambda r: str(r.get("start_date_local") or ""), reverse=True)
     if recent is not None and recent > 0:
         sorted_runs = sorted_runs[:recent]
@@ -857,9 +893,16 @@ def find_unreviewed_runs(
     for r in sorted_runs:
         run_id = str(r.get("id"))
         cached_entry = reviews.get(run_id)
+        has_stream = bool(streams_dir and (streams_dir / f"{run_id}.json").is_file())
+        missing_zone_pace = (
+            cached_entry is not None
+            and has_stream
+            and cached_entry.get("zone_pace_stats") is None
+        )
         needs_upgrade = (
             cached_entry is None
             or cached_entry.get("review", {}).get("schema_version") != 2
+            or missing_zone_pace
         )
         if force or needs_upgrade:
             unreviewed.append(r)
@@ -878,6 +921,7 @@ def review_runs(
     recent: Optional[int] = None,
     force: bool = False,
     ref_date: Optional[datetime.date] = None,
+    streams_dir: Optional[Path] = None,
 ) -> Dict[str, Any]:
     """Incrementally review unreviewed runs and persist into review cache."""
     activities = load_activities(activities_file)
@@ -895,8 +939,16 @@ def review_runs(
 
     reviews_path = reviews_file or (PROJECT_ROOT / "data" / "run_reviews.json")
     reviews = load_run_reviews(reviews_path)
+    resolved_streams_dir = streams_dir if streams_dir is not None else (activities_file.parent / "streams")
 
-    unreviewed = find_unreviewed_runs(runs, reviews, limit=limit, recent=recent, force=force)
+    unreviewed = find_unreviewed_runs(
+        runs,
+        reviews,
+        limit=limit,
+        recent=recent,
+        force=force,
+        streams_dir=resolved_streams_dir,
+    )
     now_iso = (
         f"{ref_date.isoformat()}T12:00:00"
         if ref_date is not None
@@ -906,7 +958,7 @@ def review_runs(
     added_count = 0
     for run in unreviewed:
         run_id = str(run.get("id"))
-        metrics = extract_deep_run_metrics(run, profile)
+        metrics = extract_deep_run_metrics(run, profile, streams_dir=resolved_streams_dir)
         intent = resolve_run_intent(run, metrics, profile, history)
         evaluation = evaluate_run_deep(metrics, profile, run_raw=run, coach_history=history, run_intent=intent)
 
@@ -931,6 +983,7 @@ def review_runs(
             "zone_breakdown": metrics["zone_breakdown"],
             "intervals": metrics["intervals"],
             "intensity_class": metrics["intensity_class"],
+            "zone_pace_stats": metrics.get("zone_pace_stats"),
             "athlete_note": evaluation.get("athlete_note") or metrics.get("athlete_note") or None,
             "review": evaluation,
             "analyzed_at": now_iso,
@@ -1003,8 +1056,9 @@ def main() -> int:
     initial_reviews = load_run_reviews(args.reviews)
     activities = load_activities(args.input)
     runs = filter_runs(activities)
+    streams_dir = args.input.parent / "streams"
     unreviewed = find_unreviewed_runs(
-        runs, initial_reviews, limit=args.limit, recent=args.recent, force=args.force
+        runs, initial_reviews, limit=args.limit, recent=args.recent, force=args.force, streams_dir=streams_dir
     )
 
     print(f"Total runs: {len(runs)} | Cached reviews: {len(initial_reviews)} | Unreviewed to process: {len(unreviewed)}")
@@ -1021,6 +1075,7 @@ def main() -> int:
         limit=args.limit,
         recent=args.recent,
         force=args.force,
+        streams_dir=streams_dir,
     )
 
     print(f"Successfully processed {len(unreviewed)} runs into cache: {args.reviews}")

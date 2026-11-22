@@ -153,6 +153,9 @@ Weekly training structure is **not hardcoded globally**; every athlete defines t
 - **Aerobic Efficiency Factor (AEF)**:
   $$\text{AEF} = \frac{\text{Speed (m/min)}}{\text{Average Heart Rate (bpm)}}$$
   Tracked across all runs and specifically filtered for pure Z2 base runs (`z1_z2_pct >= 80%`) to measure aerobic progression independent of pace.
+- **Per-Zone Grade Adjusted Pace (GAP) & Split Analysis** ([`src/analysis/zone_pace.py`](../src/analysis/zone_pace.py)):
+  - Incrementally caches per-second activity streams (`athletes/<slug>/streams/<id>.json`) during `./run sync`.
+  - Filters out walking pauses (`velocity_smooth < 1.67 m/s`), applies Minetti's energy-cost polynomial to compute Grade Adjusted Pace (GAP) per second, and aggregates per-zone pace (`valid_for_trend` when $\ge 120\text{ s}$ in zone) plus 1st/2nd-half splits into `zone_pace_stats` inside `run_reviews.json`.
 - **Banister Impulse-Response Form** ([`src/analysis/forecast.py`](../src/analysis/forecast.py)):
   - Chronic Training Load ($\text{CTL}$, 42-day exponentially weighted moving average of `icu_training_load`).
   - Acute Training Load ($\text{ATL}$, 7-day EWMA).
@@ -173,6 +176,7 @@ All inter-module JSON schemas and runtime validators are defined in **[`src/core
 | :--- | :--- | :--- | :--- |
 | `athlete.json` | [`sync_athlete.py`](../src/integrations/sync_athlete.py), [`onboard_athlete.py`](../src/integrations/onboard_athlete.py) | All planner, analysis & dashboard modules | [`AthleteProfileContract`](../src/core/contracts.py) (`validate_athlete_profile`) |
 | `intervals_activities.json` | [`download_intervals.py`](../src/integrations/download_intervals.py), [`manage_note.py`](../src/integrations/manage_note.py) | `trends.py`, `run_reviewer.py`, `extract_markers.py`, `generate_dashboard.py` | Raw Intervals.icu Activity list |
+| `streams/<id>.json` | [`download_intervals.py`](../src/integrations/download_intervals.py) | [`zone_pace.py`](../src/analysis/zone_pace.py), [`run_reviewer.py`](../src/analysis/run_reviewer.py) | Cached per-second HR, velocity, cadence & altitude streams |
 | `intervals_wellness.json` | [`download_wellness.py`](../src/integrations/download_wellness.py) | `extract_markers.py`, `ai_coach.py`, `telegram_bot.py`, `generate_dashboard.py` | Raw Intervals.icu Wellness list |
 | `calendar_events.json` | [`download_events.py`](../src/integrations/download_events.py), [`schedule_workout.py`](../src/planner/schedule_workout.py) | `daily_recommendation.py`, `ai_coach.py`, `telegram_bot.py`, `generate_dashboard.py` | Intervals.icu Event list |
 | `run_reviews.json` | [`run_reviewer.py`](../src/analysis/run_reviewer.py) (`schema_version: 2`) | `ai_coach.py`, `telegram_bot.py`, `generate_dashboard.py` | [`CachedRunReviewRecordContract`](../src/core/contracts.py) / [`RunReviewEvaluationV2Contract`](../src/core/contracts.py) (`validate_run_review_evaluation`) |

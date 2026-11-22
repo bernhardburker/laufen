@@ -89,6 +89,33 @@ class RunReviewEvaluationV2Contract(TypedDict, total=False):
     stages: RunReviewStagesContract
 
 
+class ZonePaceEntryContract(TypedDict, total=False):
+    zone: int
+    name: str
+    running_seconds: int
+    avg_hr: float
+    gap_speed_mps: float
+    gap_pace_s_per_km: float
+    gap_pace_str: str
+    raw_speed_mps: float
+    raw_pace_s_per_km: float
+    raw_pace_str: str
+    valid_for_trend: bool
+
+
+class ZonePaceStatsContract(TypedDict, total=False):
+    has_streams: bool
+    min_zone_seconds: int
+    total_running_seconds: int
+    walking_seconds_filtered: int
+    zones: Dict[str, ZonePaceEntryContract]
+    first_half_gap_pace_s_per_km: Optional[float]
+    second_half_gap_pace_s_per_km: Optional[float]
+    first_half_avg_hr: Optional[float]
+    second_half_avg_hr: Optional[float]
+    pace_split_diff_s: Optional[float]
+
+
 class CachedRunReviewRecordContract(TypedDict, total=False):
     """Per-activity entry stored in `athletes/<slug>/run_reviews.json`."""
     id: str
@@ -111,6 +138,7 @@ class CachedRunReviewRecordContract(TypedDict, total=False):
     zone_breakdown: Dict[str, Any]
     intervals: List[str]
     intensity_class: str
+    zone_pace_stats: Optional[ZonePaceStatsContract]
     review: RunReviewEvaluationV2Contract
 
 
