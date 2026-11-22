@@ -88,7 +88,7 @@ jobs:
         if: ${{ inputs.mode != 'adhoc' }}
         continue-on-error: true
         env:
-          AGY_MODEL: ${{ vars.AGY_MODEL || 'Gemini 3.8 Flash (Medium)' }}
+          AGY_MODEL: ${{ vars.AGY_MODEL || 'Gemini 4 Hydrogen (Medium)' }}
           AGY_TIMEOUT: '3m'
           ATHLETE: ${{ inputs.athlete || 'berni' }}
         run: |

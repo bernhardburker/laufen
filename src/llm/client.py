@@ -214,7 +214,7 @@ class AgyLLMClient(LLMClient):
         extra_args: Optional[List[str]] = None,
     ):
         self.explicit_bin = Path(agy_bin) if agy_bin else None
-        self.model = model or os.getenv("AGY_MODEL", "Gemini 3.8 Flash (Medium)")
+        self.model = model or os.getenv("AGY_MODEL", "Gemini 4 Hydrogen (Medium)")
         self.timeout_str = os.getenv("AGY_TIMEOUT", str(timeout))
         self.timeout_seconds = parse_timeout_string(self.timeout_str)
         self.sandbox = sandbox
