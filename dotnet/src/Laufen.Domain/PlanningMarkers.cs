@@ -181,6 +181,48 @@ public static class PlanningMarkersCalculator
             .ToList();
     }
 
+    public static CalendarContextMarkers GetCalendarContext(
+        IEnumerable<CalendarEventEntry>? calendarEvents,
+        DateOnly refDate)
+    {
+        if (calendarEvents is null)
+        {
+            return CalendarContextMarkers.Empty;
+        }
+
+        var eventList = calendarEvents.ToList();
+        if (eventList.Count == 0)
+        {
+            return CalendarContextMarkers.Empty;
+        }
+
+        var eventsToday = eventList
+            .Where(e => DateOnly.FromDateTime(e.StartDateLocal) == refDate)
+            .ToList();
+
+        var hasCompleted = eventsToday.Any(e =>
+            string.Equals(e.Category, "WORKOUT", StringComparison.Ordinal)
+            && !string.IsNullOrEmpty(e.PairedActivityId));
+
+        var hasPlanned = eventsToday.Any(e =>
+            string.Equals(e.Category, "WORKOUT", StringComparison.Ordinal)
+            && string.IsNullOrEmpty(e.PairedActivityId));
+
+        var hasRestNote = eventsToday.Any(e =>
+            (string.Equals(e.Category, "NOTE", StringComparison.Ordinal)
+                && (e.Name ?? string.Empty).Contains("ruhetag", StringComparison.OrdinalIgnoreCase))
+            || string.Equals(e.Category, "HOLIDAY", StringComparison.Ordinal));
+
+        return new CalendarContextMarkers
+        {
+            HasCalendar = true,
+            HasCompletedWorkoutToday = hasCompleted,
+            HasPlannedWorkoutToday = hasPlanned,
+            HasRestNoteToday = hasRestNote,
+            EventsTodayCount = eventsToday.Count
+        };
+    }
+
     public static bool IsQualityRun(IntervalsActivityEntry run)
     {
         ArgumentNullException.ThrowIfNull(run);

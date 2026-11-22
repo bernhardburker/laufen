@@ -82,6 +82,14 @@ public static class StrictJsonLoader
         return LoadFromFile<List<IntervalsActivityEntry>>(activitiesPath);
     }
 
+    public static IReadOnlyList<CalendarEventEntry> LoadCalendarEvents(WorkspaceLayout layout, string slug)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+        var eventsPath = Path.Combine(layout.AthletesDirectory, slug, "calendar_events.json");
+        return LoadFromFile<List<CalendarEventEntry>>(eventsPath);
+    }
+
     private static void ValidateNoNullCollectionEntries(object? instance, string path)
     {
         if (instance is null or string)
