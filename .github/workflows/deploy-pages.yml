@@ -52,20 +52,20 @@ jobs:
             done
             cp -rf "$PERSIST_DIR/athletes/"* athletes/ 2>/dev/null || true
             .venv/bin/python -c "
-import json, pathlib
-for p in pathlib.Path('athletes').glob('*/run_reviews.json'):
-    git_p = pathlib.Path(f'/tmp/git_{p.parent.name}_reviews.json')
-    if not git_p.is_file(): continue
-    cur = json.loads(p.read_text())
-    git_d = json.loads(git_p.read_text())
-    changed = False
-    for k, v in cur.items():
-        if isinstance(v, dict) and v.get('zone_pace_stats') is None and isinstance(git_d.get(k), dict) and git_d[k].get('zone_pace_stats'):
-            v['zone_pace_stats'] = git_d[k]['zone_pace_stats']
-            changed = True
-    if changed:
-        p.write_text(json.dumps(cur, indent=2, ensure_ascii=False))
-"
+          import json, pathlib
+          for p in pathlib.Path('athletes').glob('*/run_reviews.json'):
+              git_p = pathlib.Path(f'/tmp/git_{p.parent.name}_reviews.json')
+              if not git_p.is_file(): continue
+              cur = json.loads(p.read_text())
+              git_d = json.loads(git_p.read_text())
+              changed = False
+              for k, v in cur.items():
+                  if isinstance(v, dict) and v.get('zone_pace_stats') is None and isinstance(git_d.get(k), dict) and git_d[k].get('zone_pace_stats'):
+                      v['zone_pace_stats'] = git_d[k]['zone_pace_stats']
+                      changed = True
+              if changed:
+                  p.write_text(json.dumps(cur, indent=2, ensure_ascii=False))
+          "
           fi
           if [ -d "$PERSIST_DIR/data" ]; then
             mkdir -p data
