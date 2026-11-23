@@ -423,45 +423,83 @@ def build_coach_history_html(history: List[Dict[str, Any]]) -> str:
             status_badge = '<span class="tag" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3);">⏳ Offen</span>'
 
         rows.append(
-            f"<tr>"
-            f"<td style=\"white-space: nowrap; font-weight: 600;\">{date_str}</td>"
-            f"<td>{rec_text}</td>"
-            f"<td>{actual_text}</td>"
-            f"<td style=\"text-align: center;\">{status_badge}</td>"
-            f"<td>{effect_text}</td>"
-            f"</tr>"
+            f'<tr class="coach-history-row" data-date="{date_str}" data-status="{html.escape(status)}">'
+            f'<td class="ch-col-date" data-label="Datum">{date_str}</td>'
+            f'<td class="ch-col-rec" data-label="Empfehlung">{rec_text}</td>'
+            f'<td class="ch-col-actual" data-label="Umsetzung">{actual_text}</td>'
+            f'<td class="ch-col-status" data-label="Status">{status_badge}</td>'
+            f'<td class="ch-col-effect" data-label="Effekt / Trend">{effect_text}</td>'
+            f'</tr>'
         )
 
     rows_html = "".join(rows)
     return f"""
-    <div class="coach-history-card" style="margin-top: 24px; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 12px; padding: 20px;">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span class="badge-dot" style="background-color: var(--cyan); box-shadow: 0 0 8px var(--cyan);"></span>
-          <h3 style="font-size: 1.05rem; font-weight: 700; color: #f8fafc; margin: 0;">🧠 Coach-Gedächtnis &amp; Feedback-Schleife</h3>
+    <section class="coach-history-card" id="coachHistorySection">
+      <details class="coach-history-details">
+        <summary class="coach-history-summary">
+          <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+            <span class="badge-dot" style="background-color: var(--cyan); box-shadow: 0 0 8px var(--cyan); flex-shrink: 0;"></span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #f8fafc; margin: 0;">🧠 Coach-Gedächtnis &amp; Feedback-Schleife</h3>
+          </div>
+          <div class="coach-history-summary-right">
+            <span class="tag tag-cyan">{len(history)} Zyklen erfasst</span>
+            <span class="review-toggle-hint">Verlauf anzeigen <span class="chevron">▼</span></span>
+          </div>
+        </summary>
+        <div class="coach-history-body">
+          <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0; margin-bottom: 14px;">
+            Nüchterne Verlaufskontrolle: Was hat der Trainer empfohlen, was wurde gelaufen und welcher physiologische Effekt ist messbar?
+          </p>
+          <div class="table-header-tools" style="margin-bottom: 14px;">
+            <span id="coachHistoryFilterSummary" style="font-size: 0.8rem; color: var(--text-muted);">
+              Zeige {len(history)} von {len(history)} Zyklen
+            </span>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <select id="coachHistoryStatusFilter" class="filter-select" aria-label="Coach-Gedächtnis nach Status filtern">
+                <option value="all">Alle Status</option>
+                <option value="erfüllt">✓ Erfüllt</option>
+                <option value="angepasst_nach_tempo">⚡ Adaptiert (Tempo)</option>
+                <option value="teilweise">~ Teilweise</option>
+                <option value="verfehlt">⚠ Verfehlt</option>
+                <option value="offen">⏳ Offen</option>
+              </select>
+              <input type="text" id="coachHistorySearch" class="search-input" placeholder="Zyklen durchsuchen..." aria-label="Coach-Gedächtnis durchsuchen">
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="activities-table" id="coachHistoryTable">
+              <thead>
+                <tr>
+                  <th class="sortable ch-sortable" data-ch-sort="date" style="width: 115px;">Datum <span class="sort-icon" id="chSortIcon_date">▼</span></th>
+                  <th>Empfehlung des Coaches</th>
+                  <th>Tatsächliche Umsetzung (Abgleich)</th>
+                  <th class="sortable ch-sortable" data-ch-sort="status" style="width: 150px; text-align: center;">Status <span class="sort-icon" id="chSortIcon_status"></span></th>
+                  <th>Gemessener Effekt / Trend</th>
+                </tr>
+              </thead>
+              <tbody id="coachHistoryTableBody">
+                {rows_html}
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer-tools">
+            <div id="coachHistoryPaginationInfo" style="font-size: 0.8rem; color: var(--text-muted);">
+              Zeige {len(history)} Zyklen
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <select id="coachHistoryPageSize" class="filter-select" style="padding: 4px 8px; font-size: 0.8rem;" aria-label="Zyklen pro Seite">
+                <option value="10" selected>10 pro Seite</option>
+                <option value="25">25 pro Seite</option>
+                <option value="50">50 pro Seite</option>
+                <option value="all">Alle anzeigen</option>
+              </select>
+              <button type="button" class="btn-page" id="btnCoachHistoryPrev" disabled>&laquo; Zurück</button>
+              <button type="button" class="btn-page" id="btnCoachHistoryNext" disabled>Weiter &raquo;</button>
+            </div>
+          </div>
         </div>
-        <span class="tag tag-cyan">{len(history)} Zyklen erfasst</span>
-      </div>
-      <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0; margin-bottom: 16px;">
-        Nüchterne Verlaufskontrolle: Was hat der Trainer empfohlen, was wurde gelaufen und welcher physiologische Effekt ist messbar?
-      </p>
-      <div class="table-container" style="overflow-x: auto;">
-        <table class="activities-table">
-          <thead>
-            <tr>
-              <th style="width: 105px;">Datum</th>
-              <th>Empfehlung des Coaches</th>
-              <th>Tatsächliche Umsetzung (Abgleich)</th>
-              <th style="width: 140px; text-align: center;">Status</th>
-              <th>Gemessener Effekt / Trend</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows_html}
-          </tbody>
-        </table>
-      </div>
-    </div>
+      </details>
+    </section>
     """
 
 
@@ -766,6 +804,7 @@ def generate_dashboard(
             "CURRENT_TSB": "0.0",
             "CURRENT_TSB_STATUS": "Keine Daten",
             "SUMMARY_SECTION_HTML": "",
+            "COACH_HISTORY_HTML": "",
             "FORECAST_CARDS_HTML": "",
             "EMPTY_STATE_DISPLAY": "block",
             "CONTENT_DISPLAY": "none",
@@ -925,7 +964,7 @@ def generate_dashboard(
         summary_html = build_summary_html(
             summary_data,
             ai_coach_markdown=ai_coach_text,
-            coach_history=coach_history,
+            coach_history=None,
             daily_recommendation=daily_rec,
         )
         forecast_html = build_forecast_cards_html(predictions)

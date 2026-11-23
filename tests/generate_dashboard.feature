@@ -97,4 +97,13 @@ Feature: Generate visual HTML dashboard from running activities
     Then the process exits with code 0
     And the output HTML contains aerobic efficiency chart mode toggle buttons
 
+  Scenario: Coach memory section is collapsible at the end with filters and pagination
+    Given an activities dataset with multiple running activities and coach history
+    And the standard dashboard template is available
+    When the dashboard generator is executed with coach history data
+    Then the process exits with code 0
+    And the Coach Memory section appears after the activities table
+    And the Coach Memory section is collapsible with filters and pagination
+    And the activities table includes a review rating filter
+
 

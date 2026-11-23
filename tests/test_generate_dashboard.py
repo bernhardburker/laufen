@@ -346,6 +346,47 @@ class DashboardGeneratorDriver:
         assert "chartPaceHrSubtitle" in content
         assert "currentEfMode" in content
 
+    def prepare_dataset_with_coach_history(self) -> None:
+        self.prepare_dataset_with_runs()
+        self.coach_history_file = self.tmp_path / "test_coach_history.json"
+        history = [
+            {
+                "id": f"cycle-{i:03d}",
+                "date": f"2026-10-{i:02d}",
+                "recommendation": f"Z2 Grundlagenlauf {i}",
+                "actual": f"Gelaufen {i}",
+                "status": "erfüllt" if i % 2 == 0 else "offen",
+                "effect": f"EF stabil {i}",
+            }
+            for i in range(1, 14)
+        ]
+        self.coach_history_file.write_text(json.dumps(history), encoding="utf-8")
+
+    def run_generator_with_coach_history(self) -> None:
+        self.run_generator(extra_args=["--coach-history", str(self.coach_history_file)])
+
+    def assert_coach_memory_after_activities(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        activities_idx = content.find('id="runsTable"')
+        coach_idx = content.find('id="coachHistorySection"')
+        assert activities_idx != -1, "Activities table not found"
+        assert coach_idx != -1, "Coach history section not found"
+        assert coach_idx > activities_idx, "Coach history section must appear after activities table"
+
+    def assert_coach_memory_collapsible_filters_pagination(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert '<details class="coach-history-details">' in content
+        assert 'id="coachHistoryStatusFilter"' in content
+        assert 'id="coachHistorySearch"' in content
+        assert 'id="coachHistoryPageSize"' in content
+        assert 'id="btnCoachHistoryPrev"' in content
+        assert 'id="btnCoachHistoryNext"' in content
+        assert 'data-label="Empfehlung"' in content
+
+    def assert_activities_table_has_rating_filter(self) -> None:
+        content = self.output_file.read_text(encoding="utf-8")
+        assert 'id="tableRatingFilter"' in content
+
 
 
 # 3. Fixture injecting the Driver
@@ -530,6 +571,31 @@ def then_html_contains_compact_kpi(driver: DashboardGeneratorDriver):
 @then("the output HTML contains aerobic efficiency chart mode toggle buttons")
 def then_html_contains_ef_mode_toggle(driver: DashboardGeneratorDriver):
     driver.assert_html_contains_ef_mode_toggle()
+
+
+@given("an activities dataset with multiple running activities and coach history")
+def given_dataset_with_runs_and_coach_history(driver: DashboardGeneratorDriver):
+    driver.prepare_dataset_with_coach_history()
+
+
+@when("the dashboard generator is executed with coach history data")
+def when_generator_executed_with_coach_history(driver: DashboardGeneratorDriver):
+    driver.run_generator_with_coach_history()
+
+
+@then("the Coach Memory section appears after the activities table")
+def then_coach_memory_after_activities(driver: DashboardGeneratorDriver):
+    driver.assert_coach_memory_after_activities()
+
+
+@then("the Coach Memory section is collapsible with filters and pagination")
+def then_coach_memory_collapsible_filters_pagination(driver: DashboardGeneratorDriver):
+    driver.assert_coach_memory_collapsible_filters_pagination()
+
+
+@then("the activities table includes a review rating filter")
+def then_activities_table_has_rating_filter(driver: DashboardGeneratorDriver):
+    driver.assert_activities_table_has_rating_filter()
 
 
 

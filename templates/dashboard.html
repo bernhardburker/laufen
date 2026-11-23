@@ -37,6 +37,11 @@
       padding: 0;
     }
 
+    html, body {
+      overflow-x: hidden;
+      max-width: 100%;
+    }
+
     body {
       background-color: var(--bg);
       color: var(--text-main);
@@ -674,6 +679,10 @@
       width: 100%;
     }
 
+    .chart-container-tall {
+      height: 340px;
+    }
+
     /* Reference & Zones Guide */
     .zones-card {
       background: var(--card-bg);
@@ -936,6 +945,10 @@
       font-family: monospace;
       color: #38bdf8;
       font-size: 0.70rem;
+      max-width: 100%;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     td.col-activity {
@@ -1082,7 +1095,12 @@
     }
 
     @media (max-width: 768px) {
-      body {
+      html, body {
+      overflow-x: hidden;
+      max-width: 100%;
+    }
+
+    body {
         padding: max(16px, env(safe-area-inset-top, 16px)) max(12px, env(safe-area-inset-right, 12px)) max(24px, env(safe-area-inset-bottom, 24px)) max(12px, env(safe-area-inset-left, 12px));
       }
 
@@ -1349,7 +1367,20 @@
         width: 100%;
       }
 
-      /* Coach History Table Mobile Transformation */
+      /* Coach History Card & Mobile Transformation */
+      .coach-history-card {
+        padding: 14px;
+      }
+
+      .coach-history-summary {
+        gap: 10px;
+      }
+
+      .coach-history-summary-right {
+        width: 100%;
+        justify-content: space-between;
+      }
+
       .coach-history-card .activities-table,
       .coach-history-card .activities-table tbody {
         display: block;
@@ -1360,21 +1391,98 @@
         display: none;
       }
 
-      .coach-history-card .activities-table tr {
-        display: flex;
-        flex-direction: column;
-        background: rgba(255, 255, 255, 0.02);
+      .coach-history-card .activities-table tr.coach-history-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+          "chdate chstatus"
+          "chrec chrec"
+          "chactual chactual"
+          "cheffect cheffect";
+        background: rgba(255, 255, 255, 0.025);
         border: 1px solid var(--card-border);
-        border-radius: 8px;
+        border-radius: 10px;
         padding: 12px;
         margin-bottom: 10px;
-        gap: 6px;
+        gap: 8px 10px;
       }
 
       .coach-history-card .activities-table td {
         border: none;
-        padding: 2px 0;
+        padding: 0;
         white-space: normal !important;
+        text-align: left !important;
+      }
+
+      .coach-history-card td.ch-col-date {
+        grid-area: chdate;
+        font-weight: 600;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+      }
+
+      .coach-history-card td.ch-col-status {
+        grid-area: chstatus;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+
+      .coach-history-card td.ch-col-rec { grid-area: chrec; }
+      .coach-history-card td.ch-col-actual { grid-area: chactual; }
+      .coach-history-card td.ch-col-effect { grid-area: cheffect; }
+
+      .coach-history-card td.ch-col-rec,
+      .coach-history-card td.ch-col-actual,
+      .coach-history-card td.ch-col-effect {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 6px;
+        padding: 6px 8px;
+        font-size: 0.82rem;
+        line-height: 1.4;
+      }
+
+      .coach-history-card td.ch-col-rec::before,
+      .coach-history-card td.ch-col-actual::before,
+      .coach-history-card td.ch-col-effect::before {
+        content: attr(data-label);
+        font-size: 0.64rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-sub);
+        font-weight: 600;
+      }
+
+      /* General mobile card & chart refinements */
+      .summary-section,
+      .section-card,
+      .zones-card,
+      .daily-card,
+      .ai-coach-banner {
+        padding: 14px !important;
+      }
+
+      .chart-container-tall {
+        height: 250px;
+      }
+
+      .chart-toggle-group {
+        flex-wrap: wrap;
+        max-width: 100%;
+      }
+
+      #runsTable td.col-activity {
+        min-width: 0;
+      }
+
+      .btn-page,
+      .filter-select,
+      .search-input {
+        min-height: 36px;
       }
     }
 
@@ -1479,6 +1587,67 @@
 
     .content-section {
       display: {{ CONTENT_DISPLAY }};
+    }
+
+    /* Coach History Collapsible Card */
+    .coach-history-card {
+      margin-top: 28px;
+      background: var(--card-bg);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .coach-history-summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .coach-history-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .coach-history-summary-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .coach-history-details[open] .coach-history-summary .chevron {
+      transform: rotate(180deg);
+    }
+
+    .coach-history-body {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--card-border);
+    }
+
+    .ch-col-date {
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .ch-col-status {
+      text-align: center;
+    }
+
+    .coach-history-card .activities-table td {
+      white-space: normal;
+      vertical-align: top;
+    }
+
+    .coach-history-card .activities-table td.ch-col-date,
+    .coach-history-card .activities-table td.ch-col-status {
+      white-space: nowrap;
     }
 
     footer {
@@ -1685,7 +1854,7 @@
               <button type="button" class="chart-toggle-btn" data-zp-mode="raw">Individual Runs</button>
             </div>
           </div>
-          <div class="chart-container" style="height: 340px;">
+          <div class="chart-container chart-container-tall">
             <canvas id="chartZonePaceTrend"></canvas>
           </div>
         </div>
@@ -1709,11 +1878,19 @@
             </span>
           </div>
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <select id="tableZoneFilter" class="filter-select">
+            <select id="tableZoneFilter" class="filter-select" aria-label="Aktivitäten nach Intensität filtern">
               <option value="all">Alle Intensitäten</option>
               <option value="base">Nur Grundlagenausdauer (Z1/Z2 ≥ 75%)</option>
               <option value="quality">Tempo &amp; Intervalle (&lt; 75%)</option>
               <option value="long">Lange Läufe (≥ 8 km)</option>
+            </select>
+            <select id="tableRatingFilter" class="filter-select" aria-label="Aktivitäten nach Bewertung filtern">
+              <option value="all">Alle Bewertungen</option>
+              <option value="optimal">✓ Optimal</option>
+              <option value="solide">Solide / Zügig / Intensiv</option>
+              <option value="warning">⚠ Grauzone / Warnung</option>
+              <option value="with_note">📝 Mit Athleten-Notiz</option>
+              <option value="unreviewed">Ohne Review</option>
             </select>
             <input type="text" id="runSearch" class="search-input" placeholder="Aktivitäten filtern...">
           </div>
@@ -1745,15 +1922,18 @@
           <div style="display: flex; gap: 8px; align-items: center;">
             <select id="pageSizeSelect" class="filter-select" style="padding: 4px 8px; font-size: 0.8rem;">
               <option value="10">10 pro Seite</option>
-              <option value="25">25 pro Seite</option>
+              <option value="25" selected>25 pro Seite</option>
               <option value="50">50 pro Seite</option>
-              <option value="all" selected>Alle anzeigen</option>
+              <option value="all">Alle anzeigen</option>
             </select>
             <button type="button" class="btn-page" id="btnPrevPage" disabled>&laquo; Zurück</button>
             <button type="button" class="btn-page" id="btnNextPage" disabled>Weiter &raquo;</button>
           </div>
         </div>
       </section>
+
+      <!-- Coach Memory & Feedback Loop (Collapsible at the end) -->
+      {{ COACH_HISTORY_HTML }}
     </div>
 
     <footer>
@@ -1858,13 +2038,14 @@
       let customEndDate = null;
       let selectedWeek = null;
       let currentZoneFilter = 'all';
+      let currentRatingFilter = 'all';
       let currentEfMode = 'base';
       let searchQuery = '';
       let currentSortCol = 'date';
       let currentSortDir = 'desc';
       let currentPage = 1;
       let isMobile = (window.innerWidth <= 768);
-      let currentPageSize = isMobile ? '10' : 'all';
+      let currentPageSize = isMobile ? '10' : '25';
 
       // Setup page size selector initial value
       const initialPageSizeEl = document.getElementById('pageSizeSelect');
@@ -2222,6 +2403,11 @@
               `;
             }
 
+            const athleteNote = String(revInfo.athlete_note || rEval.athlete_note || run.description || '').trim();
+            const noteHtml = athleteNote
+              ? `<div class="run-athlete-note" style="margin-bottom: 8px; padding: 6px 10px; background: rgba(56, 189, 248, 0.08); border-left: 3px solid var(--cyan); border-radius: 4px; font-size: 0.82rem; color: var(--text);">📝 <strong>Athleten-Notiz:</strong> ${escapeHtml(athleteNote)}</div>`
+              : '';
+
             reviewHtml = `
               <details class="run-review-details">
                 <summary class="run-review-summary">
@@ -2229,6 +2415,7 @@
                   <span class="review-toggle-hint">Analyse anzeigen <span class="chevron">▼</span></span>
                 </summary>
                 <div class="run-review-content">
+                  ${noteHtml}
                   ${innerContent}
                 </div>
               </details>
@@ -2291,6 +2478,24 @@
           list = list.filter(r => r.total_zone_seconds > 0 && (r.z1_z2_seconds / r.total_zone_seconds) < 0.75);
         } else if (currentZoneFilter === 'long') {
           list = list.filter(r => (r.distance_km || 0) >= 8.0);
+        }
+
+        // 2b. Review rating filter
+        if (currentRatingFilter !== 'all') {
+          list = list.filter(r => {
+            const rev = runReviews[String(r.id || '')];
+            if (currentRatingFilter === 'unreviewed') return !rev;
+            if (!rev) return false;
+            const rEval = rev.review || {};
+            const rating = String(rEval.rating || '').toLowerCase();
+            if (currentRatingFilter === 'optimal') return rating === 'optimal';
+            if (currentRatingFilter === 'solide') return ['solide', 'zuegig', 'intensiv'].includes(rating);
+            if (currentRatingFilter === 'warning') return !['optimal', 'solide', 'zuegig', 'intensiv'].includes(rating);
+            if (currentRatingFilter === 'with_note') {
+              return Boolean(String(rev.athlete_note || rEval.athlete_note || r.description || '').trim());
+            }
+            return true;
+          });
         }
 
         // 3. Search query filter
@@ -2395,6 +2600,9 @@
 
         const newTrends = computeWeeklyTrends(currentDateFilteredRuns);
         updateChartsWithTrends(newTrends, currentDateFilteredRuns);
+        if (typeof renderZonePaceChart === 'function') {
+          renderZonePaceChart(zpMode, currentDateFilteredRuns);
+        }
 
         updateFilterBadge();
         applyTableFiltersAndRender();
@@ -2456,6 +2664,16 @@
       if (zoneFilterSelect) {
         zoneFilterSelect.addEventListener('change', function(e) {
           currentZoneFilter = e.target.value;
+          currentPage = 1;
+          applyTableFiltersAndRender();
+        });
+      }
+
+      // 5b. Rating Filter
+      const ratingFilterSelect = document.getElementById('tableRatingFilter');
+      if (ratingFilterSelect) {
+        ratingFilterSelect.addEventListener('change', function(e) {
+          currentRatingFilter = e.target.value;
           currentPage = 1;
           applyTableFiltersAndRender();
         });
@@ -2529,10 +2747,8 @@
         });
       }
 
-      // Initialize mobile pagination if on smaller screen
-      if (isMobile) {
-        applyTableFiltersAndRender();
-      }
+      // Initialize table pagination & filters
+      applyTableFiltersAndRender();
 
       // Chart.js Global Config & Initialization
       if (typeof Chart === 'undefined' || !trends || trends.length === 0) {
@@ -2946,21 +3162,28 @@
       let chartZonePace = null;
       let zpMode = 'rolling';
 
-      function renderZonePaceChart(mode) {
+      function renderZonePaceChart(mode, filteredRuns) {
         if (!ctxZonePace || !zonePaceTrends || !zonePaceTrends.series) return;
         if (chartZonePace) {
           chartZonePace.destroy();
         }
         const series = zonePaceTrends.series;
+        const allowedDates = (filteredRuns && currentRange !== 'all')
+          ? new Set(filteredRuns.map(r => (r.date || '').substring(0, 10)).filter(Boolean))
+          : null;
         const allDatesSet = new Set();
         ['z1', 'z2', 'z3', 'z4'].forEach(zk => {
-          (series[zk] || []).forEach(pt => allDatesSet.add(pt.date));
+          (series[zk] || []).forEach(pt => {
+            if (!allowedDates || allowedDates.has(pt.date)) {
+              allDatesSet.add(pt.date);
+            }
+          });
         });
         const sortedDates = Array.from(allDatesSet).sort();
         if (sortedDates.length === 0) return;
 
         const datasets = ['z1', 'z2', 'z3', 'z4'].map(zk => {
-          const pts = series[zk] || [];
+          const pts = (series[zk] || []).filter(pt => !allowedDates || allowedDates.has(pt.date));
           const byDate = {};
           pts.forEach(pt => { byDate[pt.date] = pt; });
           const dataArr = sortedDates.map(d => {
@@ -3020,7 +3243,7 @@
       }
 
       if (ctxZonePace) {
-        renderZonePaceChart(zpMode);
+        renderZonePaceChart(zpMode, currentDateFilteredRuns);
         const toggleWrap = document.getElementById('zonePaceModeToggle');
         if (toggleWrap) {
           toggleWrap.querySelectorAll('.chart-toggle-btn').forEach(btn => {
@@ -3028,11 +3251,149 @@
               toggleWrap.querySelectorAll('.chart-toggle-btn').forEach(b => b.classList.remove('active'));
               btn.classList.add('active');
               zpMode = btn.getAttribute('data-zp-mode') || 'rolling';
-              renderZonePaceChart(zpMode);
+              renderZonePaceChart(zpMode, currentDateFilteredRuns);
             });
           });
         }
       }
+
+      // =========================================================================
+      // Coach Memory & Feedback Loop: Filter, Sort & Pagination
+      // =========================================================================
+      (function initCoachHistoryControls() {
+        const tbody = document.getElementById('coachHistoryTableBody');
+        if (!tbody) return;
+
+        const allRows = Array.from(tbody.querySelectorAll('tr.coach-history-row')).map(tr => ({
+          el: tr,
+          date: (tr.getAttribute('data-date') || '').toLowerCase(),
+          status: (tr.getAttribute('data-status') || '').toLowerCase(),
+          text: (tr.textContent || '').toLowerCase(),
+        }));
+
+        if (allRows.length === 0) return;
+
+        let chStatusFilter = 'all';
+        let chSearch = '';
+        let chSortCol = 'date';
+        let chSortDir = 'desc';
+        let chPage = 1;
+        let chPageSize = '10';
+
+        const statusSelect = document.getElementById('coachHistoryStatusFilter');
+        const searchInp = document.getElementById('coachHistorySearch');
+        const pageSizeSelect = document.getElementById('coachHistoryPageSize');
+        const btnPrev = document.getElementById('btnCoachHistoryPrev');
+        const btnNext = document.getElementById('btnCoachHistoryNext');
+        const infoEl = document.getElementById('coachHistoryPaginationInfo');
+        const summaryEl = document.getElementById('coachHistoryFilterSummary');
+
+        function renderCoachHistory() {
+          let filtered = allRows.filter(item => {
+            if (chStatusFilter !== 'all' && item.status !== chStatusFilter) return false;
+            if (chSearch && !item.text.includes(chSearch)) return false;
+            return true;
+          });
+
+          filtered.sort((a, b) => {
+            const valA = a[chSortCol] || '';
+            const valB = b[chSortCol] || '';
+            const cmp = valA.localeCompare(valB);
+            return chSortDir === 'asc' ? cmp : -cmp;
+          });
+
+          ['date', 'status'].forEach(col => {
+            const icon = document.getElementById(`chSortIcon_${col}`);
+            if (icon) {
+              icon.textContent = (col === chSortCol) ? (chSortDir === 'asc' ? '▲' : '▼') : '';
+            }
+          });
+
+          const totalMatches = filtered.length;
+          if (summaryEl) {
+            summaryEl.textContent = `Zeige ${totalMatches} von ${allRows.length} Zyklen`;
+          }
+
+          let paged = filtered;
+          if (chPageSize !== 'all') {
+            const size = parseInt(chPageSize, 10);
+            const totalPages = Math.max(1, Math.ceil(totalMatches / size));
+            if (chPage > totalPages) chPage = totalPages;
+            const start = (chPage - 1) * size;
+            paged = filtered.slice(start, start + size);
+
+            if (infoEl) {
+              infoEl.textContent = `Seite ${chPage} von ${totalPages} (${totalMatches} Zyklen)`;
+            }
+            if (btnPrev) btnPrev.disabled = (chPage <= 1);
+            if (btnNext) btnNext.disabled = (chPage >= totalPages);
+          } else {
+            if (infoEl) {
+              infoEl.textContent = `Zeige alle ${totalMatches} Zyklen`;
+            }
+            if (btnPrev) btnPrev.disabled = true;
+            if (btnNext) btnNext.disabled = true;
+          }
+
+          tbody.innerHTML = '';
+          if (paged.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">Keine Coaching-Zyklen für die gewählten Filter gefunden.</td></tr>';
+          } else {
+            paged.forEach(item => tbody.appendChild(item.el));
+          }
+        }
+
+        if (statusSelect) {
+          statusSelect.addEventListener('change', function(e) {
+            chStatusFilter = e.target.value;
+            chPage = 1;
+            renderCoachHistory();
+          });
+        }
+        if (searchInp) {
+          searchInp.addEventListener('input', function(e) {
+            chSearch = e.target.value.toLowerCase().trim();
+            chPage = 1;
+            renderCoachHistory();
+          });
+        }
+        if (pageSizeSelect) {
+          pageSizeSelect.addEventListener('change', function(e) {
+            chPageSize = e.target.value;
+            chPage = 1;
+            renderCoachHistory();
+          });
+        }
+        if (btnPrev) {
+          btnPrev.addEventListener('click', function() {
+            if (chPage > 1) {
+              chPage--;
+              renderCoachHistory();
+            }
+          });
+        }
+        if (btnNext) {
+          btnNext.addEventListener('click', function() {
+            chPage++;
+            renderCoachHistory();
+          });
+        }
+        document.querySelectorAll('th.ch-sortable').forEach(th => {
+          th.addEventListener('click', function() {
+            const col = this.getAttribute('data-ch-sort');
+            if (!col) return;
+            if (chSortCol === col) {
+              chSortDir = (chSortDir === 'asc') ? 'desc' : 'asc';
+            } else {
+              chSortCol = col;
+              chSortDir = (col === 'status') ? 'asc' : 'desc';
+            }
+            renderCoachHistory();
+          });
+        });
+
+        renderCoachHistory();
+      })();
 
       // =========================================================================
       // Reload & Mobile Refresh (iOS Home Screen PWA & Pull-to-Refresh)
