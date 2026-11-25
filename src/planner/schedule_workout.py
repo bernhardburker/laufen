@@ -32,7 +32,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.analysis.decision_trace import append_decision_trace, evaluate_workout_decision
 from src.core.config import load_env_file
-from src.planner.extract_markers import extract_planning_markers, filter_activities_up_to_date
+from src.planner.extract_markers import extract_planning_markers, resolve_adaptive_quality_spec, filter_activities_up_to_date
 
 
 def parse_minutes(val: str) -> int:
@@ -678,39 +678,10 @@ def choose_adaptive_workout(
     slot_id = periodization.get("slot_id", 2)
     slot_allows_threshold = guardrails.get("slot_allows_threshold", False)
 
-    if slot_id == 1:
-        # Slot 1: Neuromuscular Cadence / Speed intervals
-        name = "Intervall- & Kadenztraining (5x 1m Speed)"
-        desc = render_template(
-            templates_dir / "intervals.txt",
-            {
-                "warmup": "10m",
-                "reps": 5,
-                "work": "1m",
-                "work_target": "05:15/km Pace",
-                "recovery": "2m",
-                "recovery_target": "Z1 HR",
-                "cooldown": "10m",
-            },
-        )
-        return name, desc
-
-    if slot_id == 2 and slot_allows_threshold:
-        # Slot 2: Controlled Sub-Threshold session
-        name = "Kontrollierter Schwellenlauf (3x 8m Z4)"
-        desc = render_template(
-            templates_dir / "threshold_intervals.txt",
-            {
-                "warmup": "10m",
-                "reps": 3,
-                "work": "8m",
-                "work_target": "Z4 HR",
-                "recovery": "2m",
-                "recovery_target": "Z1 HR",
-                "cooldown": "10m",
-            },
-        )
-        return name, desc
+    if slot_id == 1 or (slot_id == 2 and slot_allows_threshold):
+        spec = resolve_adaptive_quality_spec(markers)
+        desc = render_template(templates_dir / spec["template"], spec["params"])
+        return spec["name"], desc
 
     # Default / Slot 3: Base Anchor
     name = "Aerober Anker & Grundlagenlauf (45m Z2)"
@@ -1036,7 +1007,7 @@ def sync_adaptive_plan(
 
     payloads_to_schedule: list[dict] = []
     slot_id_for_target = markers_for_trace.get("periodization", {}).get("slot_id", 2)
-    if dual_options and slot_id_for_target == 2 and "Schwellenlauf" in name:
+    if dual_options and slot_id_for_target == 2 and ("Schwellenlauf" in name or "Intervall-" in name):
         name_a = name if name.startswith("Slot 2A") else f"Slot 2A: {name}"
         payloads_to_schedule.append({
             "category": "WORKOUT",

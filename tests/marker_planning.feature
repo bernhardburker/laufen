@@ -65,3 +65,33 @@ Feature: 4-Stage Marker-Based Adaptive Workout Planning
     When planning markers are extracted for tomorrow
     Then the history marker days_since_last_run is 4
 
+  Scenario: Coach quality directive overrides slot default to schedule speed intervals in Slot 2
+    Given a fresh athlete with TSB of 2.5 and 8.0 hours sleep
+    And a threshold run occurred 6 days ago with 900 seconds in Z4 and 60 seconds in Z5
+    And an easy run occurred 2 days ago
+    And an open coach directive requests "intervals"
+    And the target day is a Thursday matching Slot 2
+    When planning markers are extracted for the target day
+    Then no fatigue or quality guardrails are active
+    And the selected adaptive workout is "Intervall- & Kadenztraining (5x 1m Speed)"
+
+  Scenario: Coach threshold directive selects 4x 5m after a long quality gap
+    Given a fresh athlete with TSB of 2.5 and 8.0 hours sleep
+    And a threshold run occurred 12 days ago with 600 seconds in Z4 and 60 seconds in Z5
+    And an easy run occurred 2 days ago
+    And an open coach directive requests "tempo_run"
+    And the target day is a Thursday matching Slot 2
+    When planning markers are extracted for the target day
+    Then no fatigue or quality guardrails are active
+    And the selected adaptive workout is "Kontrollierter Schwellenlauf (4x 5m Z4)"
+
+  Scenario: Coach threshold directive progresses to 3x 8m after recent clean Z4 execution
+    Given a fresh athlete with TSB of 2.5 and 8.0 hours sleep
+    And a speed intervals run occurred 6 days ago with 720 seconds in Z4 and 60 seconds in Z5
+    And an easy run occurred 2 days ago
+    And an open coach directive requests "tempo_run"
+    And the target day is a Thursday matching Slot 2
+    When planning markers are extracted for the target day
+    Then no fatigue or quality guardrails are active
+    And the selected adaptive workout is "Kontrollierter Schwellenlauf (3x 8m Z4)"
+

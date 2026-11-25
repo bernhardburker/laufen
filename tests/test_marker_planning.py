@@ -105,6 +105,7 @@ class MarkerPlanningDriver:
         name: str,
         is_quality: bool,
         z4_sec: int = 0,
+        z5_sec: int = 0,
     ) -> None:
         run_date = (self.ref_date - datetime.timedelta(days=days_ago)).isoformat()
         z_times = [
@@ -112,7 +113,7 @@ class MarkerPlanningDriver:
             int(duration_min * 45),
             int(duration_min * 5),
             z4_sec,
-            0,
+            z5_sec,
         ]
         self.activities.append({
             "start_date_local": f"{run_date}T08:00:00",
@@ -374,6 +375,11 @@ def step_last_run_with_note(driver: MarkerPlanningDriver, days_ago: int, note: s
 
 @given(parsers.parse('an open coach directive requests "{target_type}"'))
 def step_open_coach_directive(driver: MarkerPlanningDriver, target_type: str):
+    rec = (
+        "Slot 3 am Wochenende als ruhigen Long Run nutzen (< 158 bpm)."
+        if target_type in ("easy_run", "recovery_run", "long_run")
+        else f"Gezielten Qualitätsreiz setzen ({target_type})."
+    )
     driver.coach_history = [
         {
             "id": "cycle-009",
@@ -386,9 +392,9 @@ def step_open_coach_directive(driver: MarkerPlanningDriver, target_type: str):
         {
             "id": "cycle-010",
             "date": "2026-10-23",
-            "recommendation": "Slot 3 am Wochenende als ruhigen Long Run nutzen (< 158 bpm).",
+            "recommendation": rec,
             "target_type": target_type,
-            "target_hr_max": 158,
+            "target_hr_max": 158 if target_type == "easy_run" else 174,
             "status": "offen",
         },
     ]
@@ -439,3 +445,49 @@ def step_athlete_past_and_future_run(driver: MarkerPlanningDriver, past_days: in
 @then(parsers.parse("the history marker days_since_last_run is {expected_days:d}"))
 def step_assert_history_days_since(driver: MarkerPlanningDriver, expected_days: int):
     driver.assert_history_days_since_last_run(expected_days)
+
+
+@given(parsers.parse('a threshold run occurred {days_ago:d} days ago with {z4_sec:d} seconds in Z4 and {z5_sec:d} seconds in Z5'))
+def step_threshold_run_with_zones(driver: MarkerPlanningDriver, days_ago: int, z4_sec: int, z5_sec: int):
+    driver.add_run(
+        days_ago=days_ago,
+        duration_min=48.0,
+        name="Kontrollierter Schwellenlauf (4x 5m Z4)",
+        is_quality=True,
+        z4_sec=z4_sec,
+        z5_sec=z5_sec,
+    )
+
+
+@given(parsers.parse('a speed intervals run occurred {days_ago:d} days ago'))
+def step_speed_run_days_ago(driver: MarkerPlanningDriver, days_ago: int):
+    driver.add_run(
+        days_ago=days_ago,
+        duration_min=35.0,
+        name="Intervall- & Kadenztraining (5x 1m Speed)",
+        is_quality=True,
+        z4_sec=120,
+        z5_sec=60,
+    )
+
+
+@given(parsers.parse('a speed intervals run occurred {days_ago:d} days ago with {z4_sec:d} seconds in Z4 and {z5_sec:d} seconds in Z5'))
+def step_speed_run_with_zones(driver: MarkerPlanningDriver, days_ago: int, z4_sec: int, z5_sec: int):
+    driver.add_run(
+        days_ago=days_ago,
+        duration_min=35.0,
+        name="Intervall- & Kadenztraining (5x 1m Speed)",
+        is_quality=True,
+        z4_sec=z4_sec,
+        z5_sec=z5_sec,
+    )
+
+
+@given(parsers.parse('an easy run occurred {days_ago:d} days ago'))
+def step_easy_run_days_ago(driver: MarkerPlanningDriver, days_ago: int):
+    driver.add_run(days_ago=days_ago, duration_min=40.0, name="Easy Run", is_quality=False)
+
+
+@given('the target day is a Thursday matching Slot 2')
+def step_target_day_thursday_slot2(driver: MarkerPlanningDriver):
+    driver.target_date = datetime.date(2026, 10, 29)  # Thursday

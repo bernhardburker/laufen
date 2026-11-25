@@ -852,6 +852,95 @@ def extract_planning_markers(
     }
 
 
+def resolve_adaptive_quality_spec(
+    markers: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Selects quality workout type from Coach directive (or slot default) and adapts block sizing from run history."""
+    periodization = markers.get("periodization") or {}
+    history = markers.get("history") or {}
+    coach_ctx = markers.get("coach_context") or {}
+    slot_id = periodization.get("slot_id", 2)
+    lq = history.get("last_quality_run") or {}
+    days_q = int(history.get("days_since_last_quality", 999))
+    days_r = int(history.get("days_since_last_run", 999))
+    z4_min = float(lq.get("z4_minutes") or 0.0)
+    z5_min = float(lq.get("z5_minutes") or 0.0)
+
+    coach_has_cycle = bool(coach_ctx.get("has_open_cycle", False))
+    coach_type = str(coach_ctx.get("target_type") or "").lower()
+    coach_rec = str(coach_ctx.get("recommendation") or "").lower()
+    coach_id = coach_ctx.get("open_cycle_id") or "Coach"
+
+    stimulus = "intervals" if slot_id == 1 else "threshold_intervals"
+    coach_reason = ""
+    if coach_has_cycle and coach_type == "intervals":
+        stimulus = "intervals"
+        coach_reason = f"Coach-Entscheidung ({coach_id}): Intervallreiz"
+    elif coach_has_cycle and coach_type in ("tempo_run", "threshold_intervals", "micro_threshold"):
+        stimulus = "threshold_intervals"
+        coach_reason = f"Coach-Entscheidung ({coach_id}): Schwellenreiz"
+
+    if stimulus == "intervals":
+        return {
+            "type": "intervals",
+            "template": "intervals.txt",
+            "name": "Intervall- & Kadenztraining (5x 1m Speed)",
+            "params": {
+                "warmup": "10m",
+                "reps": 5,
+                "work": "1m",
+                "work_target": "05:15/km Pace",
+                "recovery": "2m",
+                "recovery_target": "Z1 HR",
+                "cooldown": "10m",
+            },
+            "reason": coach_reason or "Standard-Speed-/Kadenzreiz",
+        }
+
+    # Explicit Coach block format in recommendation text takes priority if present
+    if coach_has_cycle and ("4x 5" in coach_rec or "4x5" in coach_rec):
+        reps, work, recovery = 4, "5m", "2m"
+        size_reason = f"Coach-Vorgabe ({coach_id}: 4x 5m)"
+    elif coach_has_cycle and ("4x 4" in coach_rec or "4x4" in coach_rec):
+        reps, work, recovery = 4, "4m", "2m"
+        size_reason = f"Coach-Vorgabe ({coach_id}: 4x 4m)"
+    elif coach_has_cycle and ("5x 4" in coach_rec or "5x4" in coach_rec):
+        reps, work, recovery = 5, "4m", "90s"
+        size_reason = f"Coach-Vorgabe ({coach_id}: 5x 4m)"
+    elif coach_has_cycle and ("3x 8" in coach_rec or "3x8" in coach_rec):
+        reps, work, recovery = 3, "8m", "2m"
+        size_reason = f"Coach-Vorgabe ({coach_id}: 3x 8m)"
+    elif not lq or days_q >= 10 or days_r >= 5:
+        reps, work, recovery = 4, "5m", "2m"
+        size_reason = f"Kontrollierte 4x 5m (20m Schwelle) nach {days_q}d Qualitätspause"
+    elif z5_min > 0 and z5_min >= z4_min:
+        reps, work, recovery = 4, "5m", "2m"
+        size_reason = (
+            f"Kontrollierte 4x 5m wegen Z5-Drift beim letzten Qualitätslauf "
+            f"({z5_min:.1f}m Z5 >= {z4_min:.1f}m Z4)"
+        )
+    else:
+        reps, work, recovery = 3, "8m", "2m"
+        size_reason = f"Progression auf 3x 8m (24m Schwelle) nach sauberer Z4-Ausführung ({z4_min:.1f}m Z4)"
+
+    reason = f"{coach_reason}; {size_reason}" if coach_reason else size_reason
+    return {
+        "type": "threshold_intervals",
+        "template": "threshold_intervals.txt",
+        "name": f"Kontrollierter Schwellenlauf ({reps}x {work} Z4)",
+        "params": {
+            "warmup": "10m",
+            "reps": reps,
+            "work": work,
+            "work_target": "Z4 HR",
+            "recovery": recovery,
+            "recovery_target": "Z1 HR",
+            "cooldown": "10m",
+        },
+        "reason": reason,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Extract objective planning markers and guardrails.")
     parser.add_argument("--ref-date", help="Reference date (YYYY-MM-DD, defaults to today)")

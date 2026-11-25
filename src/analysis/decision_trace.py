@@ -26,7 +26,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.planner.extract_markers import extract_planning_markers, load_json_file
+from src.planner.extract_markers import (
+    extract_planning_markers,
+    load_json_file,
+    resolve_adaptive_quality_spec,
+)
 
 
 def evaluate_workout_decision(
@@ -248,22 +252,22 @@ def evaluate_workout_decision(
                 "workout": default_slot_workout[0],
                 "reason": "; ".join(active_reasons),
             })
-    elif slot_id == 1:
-        selected_name = "Intervall- & Kadenztraining (5x 1m Speed)"
-        selected_type = "intervals"
-        decision_source = "slot_1_quality"
-        reasoning_summary = (
-            f"Alle Leitplanken sind im grünen Bereich (Basis-Anker erfüllt, {days_since_quality} Tage seit letzter Qualität, "
-            f"TSB {tsb:+.1f}, keine offenen Basis-Direktiven). {slot_name} gibt das Intervall- & Kadenztraining frei."
-        )
-    elif slot_id == 2 and slot_allows_threshold:
-        selected_name = "Kontrollierter Schwellenlauf (3x 8m Z4)"
-        selected_type = "threshold_intervals"
-        decision_source = "slot_2_threshold"
-        reasoning_summary = (
-            f"Hohe Frische (TSB {tsb:+.1f}) und intaktes Grundlagenfundament erlauben in {slot_name} "
-            "den kontrollierten Schwellenlauf (3x 8m Z4)."
-        )
+    elif slot_id == 1 or (slot_id == 2 and slot_allows_threshold):
+        spec = resolve_adaptive_quality_spec(markers)
+        selected_name = spec["name"]
+        selected_type = spec["type"]
+        if selected_type == "intervals":
+            decision_source = "slot_1_quality" if slot_id == 1 else "coach_quality_directive"
+            reasoning_summary = (
+                f"Alle Leitplanken sind im grünen Bereich (Basis-Anker erfüllt, {days_since_quality} Tage seit letzter Qualität, "
+                f"TSB {tsb:+.1f}, keine offenen Basis-Direktiven). {slot_name}: {spec['reason']}."
+            )
+        else:
+            decision_source = "slot_2_threshold" if slot_id == 2 else "coach_quality_directive"
+            reasoning_summary = (
+                f"Hohe Frische (TSB {tsb:+.1f}) und intaktes Grundlagenfundament erlauben in {slot_name} "
+                f"den kontrollierten Schwellenlauf ({spec['reason']})."
+            )
     else:
         selected_name = "Aerober Anker & Grundlagenlauf (45m Z2)"
         selected_type = "easy_run"
