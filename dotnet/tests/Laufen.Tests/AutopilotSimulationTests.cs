@@ -12,7 +12,6 @@ public class AutopilotSimulationTests
     [TestCase(AutopilotScenarioCatalog.MissedWorkdaysAutoRollover)]
     [TestCase(AutopilotScenarioCatalog.SpontaneousOnWatchWorkoutSwap)]
     [TestCase(AutopilotScenarioCatalog.IllnessSickholdAndReentry)]
-    [TestCase(AutopilotScenarioCatalog.StormIntervalSwap)]
     [TestCase(AutopilotScenarioCatalog.TelegramUserLockedOverride)]
     public async Task AllBuiltInMultiDayScenariosPassWithZeroAuditFailures(string scenarioName)
     {
@@ -49,26 +48,11 @@ public class AutopilotSimulationTests
     }
 
     [Test]
-    public async Task StormAndTelegramLockScenariosVerifyWeatherSwapAndLockedDelete()
+    public async Task TelegramLockScenarioPreservesLockedSessionsUntilOverride()
     {
         var layout = ResolveRepositoryLayout();
         var profile = StrictJsonLoader.LoadAthleteProfile(layout, "berni").Athlete;
         var strategy = new RollingAutopilotStrategy(new SimulationStubLlmClient());
-
-        var stormResult = await AutopilotSimulator.RunAsync(
-            AutopilotScenarioCatalog.GetScenario(AutopilotScenarioCatalog.StormIntervalSwap),
-            profile,
-            "berni",
-            "stub",
-            strategy);
-
-        Assert.That(stormResult.Passed, Is.True);
-        var stormDay = new DateOnly(2026, 12, 1);
-        var day0Upserts = stormResult.Steps[0].Outcome.Decision!.Operations
-            .Where(op => op.Date == stormDay && op.Operation == "upsert")
-            .ToList();
-        Assert.That(day0Upserts, Has.Count.EqualTo(1));
-        Assert.That(WorkoutModalityValidator.IsAerobicSessionType(day0Upserts[0].Workout!.SessionType), Is.True);
 
         var lockResult = await AutopilotSimulator.RunAsync(
             AutopilotScenarioCatalog.GetScenario(AutopilotScenarioCatalog.TelegramUserLockedOverride),
@@ -87,25 +71,16 @@ public class AutopilotSimulationTests
     }
 
     [Test]
-    public void AuditorDetectsAdverseWeatherPaceTargetIllnessNormalStateAndFailedOutcome()
+    public void AuditorDetectsIllnessNormalStateAndFailedOutcome()
     {
         var layout = ResolveRepositoryLayout();
         var profile = StrictJsonLoader.LoadAthleteProfile(layout, "berni").Athlete;
         var refDate = new DateOnly(2026, 12, 1);
 
-        var weather = new WeatherForecastDossier
-        {
-            Source = "test",
-            Days =
-            [
-                new() { Date = refDate, TempMinC = 4, TempMaxC = 8, PrecipitationMm = 20, MaxWindGustKmh = 60, Summary = "Storm" }
-            ]
-        };
-
-        var dossier = CoachIntelligenceDossierBuilder.Build(profile, [], [], null, null, refDate, weatherForecast: weather);
+        var dossier = CoachIntelligenceDossierBuilder.Build(profile, [], [], null, null, refDate);
         var paceWorkout = new WorkoutDefinition
         {
-            Title = "Windy Speed 5x60s",
+            Title = "Speed 5x60s",
             SessionType = "intervals",
             Steps =
             [
@@ -130,7 +105,7 @@ public class AutopilotSimulationTests
             Operations = [new() { Date = refDate, Operation = "upsert", Workout = paceWorkout }],
             Rationale = new()
             {
-                Observations = ["Storm ignored"],
+                Observations = ["Illness ignored"],
                 TradeoffWeighed = "None",
                 ProgressionIntent = "Force speed",
                 RejectedAlternative = "None"
@@ -142,7 +117,7 @@ public class AutopilotSimulationTests
                 BaseMilestone = "Base",
                 QualityMilestone = "Speed",
                 ObservedAthletePatterns = [],
-                LastDecisionSummary = "Forced pace intervals in storm",
+                LastDecisionSummary = "Forced intervals while sick",
                 HealthState = "Normal"
             }
         };
@@ -181,7 +156,6 @@ public class AutopilotSimulationTests
 
         var findings = AutopilotSimulationAuditor.AuditStep(0, dossier, step, "Normal", outcome, [], []);
         Assert.That(findings.Select(f => f.AuditCode), Does.Contain("AUDIT-03"));
-        Assert.That(findings.Select(f => f.AuditCode), Does.Contain("AUDIT-08"));
 
         var failedOutcome = outcome with { Success = false, FailureReason = "Timeout", Decision = null, ReconciledSchedule = null };
         var failFindings = AutopilotSimulationAuditor.AuditStep(0, dossier, step, "Normal", failedOutcome, [], []);
@@ -193,11 +167,11 @@ public class AutopilotSimulationTests
     {
         var layout = ResolveRepositoryLayout();
         var profile = StrictJsonLoader.LoadAthleteProfile(layout, "berni").Athlete;
-        var scenario = AutopilotScenarioCatalog.GetScenario(AutopilotScenarioCatalog.StormIntervalSwap);
+        var scenario = AutopilotScenarioCatalog.GetScenario(AutopilotScenarioCatalog.TelegramUserLockedOverride);
         var result = await AutopilotSimulator.RunAsync(scenario, profile, "berni", "stub", new RollingAutopilotStrategy(new SimulationStubLlmClient()));
 
         var markdown = SimulationReportWriter.FormatMarkdown(result);
-        Assert.That(markdown, Does.Contain("# Simulation Report: `storm_interval_swap`"));
+        Assert.That(markdown, Does.Contain("# Simulation Report: `telegram_user_locked_override`"));
         Assert.That(markdown, Does.Contain("PASS (0 failures)"));
         Assert.That(markdown, Does.Contain("Chronological Step Timeline"));
         Assert.That(markdown, Does.Not.Contain("/home/"));

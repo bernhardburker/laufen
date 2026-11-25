@@ -39,7 +39,7 @@ public static class SimulationReportWriter
         sb.AppendLine();
         if (result.AllFindings.Count == 0)
         {
-            sb.AppendLine("All `AUDIT-01` through `AUDIT-08` invariants passed cleanly across every simulated step.");
+            sb.AppendLine("All `AUDIT-01` through `AUDIT-07` invariants passed cleanly across every simulated step.");
         }
         else
         {

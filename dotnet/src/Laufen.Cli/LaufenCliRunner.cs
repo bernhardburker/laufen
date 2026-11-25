@@ -365,16 +365,6 @@ public static class LaufenCliRunner
             }
         }
 
-        if (dossier.Weather is not null)
-        {
-            stdout.WriteLine($"Weather Forecast ({dossier.Weather.Source}, {dossier.Weather.Days.Count}d):");
-            foreach (var day in dossier.Weather.Days)
-            {
-                var paceTag = day.PaceIntervalFriendly ? "pace-ok" : "pace-caution";
-                stdout.WriteLine($"  {day.Date:yyyy-MM-dd} | {day.TempMinC:F0}-{day.TempMaxC:F0}C | rain {day.PrecipitationMm:F1}mm | gust {day.MaxWindGustKmh:F0}km/h | {paceTag} | {day.Summary}");
-            }
-        }
-
         stdout.WriteLine($"Recent Notes & Context Clues ({r.RecentRunNotes.Count}, daysSinceComplaint={FormatNullableDays(r.DaysSinceLastComplaint)}):");
         foreach (var clue in r.RecentRunNotes)
         {
@@ -709,7 +699,6 @@ public static class LaufenCliRunner
             parsed.TargetDate ?? refDate,
             parsed.AutoEventIds,
             parsed.LockedDates,
-            weatherForecast: null,
             currentCompass: existingCompass);
 
         string? stubJson = null;

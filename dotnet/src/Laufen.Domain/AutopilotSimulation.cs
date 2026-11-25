@@ -38,16 +38,6 @@ public sealed record SimulatedCalendarSeed
     public required double EstimatedLoad { get; init; }
 }
 
-public sealed record SimulatedWeatherDaySpec
-{
-    public required int DayOffset { get; init; }
-    public required double TempMinC { get; init; }
-    public required double TempMaxC { get; init; }
-    public required double PrecipitationMm { get; init; }
-    public required double MaxWindGustKmh { get; init; }
-    public required string Summary { get; init; }
-}
-
 public sealed record SimulatedTriggerStep
 {
     public required int DayOffset { get; init; }
@@ -56,7 +46,6 @@ public sealed record SimulatedTriggerStep
     public string? AthleteMessage { get; init; }
     public SimulatedWellnessSpec? WellnessBeforeStep { get; init; }
     public SimulatedRunSpec? RunBeforeStep { get; init; }
-    public IReadOnlyList<SimulatedWeatherDaySpec>? WeatherBeforeStep { get; init; }
 }
 
 public sealed record SimulationScenario
@@ -68,7 +57,6 @@ public sealed record SimulationScenario
     public IReadOnlyList<SimulatedWellnessSpec> InitialWellness { get; init; } = [];
     public IReadOnlyList<SimulatedRunSpec> InitialRuns { get; init; } = [];
     public IReadOnlyList<SimulatedCalendarSeed> InitialCalendar { get; init; } = [];
-    public IReadOnlyList<SimulatedWeatherDaySpec>? InitialWeather { get; init; }
     public required IReadOnlyList<SimulatedTriggerStep> Steps { get; init; }
 }
 
@@ -121,7 +109,6 @@ public static class AutopilotScenarioCatalog
     public const string MissedWorkdaysAutoRollover = "missed_workdays_auto_rollover";
     public const string SpontaneousOnWatchWorkoutSwap = "spontaneous_on_watch_workout_swap";
     public const string IllnessSickholdAndReentry = "illness_sickhold_and_reentry";
-    public const string StormIntervalSwap = "storm_interval_swap";
     public const string TelegramUserLockedOverride = "telegram_user_locked_override";
 
     private static readonly DateOnly DefaultStartDate = new(2026, 12, 1);
@@ -131,7 +118,6 @@ public static class AutopilotScenarioCatalog
         MissedWorkdaysAutoRollover,
         SpontaneousOnWatchWorkoutSwap,
         IllnessSickholdAndReentry,
-        StormIntervalSwap,
         TelegramUserLockedOverride
     ];
 
@@ -146,7 +132,6 @@ public static class AutopilotScenarioCatalog
             MissedWorkdaysAutoRollover => BuildMissedWorkdaysScenario(),
             SpontaneousOnWatchWorkoutSwap => BuildSpontaneousSwapScenario(),
             IllnessSickholdAndReentry => BuildIllnessSickholdScenario(),
-            StormIntervalSwap => BuildStormIntervalSwapScenario(),
             TelegramUserLockedOverride => BuildTelegramUserLockedOverrideScenario(),
             _ => throw new ArgumentException(
                 $"Unknown simulation scenario '{name}'. Expected one of: {string.Join(", ", ScenarioNames)}.",
@@ -471,49 +456,6 @@ public static class AutopilotScenarioCatalog
         ]
     };
 
-    private static SimulationScenario BuildStormIntervalSwapScenario() => new()
-    {
-        Name = StormIntervalSwap,
-        Description = "Storm gusts and heavy rain on Day 0 prevent pace_range intervals on storm day and shift quality to calm Day 2.",
-        StartDate = DefaultStartDate,
-        InitialHealthState = "Normal",
-        InitialWellness = BuildBaselineWellness(),
-        InitialRuns = BuildBaselineRuns(),
-        InitialWeather =
-        [
-            new() { DayOffset = 0, TempMinC = 3, TempMaxC = 7, PrecipitationMm = 18.5, MaxWindGustKmh = 64.0, Summary = "Storm & Heavy Rain" },
-            new() { DayOffset = 1, TempMinC = 4, TempMaxC = 9, PrecipitationMm = 3.0, MaxWindGustKmh = 26.0, Summary = "Cloudy" },
-            new() { DayOffset = 2, TempMinC = 5, TempMaxC = 12, PrecipitationMm = 0.0, MaxWindGustKmh = 14.0, Summary = "Clear & Calm" },
-            new() { DayOffset = 3, TempMinC = 4, TempMaxC = 11, PrecipitationMm = 0.5, MaxWindGustKmh = 16.0, Summary = "Partly Cloudy" },
-            new() { DayOffset = 4, TempMinC = 5, TempMaxC = 12, PrecipitationMm = 0.0, MaxWindGustKmh = 15.0, Summary = "Clear" }
-        ],
-        Steps =
-        [
-            new()
-            {
-                DayOffset = 0,
-                Trigger = "morning_sync",
-                TimeOfDay = new TimeOnly(6, 0),
-                WellnessBeforeStep = new() { DayOffset = 0, RestingHr = 47, Hrv = 75.0, SleepHours = 7.9, SleepScore = 84.0 }
-            },
-            new()
-            {
-                DayOffset = 2,
-                Trigger = "morning_sync",
-                TimeOfDay = new TimeOnly(6, 0),
-                WellnessBeforeStep = new() { DayOffset = 2, RestingHr = 47, Hrv = 76.0, SleepHours = 8.0, SleepScore = 85.0 },
-                WeatherBeforeStep =
-                [
-                    new() { DayOffset = 2, TempMinC = 5, TempMaxC = 12, PrecipitationMm = 0.0, MaxWindGustKmh = 14.0, Summary = "Clear & Calm" },
-                    new() { DayOffset = 3, TempMinC = 4, TempMaxC = 11, PrecipitationMm = 0.5, MaxWindGustKmh = 16.0, Summary = "Partly Cloudy" },
-                    new() { DayOffset = 4, TempMinC = 5, TempMaxC = 12, PrecipitationMm = 0.0, MaxWindGustKmh = 15.0, Summary = "Clear" },
-                    new() { DayOffset = 5, TempMinC = 4, TempMaxC = 10, PrecipitationMm = 0.0, MaxWindGustKmh = 18.0, Summary = "Clear" },
-                    new() { DayOffset = 6, TempMinC = 5, TempMaxC = 11, PrecipitationMm = 0.0, MaxWindGustKmh = 15.0, Summary = "Clear" }
-                ]
-            }
-        ]
-    };
-
     private static SimulationScenario BuildTelegramUserLockedOverrideScenario() => new()
     {
         Name = TelegramUserLockedOverride,
@@ -670,10 +612,6 @@ public static class AutopilotSimulator
             }
         }
 
-        WeatherForecastDossier? activeWeather = scenario.InitialWeather is not null
-            ? BuildWeatherDossier(startDate, scenario.InitialWeather)
-            : null;
-
         BlockCompassSnapshot? currentCompass = string.IsNullOrWhiteSpace(scenario.InitialHealthState)
             ? null
             : new BlockCompassSnapshot
@@ -703,11 +641,6 @@ public static class AutopilotSimulator
             {
                 var wDate = startDate.AddDays(wSpec.DayOffset);
                 wellnessByDate[wDate] = BuildWellnessEntry(wDate, wSpec, ctl, atl);
-            }
-
-            if (step.WeatherBeforeStep is not null)
-            {
-                activeWeather = BuildWeatherDossier(startDate, step.WeatherBeforeStep);
             }
 
             string? injectedRunName = null;
@@ -753,7 +686,6 @@ public static class AutopilotSimulator
                 refDate,
                 autoEventIds,
                 userLockedDates,
-                activeWeather,
                 currentCompass);
 
             var healthBefore = currentCompass?.HealthState;
@@ -899,24 +831,6 @@ public static class AutopilotSimulator
             }
         }
     }
-
-    private static WeatherForecastDossier BuildWeatherDossier(DateOnly startDate, IReadOnlyList<SimulatedWeatherDaySpec> specs) => new()
-    {
-        Source = "simulated-open-meteo",
-        LocationLabel = "Simulation Track",
-        Days = specs
-            .Select(s => new DailyWeatherForecast
-            {
-                Date = startDate.AddDays(s.DayOffset),
-                TempMinC = s.TempMinC,
-                TempMaxC = s.TempMaxC,
-                PrecipitationMm = s.PrecipitationMm,
-                MaxWindGustKmh = s.MaxWindGustKmh,
-                Summary = s.Summary
-            })
-            .OrderBy(d => d.Date)
-            .ToList()
-    };
 
     private static IntervalsWellnessEntry BuildWellnessEntry(
         DateOnly date,
@@ -1083,9 +997,6 @@ public static class AutopilotSimulationAuditor
 
         // AUDIT-06: SickHold -> ReEntry -> Normal state machine & ramp-up gating
         CheckStateMachine(dayOffset, dossier, step.Trigger, healthStateBefore, decision, schedule, findings);
-
-        // AUDIT-08: Weather pace-interval safety
-        CheckWeatherSafety(dayOffset, dossier, step.Trigger, decision, findings);
 
         return findings;
     }
@@ -1498,72 +1409,5 @@ public static class AutopilotSimulationAuditor
                 }
             }
         }
-    }
-
-    private static void CheckWeatherSafety(
-        int dayOffset,
-        CoachIntelligenceDossier dossier,
-        string trigger,
-        AutopilotPlanDecision decision,
-        List<SimulationAuditFinding> findings)
-    {
-        if (dossier.Weather is null)
-        {
-            return;
-        }
-
-        var unfriendlyDates = dossier.Weather.Days
-            .Where(d => !d.PaceIntervalFriendly)
-            .Select(d => d.Date)
-            .ToHashSet();
-
-        if (unfriendlyDates.Count == 0)
-        {
-            return;
-        }
-
-        foreach (var op in decision.Operations)
-        {
-            if (!string.Equals(op.Operation, "upsert", StringComparison.Ordinal)
-                || op.Workout is null
-                || !unfriendlyDates.Contains(op.Date))
-            {
-                continue;
-            }
-
-            if (HasPaceRangeTarget(op.Workout))
-            {
-                findings.Add(new SimulationAuditFinding(
-                    "AUDIT-08",
-                    "fail",
-                    dayOffset,
-                    dossier.ReferenceDate,
-                    trigger,
-                    $"Upserted pace_range workout '{op.Workout.Title}' on adverse weather day {op.Date:yyyy-MM-dd}."));
-            }
-        }
-    }
-
-    private static bool HasPaceRangeTarget(WorkoutDefinition workout)
-    {
-        foreach (var step in workout.Steps)
-        {
-            if (step.Target is not null && string.Equals(step.Target.Modality, "pace_range", StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            if (step.Work is not null && string.Equals(step.Work.Target.Modality, "pace_range", StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            if (step.Recovery is not null && string.Equals(step.Recovery.Target.Modality, "pace_range", StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

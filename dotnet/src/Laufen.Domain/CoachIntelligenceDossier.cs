@@ -18,7 +18,6 @@ public sealed record AthleteDossierSummary
     public AthleteGoalsProfile? Goals { get; init; }
     public AthleteTimeBudgets? TimeBudgets { get; init; }
     public IReadOnlyList<string>? PreferredRunDays { get; init; }
-    public AthleteLocationProfile? Location { get; init; }
 }
 
 public sealed record RollingStimulusLedger
@@ -160,25 +159,6 @@ public sealed record ReadinessSignalDossier
     public required IReadOnlyList<MedicalRedFlag> MedicalRedFlags { get; init; }
 }
 
-public sealed record DailyWeatherForecast
-{
-    public required DateOnly Date { get; init; }
-    public required double TempMaxC { get; init; }
-    public required double TempMinC { get; init; }
-    public required double PrecipitationMm { get; init; }
-    public required double MaxWindGustKmh { get; init; }
-    public required string Summary { get; init; }
-    public bool PaceIntervalFriendly => TempMaxC < 24.0 && MaxWindGustKmh < 40.0 && PrecipitationMm < 8.0;
-}
-
-public sealed record WeatherForecastDossier
-{
-    public required string Source { get; init; }
-    public DateTimeOffset? FetchedAt { get; init; }
-    public string? LocationLabel { get; init; }
-    public required IReadOnlyList<DailyWeatherForecast> Days { get; init; }
-}
-
 public sealed record ScheduledCalendarItem
 {
     public required long Id { get; init; }
@@ -213,7 +193,6 @@ public sealed record CoachIntelligenceDossier
     public required StimulusProgressionDossier StimulusProgression { get; init; }
     public required ReadinessSignalDossier Readiness { get; init; }
     public required UpcomingCalendarDossier Calendar { get; init; }
-    public WeatherForecastDossier? Weather { get; init; }
     public BlockCompassSnapshot? CurrentCompass { get; init; }
     public required IReadOnlyList<string> DataQualityNotes { get; init; }
 }
@@ -256,7 +235,6 @@ public static class CoachIntelligenceDossierBuilder
         DateOnly? targetDate = null,
         IReadOnlySet<long>? autoEventIds = null,
         IReadOnlySet<DateOnly>? userLockedDates = null,
-        WeatherForecastDossier? weatherForecast = null,
         BlockCompassSnapshot? currentCompass = null)
     {
         ArgumentNullException.ThrowIfNull(profile);
@@ -304,7 +282,6 @@ public static class CoachIntelligenceDossierBuilder
             effectiveAutoIds,
             userLockedDates,
             completedRunDates);
-        var filteredWeather = FilterWeatherForecast(weatherForecast, refDate);
         var dataQualityNotes = BuildDataQualityNotes(
             profile,
             projectedRunsDesc,
@@ -328,7 +305,6 @@ public static class CoachIntelligenceDossierBuilder
             },
             Readiness = readiness,
             Calendar = calendar,
-            Weather = filteredWeather,
             CurrentCompass = currentCompass,
             DataQualityNotes = dataQualityNotes
         };
@@ -354,8 +330,7 @@ public static class CoachIntelligenceDossierBuilder
             ProfileRestingHr = profile.HeartRate.RestingHr,
             Goals = profile.Goals,
             TimeBudgets = profile.TimeBudgets,
-            PreferredRunDays = profile.PreferredRunDays,
-            Location = profile.Location
+            PreferredRunDays = profile.PreferredRunDays
         };
     }
 
@@ -1176,24 +1151,6 @@ public static class CoachIntelligenceDossierBuilder
         }
 
         return flags;
-    }
-
-    private static WeatherForecastDossier? FilterWeatherForecast(
-        WeatherForecastDossier? weatherForecast,
-        DateOnly refDate)
-    {
-        if (weatherForecast is null)
-        {
-            return null;
-        }
-
-        var endWeather = refDate.AddDays(5);
-        var filteredDays = weatherForecast.Days
-            .Where(d => d.Date >= refDate && d.Date <= endWeather)
-            .OrderBy(d => d.Date)
-            .ToList();
-
-        return weatherForecast with { Days = filteredDays };
     }
 
     private static UpcomingCalendarDossier BuildUpcomingCalendar(

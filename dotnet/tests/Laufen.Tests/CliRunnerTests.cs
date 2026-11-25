@@ -681,12 +681,12 @@ public class CliRunnerTests
             Assert.That(exitCode, Is.EqualTo(0), stderr.ToString());
             var text = stdout.ToString();
             Assert.That(text, Does.Contain("Autopilot Multi-Day Simulation: berni"));
-            Assert.That(text, Does.Contain("passed=5/5"));
+            Assert.That(text, Does.Contain("passed=4/4"));
 
             using var jsonOut = new StringWriter();
             using var jsonErr = new StringWriter();
             var jsonExit = LaufenCliRunner.Run(
-                ["simulate", "--scenario", "storm_interval_swap", "--athlete", "berni", "--provider", "stub", "--output-dir", tempOutDir, "--json"],
+                ["simulate", "--scenario", "telegram_user_locked_override", "--athlete", "berni", "--provider", "stub", "--output-dir", tempOutDir, "--json"],
                 jsonOut,
                 jsonErr,
                 AppContext.BaseDirectory);
@@ -694,8 +694,8 @@ public class CliRunnerTests
             Assert.That(jsonExit, Is.EqualTo(0), jsonErr.ToString());
             using var doc = JsonDocument.Parse(jsonOut.ToString());
             Assert.That(doc.RootElement.GetProperty("allPassed").GetBoolean(), Is.True);
-            Assert.That(File.Exists(Path.Combine(tempOutDir, "storm_interval_swap", "report.md")), Is.True);
-            Assert.That(File.Exists(Path.Combine(tempOutDir, "storm_interval_swap", "timeline.json")), Is.True);
+            Assert.That(File.Exists(Path.Combine(tempOutDir, "telegram_user_locked_override", "report.md")), Is.True);
+            Assert.That(File.Exists(Path.Combine(tempOutDir, "telegram_user_locked_override", "timeline.json")), Is.True);
         }
         finally
         {

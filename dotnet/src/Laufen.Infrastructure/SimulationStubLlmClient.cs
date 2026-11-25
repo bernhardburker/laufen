@@ -75,8 +75,6 @@ public sealed class SimulationStubLlmClient : ILlmClient
         var lockedDates = ParseDateSet(calendarEl, "UserLockedDates");
         var hasCompletedToday = GetBool(calendarEl, "HasCompletedRunOnTargetDate") ?? false;
 
-        var (unfriendlyWeather, friendlyWeather) = ParseWeather(root);
-
         var compassEl = GetObj(root, "current_compass");
         var prevHealthState = compassEl.HasValue ? GetString(compassEl.Value, "health_state") : null;
         var compassUpdatedAt = compassEl.HasValue ? TryGetDate(compassEl.Value, "updated_at") : null;
@@ -382,29 +380,12 @@ public sealed class SimulationStubLlmClient : ILlmClient
             }
             else
             {
-                var stormOnDate = unfriendlyWeather.Contains(date);
-                var calmerLaterWatchDayExists = isWatch && timeline.Any(t =>
-                    t.IsUpsert && t.Date > date && t.Date <= watchCutoff && !unfriendlyWeather.Contains(t.Date));
-                var preferQualityNow = !stormOnDate
-                    && !calmerLaterWatchDayExists
-                    && ((isWatch && !qualityInWatch) || (!isWatch && !qualityInPreview))
+                var preferQualityNow = ((isWatch && !qualityInWatch) || (!isWatch && !qualityInPreview))
                     && (daysSinceLastQuality is null or >= 3 || !isWatch);
-
-                if (isWatch && !qualityInWatch && !stormOnDate && (!calmerLaterWatchDayExists || friendlyWeather.Contains(date)))
-                {
-                    preferQualityNow = true;
-                }
 
                 if (preferQualityNow)
                 {
-                    if (!stormOnDate && friendlyWeather.Contains(date) && isWatch)
-                    {
-                        workout = BuildCalmSpeedIntervals();
-                    }
-                    else
-                    {
-                        workout = BuildThreshold4x5(date >= watchCutoff.AddDays(1) ? "Aufbau Schwellenintervalle (4x 5m Z4)" : "Kontrollierte Schwellenintervalle (4x 5m Z4)");
-                    }
+                    workout = BuildThreshold4x5(date >= watchCutoff.AddDays(1) ? "Aufbau Schwellenintervalle (4x 5m Z4)" : "Kontrollierte Schwellenintervalle (4x 5m Z4)");
 
                     if (isWatch)
                     {
@@ -456,10 +437,6 @@ public sealed class SimulationStubLlmClient : ILlmClient
         {
             $"HealthState={healthState}, CleanBaseRunsSinceBreak={cleanBaseSinceBreak}, MissedAuto7d={missedAutoCount}."
         };
-        if (unfriendlyWeather.Count > 0)
-        {
-            observations.Add($"Adverse pace weather detected on: {string.Join(", ", unfriendlyWeather.OrderBy(d => d).Select(d => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))}.");
-        }
         if (lockedDates.Count > 0)
         {
             observations.Add($"Preserving user_locked dates: {string.Join(", ", lockedDates.OrderBy(d => d).Select(d => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)))}.");
@@ -475,13 +452,13 @@ public sealed class SimulationStubLlmClient : ILlmClient
             Rationale = new CoachDecisionRationale
             {
                 Observations = observations,
-                TradeoffWeighed = "Balanced 14-day quality vs aerobic durability while respecting ownership, weather, and non-consecutive spacing",
+                TradeoffWeighed = "Balanced 14-day quality vs aerobic durability while respecting ownership and non-consecutive spacing",
                 ProgressionIntent = string.Equals(healthState, "ReEntry", StringComparison.Ordinal)
                     ? "Complete 2 clean aerobic base runs before resuming threshold intensity"
-                    : "Maintain alternating easy, threshold/speed, and long-run stimuli across Days 1-14",
+                    : "Maintain alternating easy, threshold, and long-run stimuli across Days 1-14",
                 RejectedAlternative = isRestOverride
                     ? "Keeping locked workout rejected because athlete explicitly requested rest"
-                    : "Consecutive hard days or pace_range targets during storms rejected"
+                    : "Consecutive hard days rejected under alternating run-day cadence"
             },
             UpdatedCompass = new BlockCompassSnapshot
             {
@@ -490,7 +467,7 @@ public sealed class SimulationStubLlmClient : ILlmClient
                     ? "ReEntry aerobic consolidation"
                     : "14-day balanced base and threshold autopilot",
                 BaseMilestone = "60-65m Z2 Long Run durability",
-                QualityMilestone = "4x 5m Z4 Threshold or calm-day speed intervals",
+                QualityMilestone = "4x 5m Z4 Threshold",
                 ObservedAthletePatterns = ["Alternating run days respected", "Z1/Z2 HR separation maintained"],
                 LastDecisionSummary = $"Reconciled {plannedWorkouts.Count} upsert(s) under trigger '{trigger}' ({healthState}).",
                 HealthState = healthState,
@@ -617,29 +594,6 @@ public sealed class SimulationStubLlmClient : ILlmClient
         ]
     };
 
-    private static WorkoutDefinition BuildCalmSpeedIntervals() => new()
-    {
-        Title = "Kalibrierte Speed-Intervalle (5x 90s)",
-        SessionType = "intervals",
-        CoachingNotes = "Run controlled fast reps on calm, dry footing with relaxed Z1 jogging recoveries.",
-        Steps =
-        [
-            new() { Kind = "warmup", DurationSeconds = 600, Target = new() { Modality = "hr_zone", HrZoneStart = 1, HrZoneEnd = 2 } },
-            new()
-            {
-                Kind = "repeat",
-                Reps = 5,
-                Work = new()
-                {
-                    DurationSeconds = 90,
-                    Target = new() { Modality = "pace_range", PaceFastSecPerKm = 305, PaceSlowSecPerKm = 325 }
-                },
-                Recovery = new() { DurationSeconds = 120, Target = new() { Modality = "hr_zone", HrZoneStart = 1 } }
-            },
-            new() { Kind = "cooldown", DurationSeconds = 600, Target = new() { Modality = "hr_zone", HrZoneStart = 1 } }
-        ]
-    };
-
     private static List<string> BuildSickHoldObservations(string? message, int redFlags, int clearedCount)
     {
         var obs = new List<string>
@@ -714,36 +668,6 @@ public sealed class SimulationStubLlmClient : ILlmClient
         }
 
         return list;
-    }
-
-    private static (HashSet<DateOnly> Unfriendly, HashSet<DateOnly> Friendly) ParseWeather(JsonElement root)
-    {
-        var unfriendly = new HashSet<DateOnly>();
-        var friendly = new HashSet<DateOnly>();
-        var weatherEl = GetObj(root, "weather");
-        if (!TryGetProp(weatherEl, "Days", out var daysArr) || daysArr.ValueKind != JsonValueKind.Array)
-        {
-            return (unfriendly, friendly);
-        }
-
-        foreach (var day in daysArr.EnumerateArray())
-        {
-            var date = TryGetDate(day, "Date");
-            var isFriendly = GetBool(day, "PaceIntervalFriendly");
-            if (date.HasValue && isFriendly.HasValue)
-            {
-                if (isFriendly.Value)
-                {
-                    friendly.Add(date.Value);
-                }
-                else
-                {
-                    unfriendly.Add(date.Value);
-                }
-            }
-        }
-
-        return (unfriendly, friendly);
     }
 
     private static HashSet<DateOnly> ParseDateSet(JsonElement? parent, string propertyName)

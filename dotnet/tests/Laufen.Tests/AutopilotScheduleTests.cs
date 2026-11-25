@@ -390,39 +390,14 @@ public class AutopilotScheduleTests
     }
 
     [Test]
-    public void WeatherForecastEvaluatesPaceIntervalFriendlinessAndProfileBackwardCompatibility()
+    public void PreferredRunDaysProfileMaintainsBackwardCompatibility()
     {
-        var refDate = new DateOnly(2026, 11, 25);
-        var weather = new WeatherForecastDossier
-        {
-            Source = "open-meteo",
-            LocationLabel = "Gerasdorf",
-            Days =
-            [
-                new() { Date = refDate.AddDays(-1), TempMinC = 4, TempMaxC = 10, PrecipitationMm = 0, MaxWindGustKmh = 15, Summary = "Past" },
-                new() { Date = refDate, TempMinC = 5, TempMaxC = 14, PrecipitationMm = 0.5, MaxWindGustKmh = 18, Summary = "Clear" },
-                new() { Date = refDate.AddDays(1), TempMinC = 8, TempMaxC = 16, PrecipitationMm = 12.0, MaxWindGustKmh = 52, Summary = "Stormy" },
-                new() { Date = refDate.AddDays(2), TempMinC = 17, TempMaxC = 27, PrecipitationMm = 0, MaxWindGustKmh = 10, Summary = "Hot" }
-            ]
-        };
-
-        var layout = ResolveRepositoryLayout();
-        var profile = StrictJsonLoader.LoadAthleteProfile(layout, "berni").Athlete;
-        var dossier = CoachIntelligenceDossierBuilder.Build(profile, [], [], null, null, refDate, weatherForecast: weather);
-
-        Assert.That(dossier.Weather, Is.Not.Null);
-        Assert.That(dossier.Weather!.Days, Has.Count.EqualTo(3));
-        Assert.That(dossier.Weather.Days[0].PaceIntervalFriendly, Is.True);
-        Assert.That(dossier.Weather.Days[1].PaceIntervalFriendly, Is.False);
-        Assert.That(dossier.Weather.Days[2].PaceIntervalFriendly, Is.False);
-
         const string profileJsonWithGrid = """
             {
               "athlete": {
                 "id": "i1",
                 "name": "GridRunner",
                 "preferred_run_days": ["tuesday", "thursday", "sunday"],
-                "location": { "latitude": 48.29, "longitude": 16.47, "label": "Gerasdorf" },
                 "heart_rate": {
                   "resting_hr": 48,
                   "max_hr": 192,
@@ -435,7 +410,6 @@ public class AutopilotScheduleTests
 
         var deserialized = StrictJsonLoader.Deserialize<AthleteProfileDocument>(profileJsonWithGrid).Athlete;
         Assert.That(deserialized.PreferredRunDays, Is.EquivalentTo(["tuesday", "thursday", "sunday"]));
-        Assert.That(deserialized.Location?.Label, Is.EqualTo("Gerasdorf"));
     }
 
     [Test]

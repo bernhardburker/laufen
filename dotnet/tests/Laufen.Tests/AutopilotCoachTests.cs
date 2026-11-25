@@ -250,32 +250,6 @@ public class AutopilotCoachTests
     }
 
     [Test]
-    public void OpenMeteoParserMapsDailyForecastAndPaceFriendliness()
-    {
-        const string sampleJson = """
-            {
-              "daily": {
-                "time": ["2026-11-24", "2026-11-25", "2026-11-26"],
-                "weather_code": [2, 95, 0],
-                "temperature_2m_max": [11.4, 15.2, 26.5],
-                "temperature_2m_min": [4.1, 7.8, 16.0],
-                "precipitation_sum": [0.0, 14.5, 0.0],
-                "wind_gusts_10m_max": [18.0, 48.0, 12.0]
-              }
-            }
-            """;
-
-        var dossier = OpenMeteoWeatherClient.ParseOpenMeteoJson(sampleJson, new DateOnly(2026, 11, 25), "Gerasdorf");
-
-        Assert.That(dossier.LocationLabel, Is.EqualTo("Gerasdorf"));
-        Assert.That(dossier.Days, Has.Count.EqualTo(2));
-        Assert.That(dossier.Days[0].Summary, Is.EqualTo("Storm"));
-        Assert.That(dossier.Days[0].PaceIntervalFriendly, Is.False);
-        Assert.That(dossier.Days[1].Summary, Is.EqualTo("Clear"));
-        Assert.That(dossier.Days[1].PaceIntervalFriendly, Is.False);
-    }
-
-    [Test]
     public void AutopilotStateStorePersistsCompassAndTraceInIsolatedTempDirectory()
     {
         var tempRoot = Path.Combine(Path.GetTempPath(), $"laufen-state-test-{Guid.NewGuid():N}");

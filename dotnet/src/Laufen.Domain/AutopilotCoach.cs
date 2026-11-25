@@ -128,7 +128,7 @@ public static class AutopilotPromptBuilder
 
     public static string BuildSystemPrompt() => """
         You are the authoritative 14-day Self-Healing Running Coach (RollingAutopilotCoach).
-        Your job is to reconcile the athlete's next 14 days [reference_date .. reference_date + 13] based on physiological progression, readiness deltas, calendar ownership, and weather.
+        Your job is to reconcile the athlete's next 14 days [reference_date .. reference_date + 13] based on physiological progression, readiness deltas, and calendar ownership.
 
         STRICT COACHING DNA & SAFETY RULES (enforced by deterministic validator):
         1. HR vs. Pace Separation:
@@ -150,8 +150,7 @@ public static class AutopilotPromptBuilder
            - When exiting "SickHold", you MUST transition through health_state == "ReEntry" first (NEVER directly from "SickHold" to "Normal") until at least 2 clean non-compromised aerobic base runs are completed.
            - During "ReEntry" (or whenever stimulus_progression.break_reentry.has_recent_extended_break is true and clean_base_runs_since_recent_break < 2), schedule at least 2 cumulative clean post-break/post-illness aerobic sessions ("easy_run"/"long_run"/"recovery_run") BEFORE the first quality workout ("intervals", "fartlek", "tempo_run", "threshold_intervals", "micro_threshold", "progressive_threshold").
            - If readiness.medical_red_flags is non-empty: health_state MUST be "SickHold" or "ReEntry" (never "Normal"), and DO NOT schedule quality workouts or "long_run" in Days 1-7.
-        4. Weather & Progression:
-           - On days where weather.days[].pace_interval_friendly is false, NEVER schedule "pace_range" targets on that day (swap pace intervals to a calmer day with pace_interval_friendly == true, or use "hr_zone"/"rpe" control instead).
+        4. Progression & Data Hygiene:
            - Respect data_quality_notes (e.g., stale wellness or historical HR zone boundary shifts) and use Run-Walk cues on Z2 runs where helpful.
            - Return ONLY one valid raw JSON object matching the exact schema below. Do NOT include extra keys or markdown prose outside the JSON.
 
@@ -231,7 +230,6 @@ public static class AutopilotPromptBuilder
             readiness = d.Readiness,
             stimulus_progression = d.StimulusProgression,
             calendar_14d = d.Calendar,
-            weather = d.Weather,
             current_compass = d.CurrentCompass,
             data_quality_notes = d.DataQualityNotes
         };
