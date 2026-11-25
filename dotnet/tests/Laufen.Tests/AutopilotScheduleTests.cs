@@ -307,6 +307,43 @@ public class AutopilotScheduleTests
     }
 
     [Test]
+    public void IntradayCheckAllowsFutureUpsertEvenWhenFrozenRefDateHasPreExistingQualityEvent()
+    {
+        var layout = ResolveRepositoryLayout();
+        var registry = AthleteDataRepository.LoadRegistry(layout);
+        var berni = AthleteDataRepository.LoadAthleteData(layout, registry, "berni");
+        var refDate = new DateOnly(2026, 11, 25);
+
+        // Full berni calendar still has Slot 2A (160591207) on frozen refDate
+        var autoDossier = CoachIntelligenceDossierBuilder.Build(
+            berni.Profile,
+            berni.Activities,
+            berni.WellnessRecords,
+            berni.RunReviews,
+            berni.CalendarEvents,
+            refDate,
+            refDate,
+            autoEventIds: new HashSet<long> { 160591207, 160252764 });
+
+        var intradayFuture = new AutopilotPlanDecision
+        {
+            Trigger = "intraday_check",
+            ReferenceDate = refDate,
+            HorizonDays = 14,
+            HealthState = "ReEntry",
+            Operations =
+            [
+                new() { Date = refDate.AddDays(1), Operation = "upsert", Workout = EasyBase45() }
+            ],
+            Rationale = DefaultRationale(),
+            UpdatedCompass = DefaultCompass(refDate)
+        };
+
+        var result = AutopilotScheduleGatekeeper.Validate(intradayFuture, autoDossier);
+        Assert.That(result.IsValid, Is.True, string.Join("; ", result.Errors.Select(e => e.Message)));
+    }
+
+    [Test]
     public void GatekeeperEnforcesNoConsecutiveRunDaysWhenConfigured()
     {
         var layout = ResolveRepositoryLayout();

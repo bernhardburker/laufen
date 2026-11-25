@@ -236,7 +236,7 @@ public static class AutopilotScheduleGatekeeper
         }
 
         var reconciledPreview = BuildReconciledScheduleItems(decision, dossier);
-        ValidateReentryRampUp(reconciledPreview, dossier, errors);
+        ValidateReentryRampUp(reconciledPreview, decision, dossier, errors);
         ValidateConsecutiveRunDays(reconciledPreview, dossier, errors);
 
         return new WorkoutValidationResult(errors.Count == 0, errors);
@@ -526,6 +526,7 @@ public static class AutopilotScheduleGatekeeper
 
     private static void ValidateReentryRampUp(
         List<ReconciledScheduleWorkout> reconciled,
+        AutopilotPlanDecision decision,
         CoachIntelligenceDossier dossier,
         List<WorkoutValidationError> errors)
     {
@@ -543,9 +544,14 @@ public static class AutopilotScheduleGatekeeper
                 ? WorkoutModalityValidator.IsQualitySessionType(item.SessionType)
                 : IsQualityName(item.Title);
 
+            var isFrozenOrImmutable = !string.Equals(item.Source, "upsert", StringComparison.Ordinal)
+                && (item.Ownership is "completed" or "user_locked"
+                    || (string.Equals(decision.Trigger, "intraday_check", StringComparison.Ordinal)
+                        && item.Date == decision.ReferenceDate));
+
             if (isQuality)
             {
-                if (cleanBaseCount < 2)
+                if (!isFrozenOrImmutable && cleanBaseCount < 2)
                 {
                     errors.Add(new WorkoutValidationError(
                         "reentry_requires_base_before_quality",
@@ -570,6 +576,11 @@ public static class AutopilotScheduleGatekeeper
             return;
         }
 
+        var upsertedDates = reconciled
+            .Where(i => string.Equals(i.Source, "upsert", StringComparison.Ordinal))
+            .Select(i => i.Date)
+            .ToHashSet();
+
         var workoutDates = reconciled
             .Select(i => i.Date)
             .Distinct()
@@ -587,7 +598,8 @@ public static class AutopilotScheduleGatekeeper
 
         for (var i = 1; i < workoutDates.Count; i++)
         {
-            if (workoutDates[i].DayNumber - workoutDates[i - 1].DayNumber == 1)
+            if (workoutDates[i].DayNumber - workoutDates[i - 1].DayNumber == 1
+                && (upsertedDates.Contains(workoutDates[i - 1]) || upsertedDates.Contains(workoutDates[i])))
             {
                 errors.Add(new WorkoutValidationError(
                     "consecutive_run_days_not_allowed",

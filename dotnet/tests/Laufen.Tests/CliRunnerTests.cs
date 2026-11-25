@@ -38,6 +38,7 @@ public class CliRunnerTests
         Assert.That(stdout.ToString(), Does.Contain("dossier"));
         Assert.That(stdout.ToString(), Does.Contain("validate-workout"));
         Assert.That(stdout.ToString(), Does.Contain("project-plan"));
+        Assert.That(stdout.ToString(), Does.Contain("coach-plan"));
         Assert.That(stdout.ToString(), Does.Contain("athletes"));
     }
 
@@ -535,6 +536,129 @@ public class CliRunnerTests
             if (File.Exists(tempInvalid))
             {
                 File.Delete(tempInvalid);
+            }
+        }
+    }
+
+    [Test]
+    public void RunCoachPlanDryRunWithStubProviderProducesReconciledPlanWithoutWritingState()
+    {
+        var root = ResolveWorkspaceRoot();
+        var compassPath = Path.Combine(root, "athletes", "berni", "block_compass.json");
+        var tracePath = Path.Combine(root, "athletes", "berni", "decision_trace_dotnet.jsonl");
+        var compassExistedBefore = File.Exists(compassPath);
+        var traceExistedBefore = File.Exists(tracePath);
+        var tempStub = Path.Combine(Path.GetTempPath(), $"laufen-stub-coach-{Guid.NewGuid():N}.json");
+
+        try
+        {
+            const string stubJson = """
+                {
+                  "trigger": "morning_sync",
+                  "reference_date": "2026-11-25",
+                  "horizon_days": 14,
+                  "health_state": "ReEntry",
+                  "operations": [
+                    { "date": "2026-11-25", "operation": "delete", "event_id": 160591207 },
+                    {
+                      "date": "2026-11-25",
+                      "operation": "upsert",
+                      "workout": {
+                        "title": "Re-Entry Base 45m",
+                        "session_type": "easy_run",
+                        "steps": [
+                          { "kind": "warmup", "duration_seconds": 600, "target": { "modality": "hr_zone", "hr_zone_start": 1 } },
+                          { "kind": "steady", "duration_seconds": 1800, "target": { "modality": "hr_zone", "hr_zone_start": 2 } },
+                          { "kind": "cooldown", "duration_seconds": 300, "target": { "modality": "hr_zone", "hr_zone_start": 1 } }
+                        ]
+                      }
+                    },
+                    {
+                      "date": "2026-11-28",
+                      "operation": "upsert",
+                      "workout": {
+                        "title": "Aerobic Long Run 60m",
+                        "session_type": "long_run",
+                        "steps": [
+                          { "kind": "warmup", "duration_seconds": 600, "target": { "modality": "hr_zone", "hr_zone_start": 1 } },
+                          { "kind": "steady", "duration_seconds": 2700, "target": { "modality": "hr_zone", "hr_zone_start": 2 } },
+                          { "kind": "cooldown", "duration_seconds": 300, "target": { "modality": "hr_zone", "hr_zone_start": 1 } }
+                        ]
+                      }
+                    },
+                    {
+                      "date": "2026-12-01",
+                      "operation": "upsert",
+                      "workout": {
+                        "title": "Threshold 4x5m Z4",
+                        "session_type": "threshold_intervals",
+                        "steps": [
+                          { "kind": "warmup", "duration_seconds": 600, "target": { "modality": "hr_zone", "hr_zone_start": 1, "hr_zone_end": 2 } },
+                          {
+                            "kind": "repeat",
+                            "reps": 4,
+                            "work": { "duration_seconds": 300, "target": { "modality": "hr_zone", "hr_zone_start": 4 } },
+                            "recovery": { "duration_seconds": 120, "target": { "modality": "hr_zone", "hr_zone_start": 1 } }
+                          },
+                          { "kind": "cooldown", "duration_seconds": 600, "target": { "modality": "hr_zone", "hr_zone_start": 1 } }
+                        ]
+                      }
+                    }
+                  ],
+                  "rationale": {
+                    "observations": ["1 clean comeback run completed"],
+                    "tradeoff_weighed": "Base ramp-up before threshold",
+                    "progression_intent": "2nd base run today, 60m Sat, threshold Dec 1",
+                    "rejected_alternative": "Threshold today"
+                  },
+                  "updated_compass": {
+                    "updated_at": "2026-11-25",
+                    "current_block_focus": "Re-entry base build",
+                    "base_milestone": "60m Z2",
+                    "quality_milestone": "4x5m Z4",
+                    "observed_athlete_patterns": ["Clean comeback"],
+                    "last_decision_summary": "Easy 45m Z2 today",
+                    "health_state": "ReEntry",
+                    "auto_event_ids": [160591207, 160252764]
+                  }
+                }
+                """;
+            File.WriteAllText(tempStub, stubJson);
+
+            using var stdout = new StringWriter();
+            using var stderr = new StringWriter();
+            var exitCode = LaufenCliRunner.Run(
+                ["coach-plan", "--athlete", "berni", "--ref-date", "2026-11-25", "--provider", "stub", "--stub-response", tempStub, "--auto-event-ids", "160591207,160252764", "--dry-run"],
+                stdout,
+                stderr,
+                AppContext.BaseDirectory);
+
+            Assert.That(exitCode, Is.EqualTo(0), stderr.ToString());
+            var text = stdout.ToString();
+            Assert.That(text, Does.Contain("Autopilot Coach Plan: berni"));
+            Assert.That(text, Does.Contain("Compiled Intervals.icu DSL Upserts (3):"));
+            Assert.That(text, Does.Contain("Banister 14d Projection: CTL"));
+            Assert.That(File.Exists(compassPath), Is.EqualTo(compassExistedBefore));
+            Assert.That(File.Exists(tracePath), Is.EqualTo(traceExistedBefore));
+
+            using var jsonOut = new StringWriter();
+            using var jsonErr = new StringWriter();
+            var jsonExit = LaufenCliRunner.Run(
+                ["coach-plan", "--athlete", "berni", "--ref-date", "2026-11-25", "--provider", "stub", "--stub-response", tempStub, "--auto-event-ids", "160591207,160252764", "--dry-run", "--json"],
+                jsonOut,
+                jsonErr,
+                AppContext.BaseDirectory);
+
+            Assert.That(jsonExit, Is.EqualTo(0), jsonErr.ToString());
+            using var doc = JsonDocument.Parse(jsonOut.ToString());
+            Assert.That(doc.RootElement.GetProperty("dryRun").GetBoolean(), Is.True);
+            Assert.That(doc.RootElement.GetProperty("outcome").GetProperty("success").GetBoolean(), Is.True);
+        }
+        finally
+        {
+            if (File.Exists(tempStub))
+            {
+                File.Delete(tempStub);
             }
         }
     }
