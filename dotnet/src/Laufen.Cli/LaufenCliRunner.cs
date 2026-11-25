@@ -60,6 +60,11 @@ public static class LaufenCliRunner
                 return ExecuteCoachPlan(parsed, stdout, stderr, workingDirectory);
             }
 
+            if (string.Equals(parsed.Command, "simulate", StringComparison.Ordinal))
+            {
+                return ExecuteSimulate(parsed, stdout, stderr, workingDirectory);
+            }
+
             var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
                 ? WorkspaceLayout.DiscoverFrom(workingDirectory)
                 : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
@@ -351,6 +356,15 @@ public static class LaufenCliRunner
             stdout.WriteLine($"  {evt.Date:yyyy-MM-dd} | {evt.Category,-7} | {status,-9} | [{evt.Ownership}{load}] | {evt.Name}");
         }
 
+        if (dossier.Calendar.MissedAutoWorkoutsLast7Days.Count > 0)
+        {
+            stdout.WriteLine($"Missed Auto Workouts Last 7d ({dossier.Calendar.MissedAutoWorkoutsLast7Days.Count}):");
+            foreach (var missed in dossier.Calendar.MissedAutoWorkoutsLast7Days)
+            {
+                stdout.WriteLine($"  {missed.Date:yyyy-MM-dd} | [auto/unrun] | {missed.Name}");
+            }
+        }
+
         if (dossier.Weather is not null)
         {
             stdout.WriteLine($"Weather Forecast ({dossier.Weather.Source}, {dossier.Weather.Days.Count}d):");
@@ -421,6 +435,7 @@ public static class LaufenCliRunner
         stdout.WriteLine("  validate-workout          Validate a CoachPlanDecision JSON & compile Intervals.icu DSL");
         stdout.WriteLine("  project-plan              Validate & reconcile a 14-day AutopilotPlanDecision + Banister curve");
         stdout.WriteLine("  coach-plan                Run RollingAutopilotCoach via stub/agy/gemini (--dry-run supported)");
+        stdout.WriteLine("  simulate                  Run multi-day self-healing simulation scenarios & invariant auditor");
         stdout.WriteLine("  help                      Show this help text");
         stdout.WriteLine();
         stdout.WriteLine("Options:");
@@ -437,12 +452,14 @@ public static class LaufenCliRunner
         stdout.WriteLine("  --auto-event-ids <csv>    Comma-separated calendar event IDs managed as 'auto' ownership");
         stdout.WriteLine("  --locked-dates <csv>      Comma-separated YYYY-MM-DD dates marked as 'user_locked'");
         stdout.WriteLine("  --trigger <name>          Autopilot trigger: morning_sync|post_run|telegram_override|intraday_check");
-        stdout.WriteLine("  --provider <name>         LLM provider for 'coach-plan': stub|agy|gemini (default: agy)");
+        stdout.WriteLine("  --provider <name>         LLM provider: stub|agy|gemini (coach-plan default: agy; simulate default: stub)");
         stdout.WriteLine("  --model <name>            Override LLM model name");
         stdout.WriteLine("  --message <text>          Optional athlete Telegram message for 'coach-plan'");
         stdout.WriteLine("  --stub-response <path>    JSON response file for '--provider stub'");
-        stdout.WriteLine("  --retries <N>             Validation self-correction retries for 'coach-plan' (default: 1)");
-        stdout.WriteLine("  --dry-run                 Skip writing block_compass.json and decision_trace_dotnet.jsonl");
+        stdout.WriteLine("  --scenario <name|all>     Simulation scenario for 'simulate' (default: all)");
+        stdout.WriteLine("  --output-dir <path>       Write isolated simulation report.md and timeline.json artifacts");
+        stdout.WriteLine("  --retries <N>             Validation self-correction retries for 'coach-plan' / 'simulate' (default: 1)");
+        stdout.WriteLine("  --dry-run                 Skip writing block_compass.json / decision_trace_dotnet.jsonl or simulation artifacts");
     }
 
     private static bool TryParseArgs(IReadOnlyList<string> args, out ParsedCliArgs parsed, out string error)
@@ -461,10 +478,12 @@ public static class LaufenCliRunner
         IReadOnlySet<long>? autoEventIds = null;
         IReadOnlySet<DateOnly>? lockedDates = null;
         string trigger = "morning_sync";
-        string provider = "agy";
+        string? provider = null;
         string? model = null;
         string? message = null;
         string? stubResponsePath = null;
+        string? scenarioName = null;
+        string? outputDir = null;
         int retries = 1;
         bool dryRun = false;
 
@@ -584,6 +603,20 @@ public static class LaufenCliRunner
                         return false;
                     }
                     break;
+                case "--scenario":
+                    if (!TryReadValue(args, ref i, arg, out scenarioName, out error))
+                    {
+                        parsed = default!;
+                        return false;
+                    }
+                    break;
+                case "--output-dir":
+                    if (!TryReadValue(args, ref i, arg, out outputDir, out error))
+                    {
+                        parsed = default!;
+                        return false;
+                    }
+                    break;
                 case "--retries":
                     if (!TryReadInt(args, ref i, arg, out retries, out error))
                     {
@@ -643,6 +676,8 @@ public static class LaufenCliRunner
             model,
             message,
             stubResponsePath,
+            scenarioName,
+            outputDir,
             retries,
             dryRun);
         return true;
@@ -683,10 +718,11 @@ public static class LaufenCliRunner
             stubJson = File.ReadAllText(parsed.StubResponsePath);
         }
 
+        var effectiveProvider = string.IsNullOrWhiteSpace(parsed.Provider) ? "agy" : parsed.Provider;
         ILlmClient llmClient;
         try
         {
-            llmClient = LlmClientFactory.Create(parsed.Provider, parsed.Model, stubJson);
+            llmClient = LlmClientFactory.Create(effectiveProvider, parsed.Model, stubJson);
         }
         catch (ArgumentException ex)
         {
@@ -717,7 +753,7 @@ public static class LaufenCliRunner
             {
                 slug,
                 dryRun = parsed.DryRun,
-                provider = parsed.Provider,
+                provider = effectiveProvider,
                 outcome
             };
             stdout.WriteLine(JsonSerializer.Serialize(payload, JsonOptions));
@@ -748,8 +784,132 @@ public static class LaufenCliRunner
             return 1;
         }
 
-        WriteCoachPlanText(stdout, slug, parsed.Provider, parsed.DryRun, outcome);
+        WriteCoachPlanText(stdout, slug, effectiveProvider, parsed.DryRun, outcome);
         return 0;
+    }
+
+    private static int ExecuteSimulate(
+        ParsedCliArgs parsed,
+        TextWriter stdout,
+        TextWriter stderr,
+        string? workingDirectory)
+    {
+        var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
+            ? WorkspaceLayout.DiscoverFrom(workingDirectory)
+            : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
+        var registry = AthleteDataRepository.LoadRegistry(layout);
+        var slugs = AthleteDataRepository.ResolveTargetSlugs(registry, parsed.AthleteSlug, allActive: false);
+        var slug = slugs[0];
+        var profile = AthleteDataRepository.LoadAthleteData(layout, registry, slug).Profile;
+
+        var scenarioArg = string.IsNullOrWhiteSpace(parsed.ScenarioName) ? "all" : parsed.ScenarioName.Trim();
+        List<SimulationScenario> scenarios;
+        try
+        {
+            scenarios = string.Equals(scenarioArg, "all", StringComparison.OrdinalIgnoreCase)
+                ? AutopilotScenarioCatalog.GetAllNames().Select(AutopilotScenarioCatalog.GetScenario).ToList()
+                : [AutopilotScenarioCatalog.GetScenario(scenarioArg)];
+        }
+        catch (ArgumentException ex)
+        {
+            stderr.WriteLine($"Error: {ex.Message}");
+            return 1;
+        }
+
+        var effectiveProvider = string.IsNullOrWhiteSpace(parsed.Provider) ? "stub" : parsed.Provider.Trim().ToLowerInvariant();
+        ILlmClient llmClient;
+        try
+        {
+            llmClient = effectiveProvider is "stub" or "mock" or "test"
+                ? new SimulationStubLlmClient()
+                : LlmClientFactory.Create(effectiveProvider, parsed.Model);
+        }
+        catch (ArgumentException ex)
+        {
+            stderr.WriteLine($"Error: {ex.Message}");
+            return 1;
+        }
+
+        var strategy = new RollingAutopilotStrategy(llmClient);
+        var results = new List<SimulationRunResult>(scenarios.Count);
+        var artifactPaths = new List<object>();
+
+        foreach (var scenario in scenarios)
+        {
+            var result = AutopilotSimulator.RunAsync(
+                scenario,
+                profile,
+                slug,
+                effectiveProvider,
+                strategy,
+                parsed.Retries).GetAwaiter().GetResult();
+            results.Add(result);
+
+            if (!parsed.DryRun && !string.IsNullOrWhiteSpace(parsed.OutputDir))
+            {
+                var (reportPath, timelinePath) = SimulationReportWriter.WriteArtifacts(parsed.OutputDir, result);
+                artifactPaths.Add(new { scenario = scenario.Name, reportPath, timelinePath });
+            }
+        }
+
+        var allPassed = results.All(r => r.Passed);
+
+        if (parsed.AsJson)
+        {
+            var payload = new
+            {
+                slug,
+                provider = effectiveProvider,
+                dryRun = parsed.DryRun,
+                allPassed,
+                artifacts = artifactPaths,
+                scenarios = results
+            };
+            stdout.WriteLine(JsonSerializer.Serialize(payload, JsonOptions));
+            return allPassed ? 0 : 1;
+        }
+
+        WriteSimulateText(stdout, slug, effectiveProvider, parsed.DryRun, results, parsed.OutputDir);
+        return allPassed ? 0 : 1;
+    }
+
+    private static void WriteSimulateText(
+        TextWriter stdout,
+        string slug,
+        string provider,
+        bool dryRun,
+        List<SimulationRunResult> results,
+        string? outputDir)
+    {
+        var passedCount = results.Count(r => r.Passed);
+        var totalElapsed = results.Sum(r => r.TotalElapsedSeconds);
+        stdout.WriteLine($"=== Autopilot Multi-Day Simulation: {slug} (provider={provider}, dryRun={dryRun}, passed={passedCount}/{results.Count}, elapsed={totalElapsed:F1}s) ===");
+
+        foreach (var res in results)
+        {
+            var verdict = res.Passed ? "PASS" : "FAIL";
+            var failCount = res.AllFindings.Count(f => string.Equals(f.Severity, "fail", StringComparison.Ordinal));
+            stdout.WriteLine($"Scenario: {res.ScenarioName} [{verdict}] | steps={res.TotalSteps}, attempts={res.TotalAttempts}, failures={failCount}, elapsed={res.TotalElapsedSeconds:F1}s");
+            foreach (var step in res.Steps)
+            {
+                var status = step.Outcome.Success ? "ok" : "FAILED";
+                var upserts = step.Outcome.ReconciledSchedule?.CompiledUpserts.Count ?? 0;
+                var deletes = step.Outcome.ReconciledSchedule?.DeletedEventIds.Count ?? 0;
+                var msgTag = !string.IsNullOrWhiteSpace(step.AthleteMessage) ? $" | msg=\"{step.AthleteMessage}\"" : string.Empty;
+                var runTag = !string.IsNullOrWhiteSpace(step.InjectedRunName) ? $" | run=\"{step.InjectedRunName}\"" : string.Empty;
+                stdout.WriteLine($"  Day +{step.DayOffset} ({step.Date:yyyy-MM-dd ddd}) {step.Trigger,-17} | {status,-6} | health={step.HealthStateBefore ?? "-"}->{step.HealthStateAfter ?? "-"} | watch={step.ScheduledWatchCount} preview={step.ScheduledPreviewCount} upserts={upserts} deletes={deletes}{runTag}{msgTag}");
+
+                foreach (var finding in step.AuditFindings)
+                {
+                    stdout.WriteLine($"    [{finding.Severity.ToUpperInvariant()} {finding.AuditCode}] {finding.Message}");
+                }
+            }
+        }
+
+        if (!dryRun && !string.IsNullOrWhiteSpace(outputDir))
+        {
+            stdout.WriteLine($"Artifacts written under: {outputDir}");
+        }
     }
 
     private static void WriteCoachPlanText(
@@ -1144,10 +1304,12 @@ public static class LaufenCliRunner
         IReadOnlySet<long>? AutoEventIds,
         IReadOnlySet<DateOnly>? LockedDates,
         string Trigger,
-        string Provider,
+        string? Provider,
         string? Model,
         string? Message,
         string? StubResponsePath,
+        string? ScenarioName,
+        string? OutputDir,
         int Retries,
         bool DryRun);
 }

@@ -39,6 +39,7 @@ public class CliRunnerTests
         Assert.That(stdout.ToString(), Does.Contain("validate-workout"));
         Assert.That(stdout.ToString(), Does.Contain("project-plan"));
         Assert.That(stdout.ToString(), Does.Contain("coach-plan"));
+        Assert.That(stdout.ToString(), Does.Contain("simulate"));
         Assert.That(stdout.ToString(), Does.Contain("athletes"));
     }
 
@@ -659,6 +660,48 @@ public class CliRunnerTests
             if (File.Exists(tempStub))
             {
                 File.Delete(tempStub);
+            }
+        }
+    }
+
+    [Test]
+    public void RunSimulateAllStubScenariosPassesAndWritesIsolatedArtifacts()
+    {
+        var tempOutDir = Path.Combine(Path.GetTempPath(), $"laufen-sim-cli-{Guid.NewGuid():N}");
+        try
+        {
+            using var stdout = new StringWriter();
+            using var stderr = new StringWriter();
+            var exitCode = LaufenCliRunner.Run(
+                ["simulate", "--scenario", "all", "--athlete", "berni", "--provider", "stub", "--dry-run"],
+                stdout,
+                stderr,
+                AppContext.BaseDirectory);
+
+            Assert.That(exitCode, Is.EqualTo(0), stderr.ToString());
+            var text = stdout.ToString();
+            Assert.That(text, Does.Contain("Autopilot Multi-Day Simulation: berni"));
+            Assert.That(text, Does.Contain("passed=5/5"));
+
+            using var jsonOut = new StringWriter();
+            using var jsonErr = new StringWriter();
+            var jsonExit = LaufenCliRunner.Run(
+                ["simulate", "--scenario", "storm_interval_swap", "--athlete", "berni", "--provider", "stub", "--output-dir", tempOutDir, "--json"],
+                jsonOut,
+                jsonErr,
+                AppContext.BaseDirectory);
+
+            Assert.That(jsonExit, Is.EqualTo(0), jsonErr.ToString());
+            using var doc = JsonDocument.Parse(jsonOut.ToString());
+            Assert.That(doc.RootElement.GetProperty("allPassed").GetBoolean(), Is.True);
+            Assert.That(File.Exists(Path.Combine(tempOutDir, "storm_interval_swap", "report.md")), Is.True);
+            Assert.That(File.Exists(Path.Combine(tempOutDir, "storm_interval_swap", "timeline.json")), Is.True);
+        }
+        finally
+        {
+            if (Directory.Exists(tempOutDir))
+            {
+                Directory.Delete(tempOutDir, recursive: true);
             }
         }
     }

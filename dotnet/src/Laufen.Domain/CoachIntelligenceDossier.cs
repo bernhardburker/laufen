@@ -190,6 +190,7 @@ public sealed record ScheduledCalendarItem
     public string? PairedActivityId { get; init; }
     public required string Ownership { get; init; }
     public double? EstimatedLoad { get; init; }
+    public int? DurationSeconds { get; init; }
 }
 
 public sealed record UpcomingCalendarDossier
@@ -197,6 +198,7 @@ public sealed record UpcomingCalendarDossier
     public required IReadOnlyList<ScheduledCalendarItem> EventsOnTargetDate { get; init; }
     public required IReadOnlyList<ScheduledCalendarItem> UpcomingEventsNext7Days { get; init; }
     public required IReadOnlyList<ScheduledCalendarItem> UpcomingEventsNext14Days { get; init; }
+    public IReadOnlyList<ScheduledCalendarItem> MissedAutoWorkoutsLast7Days { get; init; } = [];
     public required IReadOnlyList<DateOnly> UserLockedDates { get; init; }
     public required bool HasCompletedRunOnTargetDate { get; init; }
     public required bool HasUncompletedPlannedWorkoutOnTargetDate { get; init; }
@@ -294,12 +296,14 @@ public static class CoachIntelligenceDossierBuilder
             filteredActivitiesUpToRef,
             contextClues,
             refDate);
+        var completedRunDates = projectedRunsDesc.Select(r => r.Date).ToHashSet();
         var calendar = BuildUpcomingCalendar(
             calendarEvents,
             effectiveTargetDate,
             refDate,
             effectiveAutoIds,
-            userLockedDates);
+            userLockedDates,
+            completedRunDates);
         var filteredWeather = FilterWeatherForecast(weatherForecast, refDate);
         var dataQualityNotes = BuildDataQualityNotes(
             profile,
@@ -1197,7 +1201,8 @@ public static class CoachIntelligenceDossierBuilder
         DateOnly targetDate,
         DateOnly refDate,
         IReadOnlySet<long>? autoEventIds,
-        IReadOnlySet<DateOnly>? userLockedDates)
+        IReadOnlySet<DateOnly>? userLockedDates,
+        HashSet<DateOnly> completedRunDates)
     {
         var horizonEnd = refDate.AddDays(13);
         var lockedInHorizon = userLockedDates?
@@ -1212,6 +1217,7 @@ public static class CoachIntelligenceDossierBuilder
                 EventsOnTargetDate = [],
                 UpcomingEventsNext7Days = [],
                 UpcomingEventsNext14Days = [],
+                MissedAutoWorkoutsLast7Days = [],
                 UserLockedDates = lockedInHorizon,
                 HasCompletedRunOnTargetDate = false,
                 HasUncompletedPlannedWorkoutOnTargetDate = false
@@ -1219,6 +1225,7 @@ public static class CoachIntelligenceDossierBuilder
         }
 
         var end7 = refDate.AddDays(7);
+        var missedStart = refDate.AddDays(-7);
         var mapped = calendarEvents
             .Select(e =>
             {
@@ -1251,7 +1258,8 @@ public static class CoachIntelligenceDossierBuilder
                     Description = string.IsNullOrWhiteSpace(e.Description) ? null : e.Description.Trim(),
                     PairedActivityId = e.PairedActivityId,
                     Ownership = ownership,
-                    EstimatedLoad = e.IcuTrainingLoad
+                    EstimatedLoad = e.IcuTrainingLoad,
+                    DurationSeconds = e.MovingTime ?? e.WorkoutDoc?.Duration
                 };
             })
             .OrderBy(e => e.Date)
@@ -1261,6 +1269,14 @@ public static class CoachIntelligenceDossierBuilder
         var onTarget = mapped.Where(e => e.Date == targetDate).ToList();
         var next7 = mapped.Where(e => e.Date >= refDate && e.Date <= end7).ToList();
         var next14 = mapped.Where(e => e.Date >= refDate && e.Date <= horizonEnd).ToList();
+        var missedAuto = mapped
+            .Where(e => string.Equals(e.Category, "WORKOUT", StringComparison.OrdinalIgnoreCase)
+                && e.Date >= missedStart
+                && e.Date < refDate
+                && !e.IsCompleted
+                && string.Equals(e.Ownership, "auto", StringComparison.Ordinal)
+                && !completedRunDates.Contains(e.Date))
+            .ToList();
 
         var hasCompleted = onTarget.Any(e =>
             string.Equals(e.Category, "WORKOUT", StringComparison.OrdinalIgnoreCase)
@@ -1274,6 +1290,7 @@ public static class CoachIntelligenceDossierBuilder
             EventsOnTargetDate = onTarget,
             UpcomingEventsNext7Days = next7,
             UpcomingEventsNext14Days = next14,
+            MissedAutoWorkoutsLast7Days = missedAuto,
             UserLockedDates = lockedInHorizon,
             HasCompletedRunOnTargetDate = hasCompleted,
             HasUncompletedPlannedWorkoutOnTargetDate = hasUncompleted

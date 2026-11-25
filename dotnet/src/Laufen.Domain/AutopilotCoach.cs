@@ -140,16 +140,18 @@ public static class AutopilotPromptBuilder
         2. 14-Day Self-Healing & Ownership Rules:
            - Horizon is strictly 14 days: horizon_days must be 14; all operation dates in [reference_date .. reference_date + 13].
            - Plan ~3 sessions in Days 1-7 (Watch Commit Window) and ~3 sessions in Days 8-14 (Preview Window), with AT MOST ONE "upsert" per date. Clean up redundant/stale "auto" events (e.g. duplicate Slot 2A/2B pairs) using "delete" or replacing via "upsert".
+           - Inspect calendar_14d.missed_auto_workouts_last_7_days: if planned workouts went unrun, roll missed high-value stimuli (e.g., threshold or long run) smoothly forward across the 14-day window without cramming back-to-back run days.
            - NEVER modify or delete "completed" events.
            - NEVER modify or delete "user_locked" events or user_locked_dates unless trigger == "telegram_override".
            - NEVER modify or delete events on reference_date when trigger == "intraday_check".
            - If athlete.allow_consecutive_run_days is false, NEVER schedule back-to-back run days.
         3. Health & Re-Entry Rules:
+           - Acute illness athlete messages ("krank", "erkältet", "fieber", "sick") or active readiness.medical_red_flags require health_state == "SickHold" (zero "upsert" operations allowed; use "delete" on all open "auto" workouts so calendar stays clean).
+           - When exiting "SickHold", you MUST transition through health_state == "ReEntry" first (NEVER directly from "SickHold" to "Normal") until at least 2 clean non-compromised aerobic base runs are completed.
+           - During "ReEntry" (or whenever stimulus_progression.break_reentry.has_recent_extended_break is true and clean_base_runs_since_recent_break < 2), schedule at least 2 cumulative clean post-break/post-illness aerobic sessions ("easy_run"/"long_run"/"recovery_run") BEFORE the first quality workout ("intervals", "fartlek", "tempo_run", "threshold_intervals", "micro_threshold", "progressive_threshold").
            - If readiness.medical_red_flags is non-empty: health_state MUST be "SickHold" or "ReEntry" (never "Normal"), and DO NOT schedule quality workouts or "long_run" in Days 1-7.
-           - If health_state == "SickHold": NO "upsert" operations allowed (only "delete" open "auto" workouts or "keep").
-           - If stimulus_progression.break_reentry.has_recent_extended_break is true AND clean_base_runs_since_recent_break < 2: set health_state to "ReEntry" and ensure at least 2 cumulative clean post-break aerobic sessions ("easy_run"/"long_run"/"recovery_run") are completed/scheduled BEFORE the first quality workout ("intervals", "fartlek", "tempo_run", "threshold_intervals", "micro_threshold", "progressive_threshold").
         4. Weather & Progression:
-           - On days where weather pace_interval_friendly is false, prefer HR/RPE targets or shift pace intervals to calmer days.
+           - On days where weather.days[].pace_interval_friendly is false, NEVER schedule "pace_range" targets on that day (swap pace intervals to a calmer day with pace_interval_friendly == true, or use "hr_zone"/"rpe" control instead).
            - Respect data_quality_notes (e.g., stale wellness or historical HR zone boundary shifts) and use Run-Walk cues on Z2 runs where helpful.
            - Return ONLY one valid raw JSON object matching the exact schema below. Do NOT include extra keys or markdown prose outside the JSON.
 

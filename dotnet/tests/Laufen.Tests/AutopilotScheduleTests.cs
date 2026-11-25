@@ -480,4 +480,131 @@ public class AutopilotScheduleTests
         Assert.That(roundtrip.HorizonDays, Is.EqualTo(14));
         Assert.That(roundtrip.Operations, Has.Count.EqualTo(1));
     }
+
+    [Test]
+    public void TelegramOverrideCanDeleteUserLockedEventAndPreserveKeptDuration()
+    {
+        var layout = ResolveRepositoryLayout();
+        var berni = StrictJsonLoader.LoadAthleteProfile(layout, "berni").Athlete;
+        var refDate = new DateOnly(2026, 12, 1);
+
+        var calEvents = new List<CalendarEventEntry>
+        {
+            new()
+            {
+                Id = 990001,
+                AthleteId = berni.Id,
+                Category = "WORKOUT",
+                StartDateLocal = new DateTime(2026, 12, 1, 7, 0, 0),
+                Name = "Locked Quality Session",
+                MovingTime = 2880,
+                IcuTrainingLoad = 48.0
+            },
+            new()
+            {
+                Id = 990002,
+                AthleteId = berni.Id,
+                Category = "WORKOUT",
+                StartDateLocal = new DateTime(2026, 12, 4, 7, 0, 0),
+                Name = "Auto Long Run",
+                WorkoutDoc = new WorkoutDoc { Duration = 3600 },
+                IcuTrainingLoad = 54.0
+            }
+        };
+
+        var dossier = CoachIntelligenceDossierBuilder.Build(
+            berni,
+            [],
+            [],
+            null,
+            calEvents,
+            refDate,
+            refDate,
+            autoEventIds: new HashSet<long> { 990002 },
+            userLockedDates: new HashSet<DateOnly> { refDate });
+
+        var deleteLocked = new AutopilotPlanDecision
+        {
+            Trigger = "telegram_override",
+            ReferenceDate = refDate,
+            HorizonDays = 14,
+            HealthState = "Normal",
+            Operations =
+            [
+                new() { Date = refDate, Operation = "delete", EventId = 990001, Reason = "Athlete requested rest" }
+            ],
+            Rationale = DefaultRationale(),
+            UpdatedCompass = DefaultCompass(refDate, "Normal") with { AutoEventIds = [990002] }
+        };
+
+        var reconciled = AutopilotScheduleGatekeeper.Reconcile(deleteLocked, dossier);
+        Assert.That(reconciled.DeletedEventIds, Does.Contain(990001L));
+        Assert.That(reconciled.WatchCommitWindow, Has.Count.EqualTo(1));
+        Assert.That(reconciled.WatchCommitWindow[0].ExistingEventId, Is.EqualTo(990002L));
+        Assert.That(reconciled.WatchCommitWindow[0].TotalDurationSeconds, Is.EqualTo(3600));
+    }
+
+    [Test]
+    public void SickHoldRequiresReEntryTransitionAndSurfacesMissedAutoWorkouts()
+    {
+        var layout = ResolveRepositoryLayout();
+        var berni = StrictJsonLoader.LoadAthleteProfile(layout, "berni").Athlete;
+        var refDate = new DateOnly(2026, 12, 6);
+
+        var missedAndCompletedCal = new List<CalendarEventEntry>
+        {
+            new()
+            {
+                Id = 991001,
+                AthleteId = berni.Id,
+                Category = "WORKOUT",
+                StartDateLocal = new DateTime(2026, 12, 4, 7, 0, 0),
+                Name = "Missed Friday Auto Base",
+                MovingTime = 2700,
+                IcuTrainingLoad = 40.0
+            }
+        };
+
+        var sickCompass = DefaultCompass(new DateOnly(2026, 12, 4), "SickHold") with { AutoEventIds = [991001] };
+        var dossier = CoachIntelligenceDossierBuilder.Build(
+            berni,
+            [],
+            [],
+            null,
+            missedAndCompletedCal,
+            refDate,
+            refDate,
+            autoEventIds: new HashSet<long> { 991001 },
+            currentCompass: sickCompass);
+
+        Assert.That(dossier.Calendar.MissedAutoWorkoutsLast7Days, Has.Count.EqualTo(1));
+        Assert.That(dossier.Calendar.MissedAutoWorkoutsLast7Days[0].Id, Is.EqualTo(991001L));
+        Assert.That(dossier.Calendar.MissedAutoWorkoutsLast7Days[0].DurationSeconds, Is.EqualTo(2700));
+
+        var directJumpToNormal = new AutopilotPlanDecision
+        {
+            Trigger = "telegram_override",
+            ReferenceDate = refDate,
+            HorizonDays = 14,
+            HealthState = "Normal",
+            Operations = [new() { Date = refDate, Operation = "upsert", Workout = EasyBase45() }],
+            Rationale = DefaultRationale(),
+            UpdatedCompass = DefaultCompass(refDate, "Normal")
+        };
+
+        var jumpResult = AutopilotScheduleGatekeeper.Validate(directJumpToNormal, dossier);
+        Assert.That(jumpResult.IsValid, Is.False);
+        Assert.That(jumpResult.Errors.Select(e => e.Code), Does.Contain("sickhold_requires_reentry_step"));
+
+        // Short-break ReEntry also blocks immediate quality even if break < 7 days
+        var prematureQualityInReentry = directJumpToNormal with
+        {
+            HealthState = "ReEntry",
+            Operations = [new() { Date = refDate, Operation = "upsert", Workout = Threshold4x5() }],
+            UpdatedCompass = DefaultCompass(refDate, "ReEntry")
+        };
+        var reentryResult = AutopilotScheduleGatekeeper.Validate(prematureQualityInReentry, dossier);
+        Assert.That(reentryResult.IsValid, Is.False);
+        Assert.That(reentryResult.Errors.Select(e => e.Code), Does.Contain("reentry_requires_base_before_quality"));
+    }
 }

@@ -235,6 +235,8 @@ public static class AutopilotScheduleGatekeeper
             ValidateMedicalRedFlagRules(decision, errors);
         }
 
+        ValidateSickHoldTransition(decision, dossier, errors);
+
         var reconciledPreview = BuildReconciledScheduleItems(decision, dossier);
         ValidateReentryRampUp(reconciledPreview, decision, dossier, errors);
         ValidateConsecutiveRunDays(reconciledPreview, dossier, errors);
@@ -423,6 +425,10 @@ public static class AutopilotScheduleGatekeeper
             }
         }
 
+        bool CanMutateItem(ScheduledCalendarItem e) =>
+            string.Equals(e.Ownership, "auto", StringComparison.Ordinal)
+            || (string.Equals(decision.Trigger, "telegram_override", StringComparison.Ordinal) && !e.IsCompleted);
+
         // 1. Apply explicit deletes
         foreach (var op in decision.Operations)
         {
@@ -434,7 +440,7 @@ public static class AutopilotScheduleGatekeeper
             if (op.EventId.HasValue)
             {
                 var removed = activeExisting.RemoveAll(e =>
-                    e.Id == op.EventId.Value && string.Equals(e.Ownership, "auto", StringComparison.Ordinal));
+                    e.Id == op.EventId.Value && CanMutateItem(e));
                 if (removed > 0)
                 {
                     MarkDeleted(op.EventId.Value);
@@ -443,7 +449,7 @@ public static class AutopilotScheduleGatekeeper
             else
             {
                 var toRemove = activeExisting
-                    .Where(e => e.Date == op.Date && string.Equals(e.Ownership, "auto", StringComparison.Ordinal))
+                    .Where(e => e.Date == op.Date && CanMutateItem(e))
                     .ToList();
                 foreach (var evt in toRemove)
                 {
@@ -467,10 +473,7 @@ public static class AutopilotScheduleGatekeeper
             upsertedDates.Add(op.Date);
 
             var replacedAuto = activeExisting
-                .Where(e => e.Date == op.Date
-                    && (string.Equals(e.Ownership, "auto", StringComparison.Ordinal)
-                        || (string.Equals(decision.Trigger, "telegram_override", StringComparison.Ordinal)
-                            && !e.IsCompleted)))
+                .Where(e => e.Date == op.Date && CanMutateItem(e))
                 .ToList();
             foreach (var evt in replacedAuto)
             {
@@ -509,7 +512,7 @@ public static class AutopilotScheduleGatekeeper
                 ExistingEventId = evt.Id,
                 Title = evt.Name,
                 SessionType = null,
-                TotalDurationSeconds = null,
+                TotalDurationSeconds = evt.DurationSeconds,
                 EstimatedLoad = evt.EstimatedLoad ?? 35.0,
                 CompiledWorkout = null
             });
@@ -524,6 +527,26 @@ public static class AutopilotScheduleGatekeeper
         return (result, deletedIds);
     }
 
+    private static void ValidateSickHoldTransition(
+        AutopilotPlanDecision decision,
+        CoachIntelligenceDossier dossier,
+        List<WorkoutValidationError> errors)
+    {
+        if (string.Equals(dossier.CurrentCompass?.HealthState, "SickHold", StringComparison.Ordinal)
+            && string.Equals(decision.HealthState, "Normal", StringComparison.Ordinal)
+            && CountCleanBaseRunsSince(dossier, dossier.CurrentCompass!.UpdatedAt) < 2)
+        {
+            errors.Add(new WorkoutValidationError(
+                "sickhold_requires_reentry_step",
+                "health_state",
+                "Exiting SickHold must transition through ReEntry before Normal until at least 2 clean aerobic base runs are completed."));
+        }
+    }
+
+    private static int CountCleanBaseRunsSince(CoachIntelligenceDossier dossier, DateOnly sinceDate) =>
+        dossier.StimulusProgression.BaseProgressionChain.Count(s =>
+            s.Date >= sinceDate && !s.IsCompromised && (s.Z1Z2Percentage is null or >= 80.0));
+
     private static void ValidateReentryRampUp(
         List<ReconciledScheduleWorkout> reconciled,
         AutopilotPlanDecision decision,
@@ -531,12 +554,22 @@ public static class AutopilotScheduleGatekeeper
         List<WorkoutValidationError> errors)
     {
         var breakCtx = dossier.StimulusProgression.BreakReentry;
-        if (!breakCtx.HasRecentExtendedBreak || breakCtx.CleanBaseRunsSinceRecentBreak >= 2)
+        var breakRequiresRampUp = breakCtx.HasRecentExtendedBreak && breakCtx.CleanBaseRunsSinceRecentBreak < 2;
+        var cleanRunsSinceCompass = dossier.CurrentCompass is not null
+            ? CountCleanBaseRunsSince(dossier, dossier.CurrentCompass.UpdatedAt)
+            : 0;
+        var compassReentryRequiresRampUp = string.Equals(decision.HealthState, "ReEntry", StringComparison.Ordinal)
+            && dossier.CurrentCompass?.HealthState is "SickHold" or "ReEntry"
+            && cleanRunsSinceCompass < 2;
+
+        if (!breakRequiresRampUp && !compassReentryRequiresRampUp)
         {
             return;
         }
 
-        var cleanBaseCount = breakCtx.CleanBaseRunsSinceRecentBreak;
+        var cleanBaseCount = breakCtx.HasRecentExtendedBreak
+            ? breakCtx.CleanBaseRunsSinceRecentBreak
+            : cleanRunsSinceCompass;
 
         foreach (var item in reconciled)
         {
@@ -559,7 +592,8 @@ public static class AutopilotScheduleGatekeeper
                         $"Quality workout '{item.Title}' on {item.Date:yyyy-MM-dd} requires at least 2 clean post-break aerobic sessions first (currently {cleanBaseCount})."));
                 }
             }
-            else if (item.SessionType is null || WorkoutModalityValidator.IsAerobicSessionType(item.SessionType))
+            else if (!string.Equals(item.Ownership, "completed", StringComparison.Ordinal)
+                && (item.SessionType is null || WorkoutModalityValidator.IsAerobicSessionType(item.SessionType)))
             {
                 cleanBaseCount++;
             }
@@ -594,6 +628,12 @@ public static class AutopilotScheduleGatekeeper
             {
                 workoutDates.Insert(0, yesterday);
             }
+        }
+        else if (dossier.StimulusProgression.Ledger.DaysSinceLastRun == 0
+            && !workoutDates.Contains(dossier.ReferenceDate))
+        {
+            workoutDates.Add(dossier.ReferenceDate);
+            workoutDates.Sort();
         }
 
         for (var i = 1; i < workoutDates.Count; i++)
