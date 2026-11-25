@@ -43,6 +43,8 @@ public class CliRunnerTests
         Assert.That(stdout.ToString(), Does.Contain("narrate"));
         Assert.That(stdout.ToString(), Does.Contain("review"));
         Assert.That(stdout.ToString(), Does.Contain("sync-calendar"));
+        Assert.That(stdout.ToString(), Does.Contain("telegram-briefing"));
+        Assert.That(stdout.ToString(), Does.Contain("telegram-override"));
         Assert.That(stdout.ToString(), Does.Contain("athletes"));
     }
 
@@ -878,6 +880,129 @@ public class CliRunnerTests
             if (File.Exists(tempDecision))
             {
                 File.Delete(tempDecision);
+            }
+        }
+    }
+
+    [Test]
+    public void RunTelegramBriefingAndOverrideCommandsRespectDryRunAndStagingSafety()
+    {
+        using var briefOut = new StringWriter();
+        using var briefErr = new StringWriter();
+        var briefExit = LaufenCliRunner.Run(
+            ["telegram-briefing", "--athlete", "berni", "--ref-date", "2026-11-25", "--dry-run", "--json"],
+            briefOut,
+            briefErr,
+            AppContext.BaseDirectory);
+
+        Assert.That(briefExit, Is.EqualTo(0), briefErr.ToString());
+        using (var briefDoc = JsonDocument.Parse(briefOut.ToString()))
+        {
+            Assert.That(briefDoc.RootElement.GetProperty("dryRun").GetBoolean(), Is.True);
+            Assert.That(briefDoc.RootElement.GetProperty("sent").GetBoolean(), Is.False);
+            Assert.That(briefDoc.RootElement.GetProperty("message").GetProperty("messageKind").GetString(), Is.EqualTo("morning_briefing"));
+        }
+
+        using var blockOut = new StringWriter();
+        using var blockErr = new StringWriter();
+        var blockExit = LaufenCliRunner.Run(
+            ["telegram-briefing", "--athlete", "berni", "--ref-date", "2026-11-25", "--send"],
+            blockOut,
+            blockErr,
+            AppContext.BaseDirectory);
+        Assert.That(blockExit, Is.EqualTo(1));
+        Assert.That(blockErr.ToString(), Does.Contain("SAFETY BLOCK"));
+
+        using var acceptOut = new StringWriter();
+        using var acceptErr = new StringWriter();
+        var acceptExit = LaufenCliRunner.Run(
+            ["telegram-override", "--athlete", "berni", "--ref-date", "2026-11-25", "--callback", "accept:2026-11-26", "--dry-run", "--json"],
+            acceptOut,
+            acceptErr,
+            AppContext.BaseDirectory);
+
+        Assert.That(acceptExit, Is.EqualTo(0), acceptErr.ToString());
+        using (var acceptDoc = JsonDocument.Parse(acceptOut.ToString()))
+        {
+            Assert.That(acceptDoc.RootElement.GetProperty("llmInvoked").GetBoolean(), Is.False);
+            Assert.That(acceptDoc.RootElement.GetProperty("route").GetProperty("locksDate").GetBoolean(), Is.True);
+        }
+
+        var tempStub = Path.Combine(Path.GetTempPath(), $"laufen-tg-override-stub-{Guid.NewGuid():N}.json");
+        try
+        {
+            const string stubJson = """
+                {
+                  "trigger": "telegram_override",
+                  "reference_date": "2026-11-25",
+                  "horizon_days": 14,
+                  "health_state": "ReEntry",
+                  "operations": [
+                    { "date": "2026-11-25", "operation": "delete", "event_id": 160591207 },
+                    {
+                      "date": "2026-11-25",
+                      "operation": "upsert",
+                      "workout": {
+                        "title": "Locker 30m Z1-Z2",
+                        "session_type": "easy_run",
+                        "steps": [
+                          { "kind": "warmup", "duration_seconds": 600, "target": { "modality": "hr_zone", "hr_zone_start": 1 } },
+                          { "kind": "steady", "duration_seconds": 900, "target": { "modality": "hr_zone", "hr_zone_start": 2 } },
+                          { "kind": "cooldown", "duration_seconds": 300, "target": { "modality": "hr_zone", "hr_zone_start": 1 } }
+                        ]
+                      }
+                    },
+                    {
+                      "date": "2026-11-28",
+                      "operation": "upsert",
+                      "workout": {
+                        "title": "Aerobic Long Run 60m",
+                        "session_type": "long_run",
+                        "steps": [
+                          { "kind": "warmup", "duration_seconds": 600, "target": { "modality": "hr_zone", "hr_zone_start": 1 } },
+                          { "kind": "steady", "duration_seconds": 2700, "target": { "modality": "hr_zone", "hr_zone_start": 2 } },
+                          { "kind": "cooldown", "duration_seconds": 300, "target": { "modality": "hr_zone", "hr_zone_start": 1 } }
+                        ]
+                      }
+                    }
+                  ],
+                  "rationale": {
+                    "observations": ["Athlete requested shorter/easier day via Telegram"],
+                    "tradeoff_weighed": "Preserved recovery over volume during ReEntry",
+                    "progression_intent": "Short aerobic flush today, long run Saturday",
+                    "rejected_alternative": "45m standard easy run"
+                  },
+                  "updated_compass": {
+                    "updated_at": "2026-11-25",
+                    "current_block_focus": "Re-entry base build",
+                    "base_milestone": "60m Z2",
+                    "quality_milestone": "4x5m Z4",
+                    "observed_athlete_patterns": ["Responds well to short flexibility overrides"],
+                    "last_decision_summary": "Shortened 2026-11-25 to 30m Z1-Z2 easy per Telegram callback",
+                    "health_state": "ReEntry"
+                  }
+                }
+                """;
+            File.WriteAllText(tempStub, stubJson);
+
+            using var overrideOut = new StringWriter();
+            using var overrideErr = new StringWriter();
+            var overrideExit = LaufenCliRunner.Run(
+                ["telegram-override", "--athlete", "berni", "--ref-date", "2026-11-25", "--auto-event-ids", "160591207,160252764", "--callback", "easier:2026-11-25", "--provider", "stub", "--stub-response", tempStub, "--dry-run", "--json"],
+                overrideOut,
+                overrideErr,
+                AppContext.BaseDirectory);
+
+            Assert.That(overrideExit, Is.EqualTo(0), overrideErr.ToString() + overrideOut.ToString());
+            using var overrideDoc = JsonDocument.Parse(overrideOut.ToString());
+            Assert.That(overrideDoc.RootElement.GetProperty("llmInvoked").GetBoolean(), Is.True);
+            Assert.That(overrideDoc.RootElement.GetProperty("outcome").GetProperty("success").GetBoolean(), Is.True);
+        }
+        finally
+        {
+            if (File.Exists(tempStub))
+            {
+                File.Delete(tempStub);
             }
         }
     }

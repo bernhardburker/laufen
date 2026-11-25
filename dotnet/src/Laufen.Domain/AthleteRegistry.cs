@@ -36,4 +36,19 @@ public sealed record AthleteRegistryEntry
 
     [JsonPropertyName("briefing_enabled")]
     public bool? BriefingEnabled { get; init; }
+
+    [JsonPropertyName("briefing_time")]
+    public string? BriefingTime { get; init; }
+
+    [JsonPropertyName("morning_briefing_enabled")]
+    public bool? MorningBriefingEnabled { get; init; }
+
+    [JsonPropertyName("evening_briefing_time")]
+    public string? EveningBriefingTime { get; init; }
+
+    [JsonPropertyName("evening_briefing_enabled")]
+    public bool? EveningBriefingEnabled { get; init; }
+
+    [JsonPropertyName("post_run_summary_enabled")]
+    public bool? PostRunSummaryEnabled { get; init; }
 }

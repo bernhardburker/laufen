@@ -99,6 +99,14 @@ public static class StrictJsonLoader
         return File.Exists(streamPath) ? LoadFromFile<ActivityStreamData>(streamPath) : null;
     }
 
+    public static TelegramStateRecord? LoadTelegramState(WorkspaceLayout layout, string slug)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+        var statePath = Path.Combine(layout.AthletesDirectory, slug, "telegram_state.json");
+        return File.Exists(statePath) ? LoadFromFile<TelegramStateRecord>(statePath) : null;
+    }
+
     private static void ValidateNoNullCollectionEntries(object? instance, string path)
     {
         if (instance is null or string)

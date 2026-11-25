@@ -15,6 +15,7 @@ public sealed record AthleteWorkspaceData
     public required IReadOnlyList<CoachHistoryEntry> CoachHistory { get; init; }
     public required IReadOnlyList<CalendarEventEntry> CalendarEvents { get; init; }
     public required IReadOnlyDictionary<string, RunReviewRecord> RunReviews { get; init; }
+    public TelegramStateRecord? TelegramState { get; init; }
 }
 
 /// <summary>
@@ -90,6 +91,7 @@ public static class AthleteDataRepository
         IReadOnlyDictionary<string, RunReviewRecord> runReviews = File.Exists(reviewsPath)
             ? StrictJsonLoader.LoadRunReviews(layout, slug)
             : new Dictionary<string, RunReviewRecord>(StringComparer.Ordinal);
+        var telegramState = StrictJsonLoader.LoadTelegramState(layout, slug);
 
         return new AthleteWorkspaceData
         {
@@ -100,7 +102,8 @@ public static class AthleteDataRepository
             WellnessRecords = wellness,
             CoachHistory = history,
             CalendarEvents = calendarEvents,
-            RunReviews = runReviews
+            RunReviews = runReviews,
+            TelegramState = telegramState
         };
     }
 }

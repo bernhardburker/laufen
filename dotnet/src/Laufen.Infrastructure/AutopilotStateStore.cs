@@ -127,4 +127,61 @@ public static class AutopilotStateStore
             ? StrictJsonLoader.LoadFromFile<Dictionary<string, RunReviewRecord>>(path)
             : new Dictionary<string, RunReviewRecord>(StringComparer.Ordinal);
     }
+
+    public static TelegramStateRecord? LoadDotNetTelegramState(WorkspaceLayout layout, string slug)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+
+        var path = Path.Combine(layout.AthletesDirectory, slug, "telegram_state_dotnet.json");
+        return File.Exists(path)
+            ? StrictJsonLoader.LoadFromFile<TelegramStateRecord>(path)
+            : null;
+    }
+
+    public static void SaveDotNetTelegramState(WorkspaceLayout layout, string slug, TelegramStateRecord state)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+        ArgumentNullException.ThrowIfNull(state);
+
+        var athleteDir = Path.Combine(layout.AthletesDirectory, slug);
+        Directory.CreateDirectory(athleteDir);
+        var path = Path.Combine(athleteDir, "telegram_state_dotnet.json");
+        var json = JsonSerializer.Serialize(state, IndentedOptions);
+        File.WriteAllText(path, json + "\n", Encoding.UTF8);
+    }
+
+    public static IReadOnlySet<DateOnly> MergeUserLockedDates(
+        TelegramStateRecord? pythonState,
+        TelegramStateRecord? dotnetState,
+        IReadOnlySet<DateOnly>? explicitLockedDates = null)
+    {
+        var merged = new HashSet<DateOnly>();
+        if (pythonState?.UserLockedDates is not null)
+        {
+            foreach (var date in pythonState.UserLockedDates)
+            {
+                merged.Add(date);
+            }
+        }
+
+        if (dotnetState?.UserLockedDates is not null)
+        {
+            foreach (var date in dotnetState.UserLockedDates)
+            {
+                merged.Add(date);
+            }
+        }
+
+        if (explicitLockedDates is not null)
+        {
+            foreach (var date in explicitLockedDates)
+            {
+                merged.Add(date);
+            }
+        }
+
+        return merged;
+    }
 }

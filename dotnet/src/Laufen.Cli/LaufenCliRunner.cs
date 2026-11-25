@@ -80,6 +80,16 @@ public static class LaufenCliRunner
                 return ExecuteSyncCalendar(parsed, stdout, stderr, workingDirectory);
             }
 
+            if (string.Equals(parsed.Command, "telegram-briefing", StringComparison.Ordinal))
+            {
+                return ExecuteTelegramBriefing(parsed, stdout, stderr, workingDirectory);
+            }
+
+            if (string.Equals(parsed.Command, "telegram-override", StringComparison.Ordinal))
+            {
+                return ExecuteTelegramOverride(parsed, stdout, stderr, workingDirectory);
+            }
+
             var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
                 ? WorkspaceLayout.DiscoverFrom(workingDirectory)
                 : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
@@ -227,6 +237,7 @@ public static class LaufenCliRunner
         {
             var data = AthleteDataRepository.LoadAthleteData(layout, registry, slug);
             var refDate = parsed.RefDate ?? DateOnly.FromDateTime(DateTime.Today);
+            var mergedLocks = ResolveMergedLockedDates(layout, slug, data, parsed.LockedDates);
             var dossier = CoachIntelligenceDossierBuilder.Build(
                 data.Profile,
                 data.Activities,
@@ -236,7 +247,7 @@ public static class LaufenCliRunner
                 refDate,
                 parsed.TargetDate,
                 parsed.AutoEventIds,
-                parsed.LockedDates);
+                mergedLocks);
 
             if (parsed.AsJson)
             {
@@ -444,6 +455,8 @@ public static class LaufenCliRunner
         stdout.WriteLine("  narrate                   Run decoupled Role 2 ProgressNarrator (--dry-run supported)");
         stdout.WriteLine("  review                    Compute deterministic 4-stage post-run reviews & stream GAP stats");
         stdout.WriteLine("  sync-calendar             Build/apply idempotent 14d Intervals.icu sync plan (--dry-run default)");
+        stdout.WriteLine("  telegram-briefing         Render/send Telegram morning briefing HTML + inline keyboard");
+        stdout.WriteLine("  telegram-override         Route Telegram callback/text override to lock or RollingAutopilotCoach");
         stdout.WriteLine("  help                      Show this help text");
         stdout.WriteLine();
         stdout.WriteLine("Options:");
@@ -463,15 +476,17 @@ public static class LaufenCliRunner
         stdout.WriteLine("  --trigger <name>          Autopilot trigger: morning_sync|post_run|telegram_override|intraday_check");
         stdout.WriteLine("  --provider <name>         LLM provider: stub|agy|gemini (coach-plan/narrate default: agy; simulate default: stub)");
         stdout.WriteLine("  --model <name>            Override LLM model name");
-        stdout.WriteLine("  --message <text>          Optional athlete Telegram message for 'coach-plan'");
+        stdout.WriteLine("  --message <text>          Optional athlete Telegram message for 'coach-plan' / 'telegram-override'");
+        stdout.WriteLine("  --callback <data>         Inline button callback data for 'telegram-override' (e.g. accept:2026-12-01)");
         stdout.WriteLine("  --stub-response <path>    JSON response file for '--provider stub'");
         stdout.WriteLine("  --scenario <name|all>     Simulation scenario for 'simulate' (default: all)");
         stdout.WriteLine("  --output-dir <path>       Write isolated simulation report.md and timeline.json artifacts");
         stdout.WriteLine("  --retries <N>             Validation self-correction retries for 'coach-plan' / 'simulate' / 'narrate' (default: 1)");
-        stdout.WriteLine("  --force                   Force narrative generation even when ProgressNarratorGate suppresses");
+        stdout.WriteLine("  --force                   Force narrative generation or briefing dispatch when gated/idempotent");
         stdout.WriteLine("  --apply                   Execute live Intervals.icu calendar mutations (staging-guarded)");
+        stdout.WriteLine("  --send                    Send live Telegram briefing message (staging-guarded)");
         stdout.WriteLine("  --allow-production-write  Explicitly authorize live external API writes to production tenants");
-        stdout.WriteLine("  --dry-run                 Skip writing block_compass.json / decision_trace_dotnet.jsonl / narrative artifacts");
+        stdout.WriteLine("  --dry-run                 Skip writing block_compass.json / decision_trace_dotnet.jsonl / narrative / telegram state artifacts");
     }
 
     private static bool TryParseArgs(IReadOnlyList<string> args, out ParsedCliArgs parsed, out string error)
@@ -502,6 +517,8 @@ public static class LaufenCliRunner
         string? activityId = null;
         bool apply = false;
         bool allowProductionWrite = false;
+        string? callbackData = null;
+        bool send = false;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -659,6 +676,16 @@ public static class LaufenCliRunner
                 case "--allow-production-write":
                     allowProductionWrite = true;
                     break;
+                case "--callback":
+                    if (!TryReadValue(args, ref i, arg, out callbackData, out error))
+                    {
+                        parsed = default!;
+                        return false;
+                    }
+                    break;
+                case "--send":
+                    send = true;
+                    break;
                 default:
                     if (arg.StartsWith('-') && arg is not ("-h" or "--help"))
                     {
@@ -715,7 +742,9 @@ public static class LaufenCliRunner
             force,
             activityId,
             apply,
-            allowProductionWrite);
+            allowProductionWrite,
+            callbackData,
+            send);
         return true;
     }
 
@@ -735,6 +764,7 @@ public static class LaufenCliRunner
 
         var refDate = parsed.RefDate ?? DateOnly.FromDateTime(DateTime.Today);
         var existingCompass = AutopilotStateStore.LoadBlockCompass(layout, slug);
+        var mergedLocks = ResolveMergedLockedDates(layout, slug, data, parsed.LockedDates);
         var dossier = CoachIntelligenceDossierBuilder.Build(
             data.Profile,
             data.Activities,
@@ -744,7 +774,7 @@ public static class LaufenCliRunner
             refDate,
             parsed.TargetDate ?? refDate,
             parsed.AutoEventIds,
-            parsed.LockedDates,
+            mergedLocks,
             currentCompass: existingCompass);
 
         string? stubJson = null;
@@ -840,6 +870,7 @@ public static class LaufenCliRunner
         var refDate = parsed.RefDate ?? DateOnly.FromDateTime(DateTime.Today);
         var existingCompass = AutopilotStateStore.LoadBlockCompass(layout, slug);
         var latestTrace = AutopilotStateStore.LoadLatestDecisionTrace(layout, slug);
+        var mergedLocks = ResolveMergedLockedDates(layout, slug, data, parsed.LockedDates);
 
         var dossier = CoachIntelligenceDossierBuilder.Build(
             data.Profile,
@@ -850,7 +881,7 @@ public static class LaufenCliRunner
             refDate,
             parsed.TargetDate ?? refDate,
             parsed.AutoEventIds,
-            parsed.LockedDates,
+            mergedLocks,
             currentCompass: existingCompass);
 
         var gate = ProgressNarratorGate.Evaluate(
@@ -1119,6 +1150,7 @@ public static class LaufenCliRunner
         var data = AthleteDataRepository.LoadAthleteData(layout, registry, slug);
         var refDate = parsed.RefDate ?? decision.ReferenceDate;
         var existingCompass = AutopilotStateStore.LoadBlockCompass(layout, slug);
+        var mergedLocks = ResolveMergedLockedDates(layout, slug, data, parsed.LockedDates);
 
         var dossier = CoachIntelligenceDossierBuilder.Build(
             data.Profile,
@@ -1129,7 +1161,7 @@ public static class LaufenCliRunner
             refDate,
             parsed.TargetDate ?? refDate,
             parsed.AutoEventIds,
-            parsed.LockedDates,
+            mergedLocks,
             currentCompass: existingCompass);
 
         var validation = AutopilotScheduleGatekeeper.Validate(decision, dossier);
@@ -1758,6 +1790,285 @@ public static class LaufenCliRunner
         return true;
     }
 
+    private static IReadOnlySet<DateOnly> ResolveMergedLockedDates(
+        WorkspaceLayout layout,
+        string slug,
+        AthleteWorkspaceData data,
+        IReadOnlySet<DateOnly>? explicitLockedDates)
+    {
+        var dotnetState = AutopilotStateStore.LoadDotNetTelegramState(layout, slug);
+        return AutopilotStateStore.MergeUserLockedDates(data.TelegramState, dotnetState, explicitLockedDates);
+    }
+
+    private static int ExecuteTelegramBriefing(
+        ParsedCliArgs parsed,
+        TextWriter stdout,
+        TextWriter stderr,
+        string? workingDirectory)
+    {
+        var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
+            ? WorkspaceLayout.DiscoverFrom(workingDirectory)
+            : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
+        var registry = AthleteDataRepository.LoadRegistry(layout);
+        var slugs = AthleteDataRepository.ResolveTargetSlugs(registry, parsed.AthleteSlug, allActive: false);
+        var slug = slugs[0];
+        var data = AthleteDataRepository.LoadAthleteData(layout, registry, slug);
+
+        var refDate = parsed.RefDate ?? DateOnly.FromDateTime(DateTime.Today);
+        var targetDate = parsed.TargetDate ?? refDate;
+        var existingCompass = AutopilotStateStore.LoadBlockCompass(layout, slug);
+        var dotnetState = AutopilotStateStore.LoadDotNetTelegramState(layout, slug);
+        var effectiveState = dotnetState ?? data.TelegramState;
+        var mergedLocks = AutopilotStateStore.MergeUserLockedDates(data.TelegramState, dotnetState, parsed.LockedDates);
+
+        var dossier = CoachIntelligenceDossierBuilder.Build(
+            data.Profile,
+            data.Activities,
+            data.WellnessRecords,
+            data.RunReviews,
+            data.CalendarEvents,
+            refDate,
+            targetDate,
+            parsed.AutoEventIds,
+            mergedLocks,
+            currentCompass: existingCompass);
+
+        var shouldSend = TelegramInteractionRouter.ShouldSendMorningBriefing(effectiveState, targetDate, parsed.Force);
+        var morningEnabled = TelegramPreferencePolicy.IsMorningBriefingEnabled(data.RegistryEntry);
+        var chatId = !string.IsNullOrWhiteSpace(data.RegistryEntry.TelegramChatId)
+            ? data.RegistryEntry.TelegramChatId!
+            : "dry-run-preview";
+        var outgoing = TelegramAutopilotPresenter.FormatMorningBriefing(chatId, dossier, schedule: null, compass: existingCompass);
+
+        var effectiveDryRun = parsed.DryRun || !parsed.Send;
+        var sent = false;
+        var skipped = false;
+        long? sentMessageId = null;
+
+        if (!effectiveDryRun)
+        {
+            var permission = StagingSafetyGuard.EvaluateWritePermission(slug, data.RegistryEntry, parsed.AllowProductionWrite);
+            if (!permission.Allowed)
+            {
+                stderr.WriteLine(permission.Reason);
+                return 1;
+            }
+
+            if (!morningEnabled && !parsed.Force)
+            {
+                skipped = true;
+            }
+            else if (!shouldSend)
+            {
+                skipped = true;
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(data.RegistryEntry.TelegramChatId))
+                {
+                    stderr.WriteLine($"Error: athlete '{slug}' has no 'telegram_chat_id' configured in registry.json.");
+                    return 1;
+                }
+
+                var botToken = DotEnvLoader.ResolveSecret(layout, "TELEGRAM_BOT_TOKEN");
+                if (string.IsNullOrWhiteSpace(botToken))
+                {
+                    stderr.WriteLine("Error: TELEGRAM_BOT_TOKEN is not set in environment or .env.");
+                    return 1;
+                }
+
+                var client = new TelegramBotHttpClient(botToken);
+                sentMessageId = client.SendMessageAsync(outgoing).GetAwaiter().GetResult();
+                sent = true;
+
+                var todayEvent = dossier.Calendar.EventsOnTargetDate.FirstOrDefault(e =>
+                    string.Equals(e.Category, "WORKOUT", StringComparison.OrdinalIgnoreCase));
+                var proposal = new TelegramProposalSnapshot
+                {
+                    TargetDate = targetDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    Name = todayEvent?.Name ?? "Ruhetag",
+                    Description = todayEvent?.Description,
+                    EventId = todayEvent?.Id,
+                    IsRestDayToday = todayEvent is null
+                };
+                var updatedState = TelegramInteractionRouter.MarkMorningBriefingSent(dotnetState ?? data.TelegramState, targetDate, proposal);
+                AutopilotStateStore.SaveDotNetTelegramState(layout, slug, updatedState);
+            }
+        }
+
+        if (parsed.AsJson)
+        {
+            var payload = new
+            {
+                slug,
+                dryRun = effectiveDryRun,
+                morningEnabled,
+                shouldSend,
+                sent,
+                skipped,
+                messageId = sentMessageId,
+                message = outgoing
+            };
+            stdout.WriteLine(JsonSerializer.Serialize(payload, JsonOptions));
+            return 0;
+        }
+
+        stdout.WriteLine($"=== Telegram Morning Briefing: {slug} (dryRun={effectiveDryRun}, shouldSend={shouldSend}, sent={sent}, skipped={skipped}) ===");
+        stdout.WriteLine(outgoing.Text);
+        if (outgoing.ReplyMarkup is not null)
+        {
+            var buttons = outgoing.ReplyMarkup.InlineKeyboard
+                .SelectMany(row => row)
+                .Select(b => $"[{b.Text} -> {b.CallbackData}]");
+            stdout.WriteLine($"Buttons: {string.Join(" ", buttons)}");
+        }
+
+        return 0;
+    }
+
+    private static int ExecuteTelegramOverride(
+        ParsedCliArgs parsed,
+        TextWriter stdout,
+        TextWriter stderr,
+        string? workingDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(parsed.CallbackData) && string.IsNullOrWhiteSpace(parsed.Message))
+        {
+            stderr.WriteLine("Missing required '--callback <data>' or '--message <text>' option for 'telegram-override'.");
+            return 1;
+        }
+
+        var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
+            ? WorkspaceLayout.DiscoverFrom(workingDirectory)
+            : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
+        var registry = AthleteDataRepository.LoadRegistry(layout);
+        var slugs = AthleteDataRepository.ResolveTargetSlugs(registry, parsed.AthleteSlug, allActive: false);
+        var slug = slugs[0];
+        var data = AthleteDataRepository.LoadAthleteData(layout, registry, slug);
+
+        var refDate = parsed.RefDate ?? DateOnly.FromDateTime(DateTime.Today);
+        var targetDate = parsed.TargetDate ?? refDate;
+        var route = !string.IsNullOrWhiteSpace(parsed.CallbackData)
+            ? TelegramInteractionRouter.RouteCallback(parsed.CallbackData, targetDate)
+            : TelegramInteractionRouter.RouteFreeText(parsed.Message, targetDate);
+
+        var dotnetState = AutopilotStateStore.LoadDotNetTelegramState(layout, slug);
+        var mergedLocks = AutopilotStateStore.MergeUserLockedDates(data.TelegramState, dotnetState, parsed.LockedDates);
+        var effectiveLocks = new HashSet<DateOnly>(mergedLocks);
+        if (route.LocksDate && route.TargetDate.HasValue)
+        {
+            effectiveLocks.Add(route.TargetDate.Value);
+        }
+
+        if (!route.RequiresLlmReplan)
+        {
+            if (!parsed.DryRun && route.LocksDate && route.TargetDate.HasValue)
+            {
+                var updatedState = TelegramInteractionRouter.ApplyStateLock(dotnetState ?? data.TelegramState, route.TargetDate.Value);
+                AutopilotStateStore.SaveDotNetTelegramState(layout, slug, updatedState);
+            }
+
+            if (parsed.AsJson)
+            {
+                var lockPayload = new
+                {
+                    slug,
+                    dryRun = parsed.DryRun,
+                    route,
+                    llmInvoked = false,
+                    lockedDates = effectiveLocks.OrderBy(d => d).ToList(),
+                    outcome = (CoachPlanningOutcome?)null
+                };
+                stdout.WriteLine(JsonSerializer.Serialize(lockPayload, JsonOptions));
+            }
+            else
+            {
+                stdout.WriteLine($"=== Telegram Override: {slug} (dryRun={parsed.DryRun}, llmInvoked=False) ===");
+                stdout.WriteLine($"Route: {route.Kind} | Target={route.TargetDate:yyyy-MM-dd} | LocksDate={route.LocksDate}");
+                stdout.WriteLine($"Reply: {route.AcknowledgementText}");
+            }
+
+            return 0;
+        }
+
+        var existingCompass = AutopilotStateStore.LoadBlockCompass(layout, slug);
+        var dossier = CoachIntelligenceDossierBuilder.Build(
+            data.Profile,
+            data.Activities,
+            data.WellnessRecords,
+            data.RunReviews,
+            data.CalendarEvents,
+            refDate,
+            route.TargetDate ?? targetDate,
+            parsed.AutoEventIds,
+            effectiveLocks,
+            currentCompass: existingCompass);
+
+        string? stubJson = null;
+        if (!string.IsNullOrWhiteSpace(parsed.StubResponsePath))
+        {
+            stubJson = File.ReadAllText(parsed.StubResponsePath);
+        }
+
+        var effectiveProvider = string.IsNullOrWhiteSpace(parsed.Provider) ? "agy" : parsed.Provider;
+        ILlmClient llmClient;
+        try
+        {
+            llmClient = LlmClientFactory.Create(effectiveProvider, parsed.Model, stubJson);
+        }
+        catch (ArgumentException ex)
+        {
+            stderr.WriteLine($"Error: {ex.Message}");
+            return 1;
+        }
+
+        var strategy = new RollingAutopilotStrategy(llmClient);
+        var outcome = strategy.PlanAsync(new CoachPlanningContext
+        {
+            Dossier = dossier,
+            Trigger = route.Trigger,
+            AthleteMessage = route.AthleteMessage,
+            MaxValidationRetries = parsed.Retries
+        }).GetAwaiter().GetResult();
+
+        if (outcome.Success && !parsed.DryRun && outcome.Decision is not null)
+        {
+            AutopilotStateStore.SaveBlockCompass(layout, slug, outcome.Decision.UpdatedCompass);
+            AutopilotStateStore.AppendDecisionTrace(layout, slug, outcome.TraceEntry);
+            if (route.LocksDate && route.TargetDate.HasValue)
+            {
+                var updatedState = TelegramInteractionRouter.ApplyStateLock(dotnetState ?? data.TelegramState, route.TargetDate.Value);
+                AutopilotStateStore.SaveDotNetTelegramState(layout, slug, updatedState);
+            }
+        }
+
+        if (parsed.AsJson)
+        {
+            var payload = new
+            {
+                slug,
+                dryRun = parsed.DryRun,
+                provider = effectiveProvider,
+                route,
+                llmInvoked = true,
+                lockedDates = effectiveLocks.OrderBy(d => d).ToList(),
+                outcome
+            };
+            stdout.WriteLine(JsonSerializer.Serialize(payload, JsonOptions));
+            return outcome.Success ? 0 : 1;
+        }
+
+        if (!outcome.Success || outcome.ReconciledSchedule is null || outcome.Decision is null)
+        {
+            stderr.WriteLine($"Telegram override planning failed: {outcome.FailureReason}");
+            return 1;
+        }
+
+        stdout.WriteLine($"Route: {route.Kind} -> {route.AcknowledgementText}");
+        WriteCoachPlanText(stdout, slug, effectiveProvider, parsed.DryRun, outcome);
+        return 0;
+    }
+
     private sealed record ParsedCliArgs(
         string Command,
         string? AthleteSlug,
@@ -1784,5 +2095,7 @@ public static class LaufenCliRunner
         bool Force,
         string? ActivityId,
         bool Apply,
-        bool AllowProductionWrite);
+        bool AllowProductionWrite,
+        string? CallbackData,
+        bool Send);
 }
