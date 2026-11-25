@@ -73,6 +73,8 @@ public sealed record BaseSessionSummary
     public double? SecondHalfAverageHeartRate { get; init; }
     public double? CardiacDriftBpm { get; init; }
     public double? PaceSplitDiffSeconds { get; init; }
+    public required string SessionQualityTag { get; init; }
+    public required bool IsCompromised { get; init; }
     public string? AthleteNote { get; init; }
 }
 
@@ -85,6 +87,7 @@ public sealed record QualitySessionSummary
     public required double DurationMinutes { get; init; }
     public required double DistanceKm { get; init; }
     public double? AverageHeartRate { get; init; }
+    public int? MaxHeartRate { get; init; }
     public double? CadenceSpm { get; init; }
     public required double Z3Minutes { get; init; }
     public required double Z4Minutes { get; init; }
@@ -256,6 +259,7 @@ public static class CoachIntelligenceDossierBuilder
             refDate);
         var calendar = BuildUpcomingCalendar(calendarEvents, effectiveTargetDate, refDate);
         var dataQualityNotes = BuildDataQualityNotes(
+            profile,
             projectedRunsDesc,
             validRunsDesc,
             runReviews,
@@ -751,6 +755,10 @@ public static class CoachIntelligenceDossierBuilder
                 SecondHalfAverageHeartRate = zps?.SecondHalfAverageHeartRate,
                 CardiacDriftBpm = drift,
                 PaceSplitDiffSeconds = zps?.PaceSplitDiffSeconds,
+                SessionQualityTag = run.HasNoteComplaint
+                    ? "compromised_complaint"
+                    : (run.Z1Z2Percentage is < PureBaseZ1Z2PercentageThreshold ? "minor_z3_drift" : "clean_base"),
+                IsCompromised = run.HasNoteComplaint,
                 AthleteNote = run.AthleteNote
             });
 
@@ -793,6 +801,7 @@ public static class CoachIntelligenceDossierBuilder
                 DurationMinutes = run.DurationMinutes,
                 DistanceKm = run.DistanceKm,
                 AverageHeartRate = run.AverageHeartRate,
+                MaxHeartRate = run.Activity.MaxHeartrate,
                 CadenceSpm = run.CadenceSpm,
                 Z3Minutes = Math.Round(run.Z3Seconds / 60.0, 1, MidpointRounding.ToEven),
                 Z4Minutes = Math.Round(run.Z4Seconds / 60.0, 1, MidpointRounding.ToEven),
@@ -1169,6 +1178,7 @@ public static class CoachIntelligenceDossierBuilder
     }
 
     private static List<string> BuildDataQualityNotes(
+        AthleteProfile profile,
         List<ProjectedRun> projectedRunsDesc,
         List<IntervalsActivityEntry> validRunsDesc,
         IReadOnlyDictionary<string, RunReviewRecord>? runReviews,
@@ -1217,6 +1227,24 @@ public static class CoachIntelligenceDossierBuilder
         if (zoneCounts.Count > 1)
         {
             notes.Add($"HR zone array length changed within last 56 days ({string.Join(" vs ", zoneCounts)} zones).");
+        }
+
+        if (profile.HeartRate.RawHrZones is { Count: > 0 } currentZones)
+        {
+            var latestShiftedRun = projectedRunsDesc
+                .Where(r => r.Date >= cutoff56
+                    && r.Activity.IcuHrZones is { Count: > 0 } runZones
+                    && runZones.Count == currentZones.Count
+                    && !runZones.SequenceEqual(currentZones))
+                .OrderByDescending(r => r.Date)
+                .FirstOrDefault();
+
+            if (latestShiftedRun is not null)
+            {
+                notes.Add(string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"HR zone thresholds shifted relative to current profile ([{string.Join(",", currentZones)}]); earlier runs up to {latestShiftedRun.Date:yyyy-MM-dd} used [{string.Join(",", latestShiftedRun.Activity.IcuHrZones!)}], so older icu_hr_zone_times reflect historical boundaries."));
+            }
         }
 
         return notes;

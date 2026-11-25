@@ -93,12 +93,27 @@ public class CoachIntelligenceDossierTests
         Assert.That(comebackRun!.Z2GapPaceText, Is.EqualTo("07:58/km"));
         Assert.That(comebackRun.CardiacDriftBpm, Is.EqualTo(4.0).Within(0.01));
         Assert.That(comebackRun.Z1Z2Percentage, Is.EqualTo(100.0));
+        Assert.That(comebackRun.SessionQualityTag, Is.EqualTo("clean_base"));
+        Assert.That(comebackRun.IsCompromised, Is.False);
 
-        // Quality progression chain parses 3x 4m @ 162bpm cleanly for i209021118
+        var compromisedRun = dossier.StimulusProgression.BaseProgressionChain
+            .FirstOrDefault(s => s.ActivityId == "i203449631");
+        Assert.That(compromisedRun, Is.Not.Null);
+        Assert.That(compromisedRun!.IsCompromised, Is.True);
+        Assert.That(compromisedRun.SessionQualityTag, Is.EqualTo("compromised_complaint"));
+
+        var minorDriftRun = dossier.StimulusProgression.BaseProgressionChain
+            .FirstOrDefault(s => s.ActivityId == "i205281485");
+        Assert.That(minorDriftRun, Is.Not.Null);
+        Assert.That(minorDriftRun!.IsCompromised, Is.False);
+        Assert.That(minorDriftRun.SessionQualityTag, Is.EqualTo("minor_z3_drift"));
+
+        // Quality progression chain parses 3x 4m @ 162bpm cleanly for i209021118 and captures MaxHeartRate
         var lastQuality = dossier.StimulusProgression.QualityProgressionChain
             .FirstOrDefault(q => q.ActivityId == "i209021118");
         Assert.That(lastQuality, Is.Not.Null);
-        var threeByFour = lastQuality!.ParsedIntervals
+        Assert.That(lastQuality!.MaxHeartRate, Is.EqualTo(174));
+        var threeByFour = lastQuality.ParsedIntervals
             .FirstOrDefault(seg => seg.Raw == "3x 4m 162bpm");
         Assert.That(threeByFour, Is.Not.Null);
         Assert.That(threeByFour!.DurationSeconds, Is.EqualTo(240));
@@ -120,9 +135,10 @@ public class CoachIntelligenceDossierTests
         Assert.That(dossier.Calendar.EventsOnTargetDate, Has.Count.EqualTo(2));
         Assert.That(dossier.Calendar.HasUncompletedPlannedWorkoutOnTargetDate, Is.True);
 
-        // Data quality notes warn on stale wellness and 7 vs 5 HR zone schema shift
+        // Data quality notes warn on stale wellness, 7 vs 5 HR zone count shift, and threshold recalibration
         Assert.That(dossier.DataQualityNotes.Any(n => n.Contains("stale", StringComparison.OrdinalIgnoreCase)), Is.True);
         Assert.That(dossier.DataQualityNotes.Any(n => n.Contains("5 vs 7", StringComparison.OrdinalIgnoreCase)), Is.True);
+        Assert.That(dossier.DataQualityNotes.Any(n => n.Contains("143,152,160,169,192", StringComparison.Ordinal)), Is.True);
     }
 
     [Test]

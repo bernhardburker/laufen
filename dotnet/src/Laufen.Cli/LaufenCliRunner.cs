@@ -45,6 +45,11 @@ public static class LaufenCliRunner
 
         try
         {
+            if (string.Equals(parsed.Command, "validate-workout", StringComparison.Ordinal))
+            {
+                return ExecuteValidateWorkout(parsed, stdout, stderr, workingDirectory);
+            }
+
             var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
                 ? WorkspaceLayout.DiscoverFrom(workingDirectory)
                 : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
@@ -305,7 +310,10 @@ public static class LaufenCliRunner
         foreach (var session in dossier.StimulusProgression.BaseProgressionChain)
         {
             var drift = session.CardiacDriftBpm.HasValue ? $"{session.CardiacDriftBpm.Value:+0.0;-0.0;0.0}bpm" : "-";
-            stdout.WriteLine($"  {session.Date:yyyy-MM-dd} | {session.DurationMinutes,4:F0}m | {session.DistanceKm,5:F2}km | HR {FormatNullableDouble(session.AverageHeartRate, "F0")} | Z1-2 {FormatNullableDouble(session.Z1Z2Percentage, "F1")}% | AEF {FormatNullableDouble(session.AerobicEfficiencyFactor, "F3")} | Z2GAP {session.Z2GapPaceText ?? "-"} | drift {drift} | {session.Name}");
+            var tag = string.Equals(session.SessionQualityTag, "clean_base", StringComparison.Ordinal)
+                ? string.Empty
+                : $" [{session.SessionQualityTag}]";
+            stdout.WriteLine($"  {session.Date:yyyy-MM-dd} | {session.DurationMinutes,4:F0}m | {session.DistanceKm,5:F2}km | HR {FormatNullableDouble(session.AverageHeartRate, "F0")} | Z1-2 {FormatNullableDouble(session.Z1Z2Percentage, "F1")}% | AEF {FormatNullableDouble(session.AerobicEfficiencyFactor, "F3")} | Z2GAP {session.Z2GapPaceText ?? "-"} | drift {drift}{tag} | {session.Name}");
         }
 
         stdout.WriteLine($"Quality Progression Chain ({dossier.StimulusProgression.QualityProgressionChain.Count}):");
@@ -320,7 +328,7 @@ public static class LaufenCliRunner
                 intSummary = $"{q.ParsedIntervals.Count} segments parsed";
             }
 
-            stdout.WriteLine($"  {q.Date:yyyy-MM-dd} | {q.StimulusKind,-9} | {q.DurationMinutes,4:F0}m | {q.DistanceKm,5:F2}km | Z4={q.Z4Minutes:F1}m Z5={q.Z5PlusMinutes:F1}m | cad {FormatNullableDouble(q.CadenceSpm, "F1")} | [{intSummary}] | {q.Name}");
+            stdout.WriteLine($"  {q.Date:yyyy-MM-dd} | {q.StimulusKind,-9} | {q.DurationMinutes,4:F0}m | {q.DistanceKm,5:F2}km | maxHR {FormatNullableInt(q.MaxHeartRate)} | Z4={q.Z4Minutes:F1}m Z5={q.Z5PlusMinutes:F1}m | cad {FormatNullableDouble(q.CadenceSpm, "F1")} | [{intSummary}] | {q.Name}");
         }
 
         stdout.WriteLine($"Calendar Target ({dossier.Calendar.EventsOnTargetDate.Count}) / Next 7d ({dossier.Calendar.UpcomingEventsNext7Days.Count}):");
@@ -387,6 +395,7 @@ public static class LaufenCliRunner
         stdout.WriteLine("  report                    Display recent runs, weekly trends & CTL/ATL/TSB");
         stdout.WriteLine("  markers                   Extract planning markers & safety guardrails");
         stdout.WriteLine("  dossier                   Build curated stimulus progression & readiness dossier");
+        stdout.WriteLine("  validate-workout          Validate a CoachPlanDecision JSON & compile Intervals.icu DSL");
         stdout.WriteLine("  help                      Show this help text");
         stdout.WriteLine();
         stdout.WriteLine("Options:");
@@ -397,8 +406,9 @@ public static class LaufenCliRunner
         stdout.WriteLine("  --limit <N>               Recent runs limit for 'report' (default: 5)");
         stdout.WriteLine("  --weeks <N>               Max weeks for 'report' (default: 12)");
         stdout.WriteLine("  --as-of <YYYY-MM-DD>      Reference date for 'report' CTL/ATL decay");
-        stdout.WriteLine("  --ref-date <YYYY-MM-DD>   Reference date for 'markers' and 'dossier'");
+        stdout.WriteLine("  --ref-date <YYYY-MM-DD>   Reference date for 'markers', 'dossier', and 'validate-workout'");
         stdout.WriteLine("  --target-date <YYYY-MM-DD> Target planning date for 'markers' and 'dossier'");
+        stdout.WriteLine("  --input <path>            Input CoachPlanDecision JSON file for 'validate-workout'");
     }
 
     private static bool TryParseArgs(IReadOnlyList<string> args, out ParsedCliArgs parsed, out string error)
@@ -413,6 +423,7 @@ public static class LaufenCliRunner
         DateOnly? asOfDate = null;
         DateOnly? refDate = null;
         DateOnly? targetDate = null;
+        string? inputPath = null;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -474,6 +485,13 @@ public static class LaufenCliRunner
                         return false;
                     }
                     break;
+                case "--input":
+                    if (!TryReadValue(args, ref i, arg, out inputPath, out error))
+                    {
+                        parsed = default!;
+                        return false;
+                    }
+                    break;
                 default:
                     if (arg.StartsWith('-') && arg is not ("-h" or "--help"))
                     {
@@ -514,8 +532,110 @@ public static class LaufenCliRunner
             maxWeeks,
             asOfDate,
             refDate,
-            targetDate);
+            targetDate,
+            inputPath);
         return true;
+    }
+
+    private static int ExecuteValidateWorkout(
+        ParsedCliArgs parsed,
+        TextWriter stdout,
+        TextWriter stderr,
+        string? workingDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(parsed.InputPath))
+        {
+            stderr.WriteLine("Missing required '--input <path>' option for 'validate-workout'.");
+            return 1;
+        }
+
+        var decision = StrictJsonLoader.LoadFromFile<CoachPlanDecision>(parsed.InputPath);
+
+        CoachIntelligenceDossier? dossier = null;
+        if (!string.IsNullOrWhiteSpace(parsed.AthleteSlug) || parsed.RefDate.HasValue)
+        {
+            var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
+                ? WorkspaceLayout.DiscoverFrom(workingDirectory)
+                : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
+            var registry = AthleteDataRepository.LoadRegistry(layout);
+            var slugs = AthleteDataRepository.ResolveTargetSlugs(registry, parsed.AthleteSlug, allActive: false);
+            var data = AthleteDataRepository.LoadAthleteData(layout, registry, slugs[0]);
+            var refDate = parsed.RefDate ?? decision.TargetDate;
+            dossier = CoachIntelligenceDossierBuilder.Build(
+                data.Profile,
+                data.Activities,
+                data.WellnessRecords,
+                data.RunReviews,
+                data.CalendarEvents,
+                refDate,
+                parsed.TargetDate ?? decision.TargetDate);
+        }
+
+        var validation = WorkoutModalityValidator.ValidateDecision(decision, dossier);
+        if (!validation.IsValid)
+        {
+            if (parsed.AsJson)
+            {
+                var errPayload = new
+                {
+                    isValid = false,
+                    action = decision.Action,
+                    targetDate = decision.TargetDate,
+                    errors = validation.Errors,
+                    compiledPrimary = (CompiledWorkout?)null,
+                    compiledSecondary = (CompiledWorkout?)null
+                };
+                stdout.WriteLine(JsonSerializer.Serialize(errPayload, JsonOptions));
+            }
+            else
+            {
+                stderr.WriteLine($"Validation failed ({validation.Errors.Count} error(s)):");
+                foreach (var err in validation.Errors)
+                {
+                    stderr.WriteLine($"  [{err.Code}] {err.Field}: {err.Message}");
+                }
+            }
+
+            return 1;
+        }
+
+        var compiledPrimary = decision.PrimaryWorkout is not null
+            ? IntervalsWorkoutCompiler.Compile(decision.PrimaryWorkout)
+            : null;
+        var compiledSecondary = decision.SecondaryWorkout is not null
+            ? IntervalsWorkoutCompiler.Compile(decision.SecondaryWorkout)
+            : null;
+
+        if (parsed.AsJson)
+        {
+            var okPayload = new
+            {
+                isValid = true,
+                action = decision.Action,
+                targetDate = decision.TargetDate,
+                errors = validation.Errors,
+                compiledPrimary,
+                compiledSecondary
+            };
+            stdout.WriteLine(JsonSerializer.Serialize(okPayload, JsonOptions));
+        }
+        else
+        {
+            stdout.WriteLine($"Validation passed: action={decision.Action}, target={decision.TargetDate:yyyy-MM-dd}");
+            if (compiledPrimary is not null)
+            {
+                stdout.WriteLine($"--- Primary: {compiledPrimary.Title} ({compiledPrimary.SessionType}, {compiledPrimary.TotalDurationSeconds / 60}m) ---");
+                stdout.Write(compiledPrimary.DslText);
+            }
+
+            if (compiledSecondary is not null)
+            {
+                stdout.WriteLine($"--- Secondary: {compiledSecondary.Title} ({compiledSecondary.SessionType}, {compiledSecondary.TotalDurationSeconds / 60}m) ---");
+                stdout.Write(compiledSecondary.DslText);
+            }
+        }
+
+        return 0;
     }
 
     private static bool TryReadValue(IReadOnlyList<string> args, ref int index, string flag, out string value, out string error)
@@ -579,5 +699,6 @@ public static class LaufenCliRunner
         int MaxWeeks,
         DateOnly? AsOfDate,
         DateOnly? RefDate,
-        DateOnly? TargetDate);
+        DateOnly? TargetDate,
+        string? InputPath);
 }
