@@ -159,7 +159,7 @@ public class PhysiologicalMetricsDifferentialTests
     }
 
     [TestCase("berni", "2026-11-11", "wellness")]
-    [TestCase("berni", "2026-11-20", "decayed")]
+    [TestCase("berni", "2099-01-01", "decayed")]
     [TestCase("berni-test", "2026-11-11", "decayed")]
     public void FitnessFormTrendMatchesPythonForecastCalculation(string slug, string asOfIso, string expectedSource)
     {

@@ -1,3 +1,3 @@
 using Laufen.Cli;
 
-return CliHealthRunner.Run(args, Console.Out);
+return LaufenCliRunner.Run(args, Console.Out, Console.Error);

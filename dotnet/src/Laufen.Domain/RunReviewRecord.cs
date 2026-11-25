@@ -73,6 +73,9 @@ public sealed record RunReviewRecord
     [JsonPropertyName("analyzed_at")]
     public required DateTimeOffset AnalyzedAt { get; init; }
 
+    [JsonPropertyName("zone_pace_stats")]
+    public ZonePaceStats? ZonePaceStats { get; init; }
+
     [JsonPropertyName("review")]
     public required RunReviewEvaluation Review { get; init; }
 }
@@ -270,4 +273,79 @@ public sealed record Stage4NextRun
 
     [JsonPropertyName("optimization_focus")]
     public string? OptimizationFocus { get; init; }
+}
+
+/// <summary>
+/// Per-second HR-zone GAP pace and split analysis attached to run reviews.
+/// </summary>
+public sealed record ZonePaceStats
+{
+    [JsonPropertyName("has_streams")]
+    public required bool HasStreams { get; init; }
+
+    [JsonPropertyName("min_zone_seconds")]
+    public required int MinZoneSeconds { get; init; }
+
+    [JsonPropertyName("total_running_seconds")]
+    public required int TotalRunningSeconds { get; init; }
+
+    [JsonPropertyName("walking_seconds_filtered")]
+    public required int WalkingSecondsFiltered { get; init; }
+
+    [JsonPropertyName("zones")]
+    public required IReadOnlyDictionary<string, ZonePaceEntry> Zones { get; init; }
+
+    [JsonPropertyName("first_half_gap_pace_s_per_km")]
+    public double? FirstHalfGapPaceSecondsPerKm { get; init; }
+
+    [JsonPropertyName("second_half_gap_pace_s_per_km")]
+    public double? SecondHalfGapPaceSecondsPerKm { get; init; }
+
+    [JsonPropertyName("first_half_avg_hr")]
+    public double? FirstHalfAverageHeartRate { get; init; }
+
+    [JsonPropertyName("second_half_avg_hr")]
+    public double? SecondHalfAverageHeartRate { get; init; }
+
+    [JsonPropertyName("pace_split_diff_s")]
+    public double? PaceSplitDiffSeconds { get; init; }
+}
+
+/// <summary>
+/// Per-zone GAP and raw pace metrics within <see cref="ZonePaceStats"/>.
+/// </summary>
+public sealed record ZonePaceEntry
+{
+    [JsonPropertyName("zone")]
+    public required int Zone { get; init; }
+
+    [JsonPropertyName("name")]
+    public required string Name { get; init; }
+
+    [JsonPropertyName("running_seconds")]
+    public required int RunningSeconds { get; init; }
+
+    [JsonPropertyName("avg_hr")]
+    public required double AverageHeartRate { get; init; }
+
+    [JsonPropertyName("gap_speed_mps")]
+    public required double GapSpeedMetersPerSecond { get; init; }
+
+    [JsonPropertyName("gap_pace_s_per_km")]
+    public required double GapPaceSecondsPerKm { get; init; }
+
+    [JsonPropertyName("gap_pace_str")]
+    public required string GapPaceText { get; init; }
+
+    [JsonPropertyName("raw_speed_mps")]
+    public required double RawSpeedMetersPerSecond { get; init; }
+
+    [JsonPropertyName("raw_pace_s_per_km")]
+    public required double RawPaceSecondsPerKm { get; init; }
+
+    [JsonPropertyName("raw_pace_str")]
+    public required string RawPaceText { get; init; }
+
+    [JsonPropertyName("valid_for_trend")]
+    public required bool ValidForTrend { get; init; }
 }

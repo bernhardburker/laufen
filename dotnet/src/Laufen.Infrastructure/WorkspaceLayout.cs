@@ -15,4 +15,22 @@ public sealed record WorkspaceLayout(string RootDirectory, string AthletesDirect
         var fullRoot = Path.GetFullPath(rootDirectory);
         return new WorkspaceLayout(fullRoot, Path.Combine(fullRoot, "athletes"));
     }
+
+    public static WorkspaceLayout DiscoverFrom(string? startDirectory = null)
+    {
+        var current = new DirectoryInfo(Path.GetFullPath(startDirectory ?? Environment.CurrentDirectory));
+        while (current is not null)
+        {
+            var registryCandidate = Path.Combine(current.FullName, "athletes", "registry.json");
+            if (File.Exists(registryCandidate))
+            {
+                return FromRoot(current.FullName);
+            }
+
+            current = current.Parent;
+        }
+
+        throw new DirectoryNotFoundException(
+            $"Could not locate 'athletes/registry.json' from '{startDirectory ?? Environment.CurrentDirectory}' or any parent directory.");
+    }
 }
