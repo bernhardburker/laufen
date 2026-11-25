@@ -65,6 +65,11 @@ public static class LaufenCliRunner
                 return ExecuteSimulate(parsed, stdout, stderr, workingDirectory);
             }
 
+            if (string.Equals(parsed.Command, "narrate", StringComparison.Ordinal))
+            {
+                return ExecuteNarrate(parsed, stdout, stderr, workingDirectory);
+            }
+
             var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
                 ? WorkspaceLayout.DiscoverFrom(workingDirectory)
                 : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
@@ -426,6 +431,7 @@ public static class LaufenCliRunner
         stdout.WriteLine("  project-plan              Validate & reconcile a 14-day AutopilotPlanDecision + Banister curve");
         stdout.WriteLine("  coach-plan                Run RollingAutopilotCoach via stub/agy/gemini (--dry-run supported)");
         stdout.WriteLine("  simulate                  Run multi-day self-healing simulation scenarios & invariant auditor");
+        stdout.WriteLine("  narrate                   Run decoupled Role 2 ProgressNarrator (--dry-run supported)");
         stdout.WriteLine("  help                      Show this help text");
         stdout.WriteLine();
         stdout.WriteLine("Options:");
@@ -436,20 +442,21 @@ public static class LaufenCliRunner
         stdout.WriteLine("  --limit <N>               Recent runs limit for 'report' (default: 5)");
         stdout.WriteLine("  --weeks <N>               Max weeks for 'report' (default: 12)");
         stdout.WriteLine("  --as-of <YYYY-MM-DD>      Reference date for 'report' CTL/ATL decay");
-        stdout.WriteLine("  --ref-date <YYYY-MM-DD>   Reference date for 'markers', 'dossier', 'validate-workout', 'project-plan', 'coach-plan'");
+        stdout.WriteLine("  --ref-date <YYYY-MM-DD>   Reference date for 'markers', 'dossier', 'validate-workout', 'project-plan', 'coach-plan', 'narrate'");
         stdout.WriteLine("  --target-date <YYYY-MM-DD> Target planning date for 'markers' and 'dossier'");
         stdout.WriteLine("  --input <path>            Input decision JSON file for 'validate-workout' and 'project-plan'");
         stdout.WriteLine("  --auto-event-ids <csv>    Comma-separated calendar event IDs managed as 'auto' ownership");
         stdout.WriteLine("  --locked-dates <csv>      Comma-separated YYYY-MM-DD dates marked as 'user_locked'");
         stdout.WriteLine("  --trigger <name>          Autopilot trigger: morning_sync|post_run|telegram_override|intraday_check");
-        stdout.WriteLine("  --provider <name>         LLM provider: stub|agy|gemini (coach-plan default: agy; simulate default: stub)");
+        stdout.WriteLine("  --provider <name>         LLM provider: stub|agy|gemini (coach-plan/narrate default: agy; simulate default: stub)");
         stdout.WriteLine("  --model <name>            Override LLM model name");
         stdout.WriteLine("  --message <text>          Optional athlete Telegram message for 'coach-plan'");
         stdout.WriteLine("  --stub-response <path>    JSON response file for '--provider stub'");
         stdout.WriteLine("  --scenario <name|all>     Simulation scenario for 'simulate' (default: all)");
         stdout.WriteLine("  --output-dir <path>       Write isolated simulation report.md and timeline.json artifacts");
-        stdout.WriteLine("  --retries <N>             Validation self-correction retries for 'coach-plan' / 'simulate' (default: 1)");
-        stdout.WriteLine("  --dry-run                 Skip writing block_compass.json / decision_trace_dotnet.jsonl or simulation artifacts");
+        stdout.WriteLine("  --retries <N>             Validation self-correction retries for 'coach-plan' / 'simulate' / 'narrate' (default: 1)");
+        stdout.WriteLine("  --force                   Force narrative generation even when ProgressNarratorGate suppresses");
+        stdout.WriteLine("  --dry-run                 Skip writing block_compass.json / decision_trace_dotnet.jsonl / narrative artifacts");
     }
 
     private static bool TryParseArgs(IReadOnlyList<string> args, out ParsedCliArgs parsed, out string error)
@@ -476,6 +483,7 @@ public static class LaufenCliRunner
         string? outputDir = null;
         int retries = 1;
         bool dryRun = false;
+        bool force = false;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -617,6 +625,9 @@ public static class LaufenCliRunner
                 case "--dry-run":
                     dryRun = true;
                     break;
+                case "--force":
+                    force = true;
+                    break;
                 default:
                     if (arg.StartsWith('-') && arg is not ("-h" or "--help"))
                     {
@@ -669,7 +680,8 @@ public static class LaufenCliRunner
             scenarioName,
             outputDir,
             retries,
-            dryRun);
+            dryRun,
+            force);
         return true;
     }
 
@@ -775,6 +787,174 @@ public static class LaufenCliRunner
 
         WriteCoachPlanText(stdout, slug, effectiveProvider, parsed.DryRun, outcome);
         return 0;
+    }
+
+    private static int ExecuteNarrate(
+        ParsedCliArgs parsed,
+        TextWriter stdout,
+        TextWriter stderr,
+        string? workingDirectory)
+    {
+        var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
+            ? WorkspaceLayout.DiscoverFrom(workingDirectory)
+            : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
+        var registry = AthleteDataRepository.LoadRegistry(layout);
+        var slugs = AthleteDataRepository.ResolveTargetSlugs(registry, parsed.AthleteSlug, allActive: false);
+        var slug = slugs[0];
+        var data = AthleteDataRepository.LoadAthleteData(layout, registry, slug);
+
+        var refDate = parsed.RefDate ?? DateOnly.FromDateTime(DateTime.Today);
+        var existingCompass = AutopilotStateStore.LoadBlockCompass(layout, slug);
+        var latestTrace = AutopilotStateStore.LoadLatestDecisionTrace(layout, slug);
+
+        var dossier = CoachIntelligenceDossierBuilder.Build(
+            data.Profile,
+            data.Activities,
+            data.WellnessRecords,
+            data.RunReviews,
+            data.CalendarEvents,
+            refDate,
+            parsed.TargetDate ?? refDate,
+            parsed.AutoEventIds,
+            parsed.LockedDates,
+            currentCompass: existingCompass);
+
+        var gate = ProgressNarratorGate.Evaluate(
+            parsed.Trigger,
+            previousHealthState: latestTrace?.HealthState,
+            currentHealthState: existingCompass?.HealthState,
+            previousBlockFocus: null,
+            currentBlockFocus: existingCompass?.CurrentBlockFocus,
+            forceManual: parsed.Force);
+
+        var effectiveProvider = string.IsNullOrWhiteSpace(parsed.Provider) ? "agy" : parsed.Provider;
+
+        if (!gate.ShouldNarrate)
+        {
+            if (parsed.AsJson)
+            {
+                var skipPayload = new
+                {
+                    slug,
+                    dryRun = parsed.DryRun,
+                    provider = effectiveProvider,
+                    narrated = false,
+                    skipped = true,
+                    triggerReason = gate.TriggerReason,
+                    reasons = gate.Reasons,
+                    outcome = (NarrativeGenerationOutcome?)null
+                };
+                stdout.WriteLine(JsonSerializer.Serialize(skipPayload, JsonOptions));
+            }
+            else
+            {
+                stdout.WriteLine($"=== Progress Narrator: {slug} (suppressed) ===");
+                stdout.WriteLine($"Trigger '{parsed.Trigger}' suppressed: no completed run, health transition, or block focus shift (use --force to override).");
+            }
+
+            return 0;
+        }
+
+        string? stubJson = null;
+        if (!string.IsNullOrWhiteSpace(parsed.StubResponsePath))
+        {
+            stubJson = File.ReadAllText(parsed.StubResponsePath);
+        }
+
+        ILlmClient llmClient;
+        try
+        {
+            llmClient = (effectiveProvider.Trim().ToLowerInvariant() is "stub" or "mock" or "test") && stubJson is null
+                ? new NarrativeStubLlmClient()
+                : LlmClientFactory.Create(effectiveProvider, parsed.Model, stubJson);
+        }
+        catch (ArgumentException ex)
+        {
+            stderr.WriteLine($"Error: {ex.Message}");
+            return 1;
+        }
+
+        var briefing = NarrativeBriefingDossierBuilder.Build(
+            data.Profile,
+            data.Activities,
+            data.WellnessRecords,
+            data.RunReviews,
+            data.CalendarEvents,
+            refDate,
+            gate.TriggerReason,
+            existingDossier: dossier,
+            reconciledSchedule: null,
+            currentCompass: existingCompass,
+            previousHealthState: latestTrace?.HealthState,
+            latestTraceRationale: latestTrace?.Rationale);
+
+        var narrator = new LlmProgressNarrator(llmClient);
+        var outcome = narrator.NarrateAsync(new NarrativeGenerationContext
+        {
+            Briefing = briefing,
+            MaxValidationRetries = parsed.Retries
+        }).GetAwaiter().GetResult();
+
+        if (outcome.Success && !parsed.DryRun && outcome.Report is not null)
+        {
+            AutopilotStateStore.SaveNarrativeArtifacts(layout, slug, outcome.Report);
+        }
+
+        if (parsed.AsJson)
+        {
+            var payload = new
+            {
+                slug,
+                dryRun = parsed.DryRun,
+                provider = effectiveProvider,
+                narrated = outcome.Success,
+                skipped = false,
+                triggerReason = gate.TriggerReason,
+                reasons = gate.Reasons,
+                outcome
+            };
+            stdout.WriteLine(JsonSerializer.Serialize(payload, JsonOptions));
+            return outcome.Success ? 0 : 1;
+        }
+
+        if (!outcome.Success || outcome.Report is null)
+        {
+            stderr.WriteLine($"Progress narration failed ({outcome.Attempts.Count} attempt(s)): {outcome.FailureReason}");
+            return 1;
+        }
+
+        WriteNarrateText(stdout, slug, effectiveProvider, parsed.DryRun, outcome);
+        return 0;
+    }
+
+    private static void WriteNarrateText(
+        TextWriter stdout,
+        string slug,
+        string provider,
+        bool dryRun,
+        NarrativeGenerationOutcome outcome)
+    {
+        var report = outcome.Report!;
+        var elapsed = outcome.Attempts.Sum(a => a.ElapsedSeconds);
+        stdout.WriteLine($"=== Progress Narrator: {slug} (dryRun={dryRun}, provider={provider}, model={outcome.ModelUsed ?? "-"}, trigger={report.TriggerReason}, attempts={outcome.Attempts.Count}, elapsed={elapsed:F1}s) ===");
+        stdout.WriteLine($"Status [{report.StatusSeverity.ToUpperInvariant()} / {report.StatusBadge}]: {report.StatusTitle}");
+        stdout.WriteLine($"Insights ({report.Insights.Count}):");
+        foreach (var insight in report.Insights)
+        {
+            stdout.WriteLine($"  [{insight.Severity}] {insight.Title} ({insight.Badge}): {insight.Text}");
+        }
+
+        if (report.ScheduleHighlights.Count > 0)
+        {
+            stdout.WriteLine($"Schedule Highlights ({report.ScheduleHighlights.Count}):");
+            foreach (var item in report.ScheduleHighlights)
+            {
+                stdout.WriteLine($"  - {item}");
+            }
+        }
+
+        stdout.WriteLine();
+        stdout.WriteLine(report.CommentaryMarkdown);
     }
 
     private static int ExecuteSimulate(
@@ -1300,5 +1480,6 @@ public static class LaufenCliRunner
         string? ScenarioName,
         string? OutputDir,
         int Retries,
-        bool DryRun);
+        bool DryRun,
+        bool Force);
 }

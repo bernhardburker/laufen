@@ -40,6 +40,7 @@ public class CliRunnerTests
         Assert.That(stdout.ToString(), Does.Contain("project-plan"));
         Assert.That(stdout.ToString(), Does.Contain("coach-plan"));
         Assert.That(stdout.ToString(), Does.Contain("simulate"));
+        Assert.That(stdout.ToString(), Does.Contain("narrate"));
         Assert.That(stdout.ToString(), Does.Contain("athletes"));
     }
 
@@ -704,5 +705,60 @@ public class CliRunnerTests
                 Directory.Delete(tempOutDir, recursive: true);
             }
         }
+    }
+
+    [Test]
+    public void RunNarrateRespectsEventGateAndDryRunWithStubProvider()
+    {
+        var root = ResolveWorkspaceRoot();
+        var summaryPath = Path.Combine(root, "athletes", "berni", "narrative_summary_dotnet.json");
+        var commentaryPath = Path.Combine(root, "athletes", "berni", "narrative_commentary_dotnet.md");
+        var summaryExisted = File.Exists(summaryPath);
+        var commentaryExisted = File.Exists(commentaryPath);
+
+        // 1. Routine morning_sync with unchanged state is suppressed
+        using var supOut = new StringWriter();
+        using var supErr = new StringWriter();
+        var supExit = LaufenCliRunner.Run(
+            ["narrate", "--athlete", "berni", "--ref-date", "2026-11-25", "--trigger", "morning_sync", "--provider", "stub", "--dry-run", "--json"],
+            supOut,
+            supErr,
+            AppContext.BaseDirectory);
+
+        Assert.That(supExit, Is.EqualTo(0), supErr.ToString());
+        using (var supDoc = JsonDocument.Parse(supOut.ToString()))
+        {
+            Assert.That(supDoc.RootElement.GetProperty("skipped").GetBoolean(), Is.True);
+            Assert.That(supDoc.RootElement.GetProperty("narrated").GetBoolean(), Is.False);
+        }
+
+        // 2. post_run triggers narrative generation cleanly without writing state under --dry-run
+        using var postOut = new StringWriter();
+        using var postErr = new StringWriter();
+        var postExit = LaufenCliRunner.Run(
+            ["narrate", "--athlete", "berni", "--ref-date", "2026-11-25", "--trigger", "post_run", "--provider", "stub", "--dry-run"],
+            postOut,
+            postErr,
+            AppContext.BaseDirectory);
+
+        Assert.That(postExit, Is.EqualTo(0), postErr.ToString());
+        Assert.That(postOut.ToString(), Does.Contain("Progress Narrator: berni"));
+        Assert.That(postOut.ToString(), Does.Contain("Insights ("));
+        Assert.That(File.Exists(summaryPath), Is.EqualTo(summaryExisted));
+        Assert.That(File.Exists(commentaryPath), Is.EqualTo(commentaryExisted));
+
+        // 3. --force works even on morning_sync and emits strict JSON
+        using var forceOut = new StringWriter();
+        using var forceErr = new StringWriter();
+        var forceExit = LaufenCliRunner.Run(
+            ["narrate", "--athlete", "berni-test", "--ref-date", "2026-11-25", "--trigger", "morning_sync", "--force", "--provider", "stub", "--dry-run", "--json"],
+            forceOut,
+            forceErr,
+            AppContext.BaseDirectory);
+
+        Assert.That(forceExit, Is.EqualTo(0), forceErr.ToString());
+        using var forceDoc = JsonDocument.Parse(forceOut.ToString());
+        Assert.That(forceDoc.RootElement.GetProperty("narrated").GetBoolean(), Is.True);
+        Assert.That(forceDoc.RootElement.GetProperty("outcome").GetProperty("success").GetBoolean(), Is.True);
     }
 }

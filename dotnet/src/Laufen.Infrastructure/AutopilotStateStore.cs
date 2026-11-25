@@ -53,4 +53,52 @@ public static class AutopilotStateStore
         var line = JsonSerializer.Serialize(entry, CompactOptions) + "\n";
         File.AppendAllText(path, line, Encoding.UTF8);
     }
+
+    public static AutopilotDecisionTraceEntry? LoadLatestDecisionTrace(WorkspaceLayout layout, string slug)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+
+        var path = Path.Combine(layout.AthletesDirectory, slug, "decision_trace_dotnet.jsonl");
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        string? lastLine = null;
+        foreach (var line in File.ReadLines(path, Encoding.UTF8))
+        {
+            if (!string.IsNullOrWhiteSpace(line))
+            {
+                lastLine = line;
+            }
+        }
+
+        return lastLine is null ? null : StrictJsonLoader.Deserialize<AutopilotDecisionTraceEntry>(lastLine);
+    }
+
+    public static void SaveNarrativeArtifacts(WorkspaceLayout layout, string slug, NarrativeReport report)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+        ArgumentNullException.ThrowIfNull(report);
+
+        var dir = Path.Combine(layout.AthletesDirectory, slug);
+        Directory.CreateDirectory(dir);
+
+        var jsonPath = Path.Combine(dir, "narrative_summary_dotnet.json");
+        File.WriteAllText(jsonPath, JsonSerializer.Serialize(report, IndentedOptions) + "\n", Encoding.UTF8);
+
+        var mdPath = Path.Combine(dir, "narrative_commentary_dotnet.md");
+        File.WriteAllText(mdPath, report.CommentaryMarkdown.TrimEnd() + "\n", Encoding.UTF8);
+    }
+
+    public static NarrativeReport? LoadNarrativeSummary(WorkspaceLayout layout, string slug)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+
+        var path = Path.Combine(layout.AthletesDirectory, slug, "narrative_summary_dotnet.json");
+        return File.Exists(path) ? StrictJsonLoader.LoadFromFile<NarrativeReport>(path) : null;
+    }
 }
