@@ -70,6 +70,11 @@ public static class LaufenCliRunner
                 return ExecuteNarrate(parsed, stdout, stderr, workingDirectory);
             }
 
+            if (string.Equals(parsed.Command, "review", StringComparison.Ordinal))
+            {
+                return ExecuteReview(parsed, stdout, stderr, workingDirectory);
+            }
+
             var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
                 ? WorkspaceLayout.DiscoverFrom(workingDirectory)
                 : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
@@ -432,6 +437,7 @@ public static class LaufenCliRunner
         stdout.WriteLine("  coach-plan                Run RollingAutopilotCoach via stub/agy/gemini (--dry-run supported)");
         stdout.WriteLine("  simulate                  Run multi-day self-healing simulation scenarios & invariant auditor");
         stdout.WriteLine("  narrate                   Run decoupled Role 2 ProgressNarrator (--dry-run supported)");
+        stdout.WriteLine("  review                    Compute deterministic 4-stage post-run reviews & stream GAP stats");
         stdout.WriteLine("  help                      Show this help text");
         stdout.WriteLine();
         stdout.WriteLine("Options:");
@@ -445,6 +451,7 @@ public static class LaufenCliRunner
         stdout.WriteLine("  --ref-date <YYYY-MM-DD>   Reference date for 'markers', 'dossier', 'validate-workout', 'project-plan', 'coach-plan', 'narrate'");
         stdout.WriteLine("  --target-date <YYYY-MM-DD> Target planning date for 'markers' and 'dossier'");
         stdout.WriteLine("  --input <path>            Input decision JSON file for 'validate-workout' and 'project-plan'");
+        stdout.WriteLine("  --activity-id <id>        Target activity ID for 'review'");
         stdout.WriteLine("  --auto-event-ids <csv>    Comma-separated calendar event IDs managed as 'auto' ownership");
         stdout.WriteLine("  --locked-dates <csv>      Comma-separated YYYY-MM-DD dates marked as 'user_locked'");
         stdout.WriteLine("  --trigger <name>          Autopilot trigger: morning_sync|post_run|telegram_override|intraday_check");
@@ -484,6 +491,7 @@ public static class LaufenCliRunner
         int retries = 1;
         bool dryRun = false;
         bool force = false;
+        string? activityId = null;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -628,6 +636,13 @@ public static class LaufenCliRunner
                 case "--force":
                     force = true;
                     break;
+                case "--activity-id":
+                    if (!TryReadValue(args, ref i, arg, out activityId, out error))
+                    {
+                        parsed = default!;
+                        return false;
+                    }
+                    break;
                 default:
                     if (arg.StartsWith('-') && arg is not ("-h" or "--help"))
                     {
@@ -681,7 +696,8 @@ public static class LaufenCliRunner
             outputDir,
             retries,
             dryRun,
-            force);
+            force,
+            activityId);
         return true;
     }
 
@@ -955,6 +971,112 @@ public static class LaufenCliRunner
 
         stdout.WriteLine();
         stdout.WriteLine(report.CommentaryMarkdown);
+    }
+
+    private static int ExecuteReview(
+        ParsedCliArgs parsed,
+        TextWriter stdout,
+        TextWriter stderr,
+        string? workingDirectory)
+    {
+        var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
+            ? WorkspaceLayout.DiscoverFrom(workingDirectory)
+            : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
+        var registry = AthleteDataRepository.LoadRegistry(layout);
+        var slugs = AthleteDataRepository.ResolveTargetSlugs(registry, parsed.AthleteSlug, allActive: false);
+        var slug = slugs[0];
+        var data = AthleteDataRepository.LoadAthleteData(layout, registry, slug);
+
+        var refDate = parsed.RefDate;
+        var validRuns = PhysiologicalCalculator.FilterValidRuns(data.Activities)
+            .Where(a => !refDate.HasValue || DateOnly.FromDateTime(a.StartDateLocal) <= refDate.Value)
+            .OrderByDescending(a => a.StartDateLocal)
+            .ToList();
+
+        List<IntervalsActivityEntry> targetRuns;
+        if (!string.IsNullOrWhiteSpace(parsed.ActivityId))
+        {
+            targetRuns = validRuns
+                .Where(a => string.Equals(a.Id, parsed.ActivityId.Trim(), StringComparison.Ordinal))
+                .ToList();
+            if (targetRuns.Count == 0)
+            {
+                stderr.WriteLine($"Activity '{parsed.ActivityId}' not found among valid runs for '{slug}'.");
+                return 1;
+            }
+        }
+        else
+        {
+            var limit = parsed.RecentLimit > 0 ? parsed.RecentLimit : 5;
+            targetRuns = validRuns.Take(limit).ToList();
+        }
+
+        var calendarById = data.CalendarEvents.ToDictionary(e => e.Id);
+        var openCycle = data.CoachHistory
+            .Where(c => string.Equals(c.Status, "offen", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(c => c.Date)
+            .FirstOrDefault();
+
+        var existingDotNet = AutopilotStateStore.LoadDotNetRunReviews(layout, slug);
+        var updatedReviews = new Dictionary<string, RunReviewRecord>(existingDotNet, StringComparer.Ordinal);
+        var evaluatedList = new List<RunReviewRecord>(targetRuns.Count);
+
+        foreach (var run in targetRuns)
+        {
+            var stream = StrictJsonLoader.LoadActivityStream(layout, slug, run.Id);
+            CalendarEventEntry? pairedEvt = null;
+            if (run.PairedEventId.HasValue)
+            {
+                calendarById.TryGetValue(run.PairedEventId.Value, out pairedEvt);
+            }
+
+            var review = PostRunReviewCalculator.EvaluateRun(
+                run,
+                data.Profile,
+                stream,
+                pairedEvt,
+                openCycle);
+            evaluatedList.Add(review);
+            updatedReviews[run.Id] = review;
+        }
+
+        if (!parsed.DryRun)
+        {
+            AutopilotStateStore.SaveDotNetRunReviews(layout, slug, updatedReviews);
+        }
+
+        if (parsed.AsJson)
+        {
+            var payload = new
+            {
+                slug,
+                dryRun = parsed.DryRun,
+                count = evaluatedList.Count,
+                reviews = evaluatedList
+            };
+            stdout.WriteLine(JsonSerializer.Serialize(payload, JsonOptions));
+            return 0;
+        }
+
+        WriteReviewText(stdout, slug, parsed.DryRun, evaluatedList);
+        return 0;
+    }
+
+    private static void WriteReviewText(
+        TextWriter stdout,
+        string slug,
+        bool dryRun,
+        List<RunReviewRecord> reviews)
+    {
+        stdout.WriteLine($"=== 4-Stage Post-Run Reviews: {slug} (dryRun={dryRun}, count={reviews.Count}) ===");
+        foreach (var r in reviews)
+        {
+            var z2Gap = r.ZonePaceStats?.Zones.Values.FirstOrDefault(z => z.Zone == 2)?.GapPaceText ?? "-";
+            stdout.WriteLine($"  {r.Date:yyyy-MM-dd} [{r.Id}] {r.Name}");
+            stdout.WriteLine($"    Stage 1: {r.DistanceKm:F2}km | {r.MovingTimeText} | HR {r.AverageHeartRate:F0} (max {r.MaxHeartRate}) | Z1/Z2 {r.Z1Z2Percentage:F1}% | AEF {r.AerobicEf?.ToString("F3", CultureInfo.InvariantCulture) ?? "-"} | Z2-GAP {z2Gap}");
+            stdout.WriteLine($"    Stage 2: [{r.Review.Stages.Stage2Compliance.StatusLabel}] {r.Review.Stages.Stage2Compliance.PlannedSlot} -> {r.Review.Stages.Stage2Compliance.TargetComparison}");
+            stdout.WriteLine($"    Stage 4: recovery={r.Review.Stages.Stage4NextRun.RecoveryHours}h | {r.Review.Stages.Stage4NextRun.Directive}");
+        }
     }
 
     private static int ExecuteSimulate(
@@ -1481,5 +1603,6 @@ public static class LaufenCliRunner
         string? OutputDir,
         int Retries,
         bool DryRun,
-        bool Force);
+        bool Force,
+        string? ActivityId);
 }

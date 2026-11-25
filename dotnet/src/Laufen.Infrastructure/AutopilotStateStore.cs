@@ -101,4 +101,30 @@ public static class AutopilotStateStore
         var path = Path.Combine(layout.AthletesDirectory, slug, "narrative_summary_dotnet.json");
         return File.Exists(path) ? StrictJsonLoader.LoadFromFile<NarrativeReport>(path) : null;
     }
+
+    public static void SaveDotNetRunReviews(
+        WorkspaceLayout layout,
+        string slug,
+        IReadOnlyDictionary<string, RunReviewRecord> reviews)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+        ArgumentNullException.ThrowIfNull(reviews);
+
+        var dir = Path.Combine(layout.AthletesDirectory, slug);
+        Directory.CreateDirectory(dir);
+        var path = Path.Combine(dir, "run_reviews_dotnet.json");
+        File.WriteAllText(path, JsonSerializer.Serialize(reviews, IndentedOptions) + "\n", Encoding.UTF8);
+    }
+
+    public static IReadOnlyDictionary<string, RunReviewRecord> LoadDotNetRunReviews(WorkspaceLayout layout, string slug)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+
+        var path = Path.Combine(layout.AthletesDirectory, slug, "run_reviews_dotnet.json");
+        return File.Exists(path)
+            ? StrictJsonLoader.LoadFromFile<Dictionary<string, RunReviewRecord>>(path)
+            : new Dictionary<string, RunReviewRecord>(StringComparer.Ordinal);
+    }
 }

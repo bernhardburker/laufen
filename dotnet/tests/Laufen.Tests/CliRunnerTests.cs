@@ -41,6 +41,7 @@ public class CliRunnerTests
         Assert.That(stdout.ToString(), Does.Contain("coach-plan"));
         Assert.That(stdout.ToString(), Does.Contain("simulate"));
         Assert.That(stdout.ToString(), Does.Contain("narrate"));
+        Assert.That(stdout.ToString(), Does.Contain("review"));
         Assert.That(stdout.ToString(), Does.Contain("athletes"));
     }
 
@@ -760,5 +761,41 @@ public class CliRunnerTests
         using var forceDoc = JsonDocument.Parse(forceOut.ToString());
         Assert.That(forceDoc.RootElement.GetProperty("narrated").GetBoolean(), Is.True);
         Assert.That(forceDoc.RootElement.GetProperty("outcome").GetProperty("success").GetBoolean(), Is.True);
+    }
+
+    [Test]
+    public void RunReviewEvaluatesRecentBerniRunsInDryRunWithoutWritingDiskFiles()
+    {
+        var root = ResolveWorkspaceRoot();
+        var dotNetReviewsPath = Path.Combine(root, "athletes", "berni", "run_reviews_dotnet.json");
+        var reviewsExisted = File.Exists(dotNetReviewsPath);
+
+        using var stdout = new StringWriter();
+        using var stderr = new StringWriter();
+        var exitCode = LaufenCliRunner.Run(
+            ["review", "--athlete", "berni", "--limit", "3", "--dry-run"],
+            stdout,
+            stderr,
+            AppContext.BaseDirectory);
+
+        Assert.That(exitCode, Is.EqualTo(0), stderr.ToString());
+        var text = stdout.ToString();
+        Assert.That(text, Does.Contain("4-Stage Post-Run Reviews: berni"));
+        Assert.That(text, Does.Contain("i213105633"));
+        Assert.That(text, Does.Contain("Z2-GAP 07:58/km"));
+        Assert.That(File.Exists(dotNetReviewsPath), Is.EqualTo(reviewsExisted));
+
+        using var jsonOut = new StringWriter();
+        using var jsonErr = new StringWriter();
+        var jsonExit = LaufenCliRunner.Run(
+            ["review", "--athlete", "berni", "--activity-id", "i209021118", "--dry-run", "--json"],
+            jsonOut,
+            jsonErr,
+            AppContext.BaseDirectory);
+
+        Assert.That(jsonExit, Is.EqualTo(0), jsonErr.ToString());
+        using var doc = JsonDocument.Parse(jsonOut.ToString());
+        Assert.That(doc.RootElement.GetProperty("count").GetInt32(), Is.EqualTo(1));
+        Assert.That(doc.RootElement.GetProperty("reviews")[0].GetProperty("id").GetString(), Is.EqualTo("i209021118"));
     }
 }

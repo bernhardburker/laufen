@@ -90,6 +90,15 @@ public static class StrictJsonLoader
         return LoadFromFile<List<CalendarEventEntry>>(eventsPath);
     }
 
+    public static ActivityStreamData? LoadActivityStream(WorkspaceLayout layout, string slug, string activityId)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+        ArgumentException.ThrowIfNullOrWhiteSpace(activityId);
+        var streamPath = Path.Combine(layout.AthletesDirectory, slug, "streams", $"{activityId}.json");
+        return File.Exists(streamPath) ? LoadFromFile<ActivityStreamData>(streamPath) : null;
+    }
+
     private static void ValidateNoNullCollectionEntries(object? instance, string path)
     {
         if (instance is null or string)
@@ -121,6 +130,11 @@ public static class StrictJsonLoader
 
         if (instance is IEnumerable enumerable)
         {
+            if (AllowsNullableValueElements(type))
+            {
+                return;
+            }
+
             var index = 0;
             foreach (var item in enumerable)
             {
@@ -146,5 +160,22 @@ public static class StrictJsonLoader
 
             ValidateNoNullCollectionEntries(property.GetValue(instance), $"{path}.{property.Name}");
         }
+    }
+
+    private static bool AllowsNullableValueElements(Type collectionType)
+    {
+        foreach (var iface in collectionType.GetInterfaces())
+        {
+            if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            {
+                var elementType = iface.GetGenericArguments()[0];
+                if (Nullable.GetUnderlyingType(elementType) is not null)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
