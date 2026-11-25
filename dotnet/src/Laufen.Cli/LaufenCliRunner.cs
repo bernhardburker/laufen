@@ -54,6 +54,7 @@ public static class LaufenCliRunner
                 "athletes" => ExecuteAthletes(layout, parsed.AsJson, stdout),
                 "report" => ExecuteReport(layout, parsed, stdout),
                 "markers" => ExecuteMarkers(layout, parsed, stdout),
+                "dossier" => ExecuteDossier(layout, parsed, stdout),
                 _ => UnknownCommand(parsed.Command, stderr)
             };
         }
@@ -181,6 +182,46 @@ public static class LaufenCliRunner
         return 0;
     }
 
+    private static int ExecuteDossier(WorkspaceLayout layout, ParsedCliArgs parsed, TextWriter stdout)
+    {
+        var registry = AthleteDataRepository.LoadRegistry(layout);
+        var slugs = AthleteDataRepository.ResolveTargetSlugs(registry, parsed.AthleteSlug, parsed.AllAthletes);
+        var results = new List<object>(slugs.Count);
+
+        foreach (var slug in slugs)
+        {
+            var data = AthleteDataRepository.LoadAthleteData(layout, registry, slug);
+            var refDate = parsed.RefDate ?? DateOnly.FromDateTime(DateTime.Today);
+            var dossier = CoachIntelligenceDossierBuilder.Build(
+                data.Profile,
+                data.Activities,
+                data.WellnessRecords,
+                data.RunReviews,
+                data.CalendarEvents,
+                refDate,
+                parsed.TargetDate);
+
+            if (parsed.AsJson)
+            {
+                results.Add(new { slug, dossier });
+            }
+            else
+            {
+                WriteDossierText(stdout, slug, dossier);
+            }
+        }
+
+        if (parsed.AsJson)
+        {
+            object payload = parsed.AllAthletes
+                ? new { athletes = results }
+                : results[0];
+            stdout.WriteLine(JsonSerializer.Serialize(payload, JsonOptions));
+        }
+
+        return 0;
+    }
+
     private static void WriteReportText(TextWriter stdout, string slug, AthleteReportSnapshot snapshot)
     {
         stdout.WriteLine($"=== Report: {snapshot.AthleteName} ({slug}) ===");
@@ -231,6 +272,99 @@ public static class LaufenCliRunner
         }
     }
 
+    private static void WriteDossierText(TextWriter stdout, string slug, CoachIntelligenceDossier dossier)
+    {
+        var a = dossier.Athlete;
+        var r = dossier.Readiness;
+        var l = dossier.StimulusProgression.Ledger;
+        var b = dossier.StimulusProgression.BreakReentry;
+
+        stdout.WriteLine($"=== Intelligence Dossier: {a.Name} ({slug}) ===");
+        stdout.WriteLine($"Ref: {dossier.ReferenceDate:yyyy-MM-dd} | Target: {dossier.TargetDate:yyyy-MM-dd} ({dossier.TargetDayOfWeek}) | Z2 max: {FormatNullableInt(a.Z2MaxHeartRate)} bpm | Z4: {FormatNullableInt(a.Z4RangeMin)}-{FormatNullableInt(a.Z4RangeMax)} bpm | LTHR: {a.Lthr} bpm");
+
+        if (a.Goals is not null || a.TimeBudgets is not null)
+        {
+            stdout.WriteLine($"Profile Hints: goal='{a.Goals?.PrimaryGoal ?? "-"}' | focus='{a.Goals?.CurrentFocus ?? "-"}' | weekday={FormatRange(a.TimeBudgets?.TypicalWeekdayMinMinutes, a.TimeBudgets?.TypicalWeekdayMaxMinutes)}m | weekend={FormatRange(a.TimeBudgets?.TypicalWeekendMinMinutes, a.TimeBudgets?.TypicalWeekendMaxMinutes)}m");
+        }
+
+        var loadStr = r.Ctl.HasValue && r.Atl.HasValue && r.Tsb.HasValue
+            ? $"CTL={r.Ctl.Value:F1} ATL={r.Atl.Value:F1} TSB={r.Tsb.Value:+0.0;-0.0;0.0} (source={r.LoadDataSource})"
+            : $"unavailable (source={r.LoadDataSource})";
+        var wellnessDateStr = r.LatestWellnessDate.HasValue
+            ? $"{r.LatestWellnessDate.Value:yyyy-MM-dd} (age={r.WellnessAgeDays}d, stale={r.IsWellnessStale})"
+            : "none (stale=True)";
+        stdout.WriteLine($"Load: {loadStr}");
+        stdout.WriteLine($"Wellness [{wellnessDateStr}]: RHR={FormatNullableInt(r.RestingHrLatest)} (30d avg={FormatNullableDouble(r.RestingHr30DayBaseline, "F1")}, delta={FormatNullableSigned(r.RestingHrDelta)}), HRV={FormatNullableDouble(r.HrvLatest, "F1")} (14d avg={FormatNullableDouble(r.Hrv14DayBaseline, "F1")}, ratio={FormatNullableDouble(r.HrvBaselineRatio, "F2")}), Sleep={FormatNullableDouble(r.SleepHoursLatest, "F2")}h / score={FormatNullableDouble(r.SleepScoreLatest, "F0")} (14d avg={FormatNullableDouble(r.SleepHours14DayBaseline, "F2")}h)");
+        stdout.WriteLine($"Medical Red Flags ({r.MedicalRedFlags.Count}): {(r.MedicalRedFlags.Count == 0 ? "none" : string.Join("; ", r.MedicalRedFlags.Select(f => $"{f.Date:yyyy-MM-dd} [{f.Code}] {f.Detail}")))}");
+
+        stdout.WriteLine($"Stimulus Ledger: lastRun={FormatNullableDays(l.DaysSinceLastRun)}, lastBaseRun={FormatNullableDays(l.DaysSinceLastBaseRun)}, lastBaseAnchor={FormatNullableDays(l.DaysSinceLastBaseAnchor)}, lastQuality={FormatNullableDays(l.DaysSinceLastQualityStimulus)}");
+        stdout.WriteLine($"Rolling Volume: 7d={l.RunsLast7Days} runs / {l.VolumeKmLast7Days:F2}km / {l.VolumeMinutesLast7Days:F0}m | 14d={l.RunsLast14Days} runs / {l.VolumeKmLast14Days:F2}km / {l.VolumeMinutesLast14Days:F0}m | Z1/Z2: 14d={FormatNullableDouble(l.Rolling14DayZ1Z2Percentage, "F1")}%, 28d={FormatNullableDouble(l.Rolling28DayZ1Z2Percentage, "F1")}%");
+        stdout.WriteLine($"Break/Re-entry: longestGap28d={b.LongestGapDaysLast28Days}d | hasRecentExtendedBreak={b.HasRecentExtendedBreak} ({b.RecentBreakStartDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "-"} -> {b.RecentBreakEndDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "ongoing"}, {FormatNullableDays(b.RecentBreakDurationDays)}) | runsSinceBreak={b.RunsCompletedSinceRecentBreak} (cleanBase={b.CleanBaseRunsSinceRecentBreak})");
+
+        stdout.WriteLine($"Base Progression Chain ({dossier.StimulusProgression.BaseProgressionChain.Count}):");
+        foreach (var session in dossier.StimulusProgression.BaseProgressionChain)
+        {
+            var drift = session.CardiacDriftBpm.HasValue ? $"{session.CardiacDriftBpm.Value:+0.0;-0.0;0.0}bpm" : "-";
+            stdout.WriteLine($"  {session.Date:yyyy-MM-dd} | {session.DurationMinutes,4:F0}m | {session.DistanceKm,5:F2}km | HR {FormatNullableDouble(session.AverageHeartRate, "F0")} | Z1-2 {FormatNullableDouble(session.Z1Z2Percentage, "F1")}% | AEF {FormatNullableDouble(session.AerobicEfficiencyFactor, "F3")} | Z2GAP {session.Z2GapPaceText ?? "-"} | drift {drift} | {session.Name}");
+        }
+
+        stdout.WriteLine($"Quality Progression Chain ({dossier.StimulusProgression.QualityProgressionChain.Count}):");
+        foreach (var q in dossier.StimulusProgression.QualityProgressionChain)
+        {
+            var workInts = q.ParsedIntervals
+                .Where(seg => seg.Role is "quality" or "tempo")
+                .Select(seg => $"{seg.Reps}x{FormatSeconds(seg.DurationSeconds)}@{seg.AverageHeartRate?.ToString("F0", CultureInfo.InvariantCulture) ?? "-"}bpm");
+            var intSummary = string.Join(", ", workInts);
+            if (string.IsNullOrEmpty(intSummary))
+            {
+                intSummary = $"{q.ParsedIntervals.Count} segments parsed";
+            }
+
+            stdout.WriteLine($"  {q.Date:yyyy-MM-dd} | {q.StimulusKind,-9} | {q.DurationMinutes,4:F0}m | {q.DistanceKm,5:F2}km | Z4={q.Z4Minutes:F1}m Z5={q.Z5PlusMinutes:F1}m | cad {FormatNullableDouble(q.CadenceSpm, "F1")} | [{intSummary}] | {q.Name}");
+        }
+
+        stdout.WriteLine($"Calendar Target ({dossier.Calendar.EventsOnTargetDate.Count}) / Next 7d ({dossier.Calendar.UpcomingEventsNext7Days.Count}):");
+        foreach (var evt in dossier.Calendar.UpcomingEventsNext7Days)
+        {
+            var status = evt.IsCompleted ? "completed" : "planned";
+            stdout.WriteLine($"  {evt.Date:yyyy-MM-dd} | {evt.Category,-7} | {status,-9} | {evt.Name}");
+        }
+
+        stdout.WriteLine($"Recent Notes & Context Clues ({r.RecentRunNotes.Count}, daysSinceComplaint={FormatNullableDays(r.DaysSinceLastComplaint)}):");
+        foreach (var clue in r.RecentRunNotes)
+        {
+            stdout.WriteLine($"  {clue.Date:yyyy-MM-dd} [{clue.Source}] {clue.Summary}");
+        }
+
+        stdout.WriteLine($"Data Quality Notes ({dossier.DataQualityNotes.Count}):");
+        foreach (var note in dossier.DataQualityNotes)
+        {
+            stdout.WriteLine($"  - {note}");
+        }
+    }
+
+    private static string FormatNullableInt(int? value) =>
+        value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : "-";
+
+    private static string FormatNullableDays(int? value) =>
+        value.HasValue ? $"{value.Value}d" : "-";
+
+    private static string FormatNullableDouble(double? value, string format) =>
+        value.HasValue ? value.Value.ToString(format, CultureInfo.InvariantCulture) : "-";
+
+    private static string FormatNullableSigned(double? value) =>
+        value.HasValue ? value.Value.ToString("+0.0;-0.0;0.0", CultureInfo.InvariantCulture) : "-";
+
+    private static string FormatRange(int? min, int? max) =>
+        $"{FormatNullableInt(min)}-{FormatNullableInt(max)}";
+
+    private static string FormatSeconds(int seconds)
+    {
+        var mins = seconds / 60;
+        var secs = seconds % 60;
+        return mins > 0 && secs > 0 ? $"{mins}m{secs:D2}s" : mins > 0 ? $"{mins}m" : $"{secs}s";
+    }
+
     private static string FormatPace(double secondsPerKm)
     {
         if (secondsPerKm <= 0)
@@ -252,6 +386,7 @@ public static class LaufenCliRunner
         stdout.WriteLine("  athletes                  List registered athletes");
         stdout.WriteLine("  report                    Display recent runs, weekly trends & CTL/ATL/TSB");
         stdout.WriteLine("  markers                   Extract planning markers & safety guardrails");
+        stdout.WriteLine("  dossier                   Build curated stimulus progression & readiness dossier");
         stdout.WriteLine("  help                      Show this help text");
         stdout.WriteLine();
         stdout.WriteLine("Options:");
@@ -262,8 +397,8 @@ public static class LaufenCliRunner
         stdout.WriteLine("  --limit <N>               Recent runs limit for 'report' (default: 5)");
         stdout.WriteLine("  --weeks <N>               Max weeks for 'report' (default: 12)");
         stdout.WriteLine("  --as-of <YYYY-MM-DD>      Reference date for 'report' CTL/ATL decay");
-        stdout.WriteLine("  --ref-date <YYYY-MM-DD>   Reference date for 'markers'");
-        stdout.WriteLine("  --target-date <YYYY-MM-DD> Target planning date for 'markers'");
+        stdout.WriteLine("  --ref-date <YYYY-MM-DD>   Reference date for 'markers' and 'dossier'");
+        stdout.WriteLine("  --target-date <YYYY-MM-DD> Target planning date for 'markers' and 'dossier'");
     }
 
     private static bool TryParseArgs(IReadOnlyList<string> args, out ParsedCliArgs parsed, out string error)

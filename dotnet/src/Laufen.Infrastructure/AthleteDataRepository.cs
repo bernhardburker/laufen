@@ -14,6 +14,7 @@ public sealed record AthleteWorkspaceData
     public required IReadOnlyList<IntervalsWellnessEntry> WellnessRecords { get; init; }
     public required IReadOnlyList<CoachHistoryEntry> CoachHistory { get; init; }
     public required IReadOnlyList<CalendarEventEntry> CalendarEvents { get; init; }
+    public required IReadOnlyDictionary<string, RunReviewRecord> RunReviews { get; init; }
 }
 
 /// <summary>
@@ -85,6 +86,11 @@ public static class AthleteDataRepository
             ? StrictJsonLoader.LoadCalendarEvents(layout, slug)
             : [];
 
+        var reviewsPath = Path.Combine(athleteDir, "run_reviews.json");
+        IReadOnlyDictionary<string, RunReviewRecord> runReviews = File.Exists(reviewsPath)
+            ? StrictJsonLoader.LoadRunReviews(layout, slug)
+            : new Dictionary<string, RunReviewRecord>(StringComparer.Ordinal);
+
         return new AthleteWorkspaceData
         {
             Slug = slug,
@@ -93,7 +99,8 @@ public static class AthleteDataRepository
             Activities = activities,
             WellnessRecords = wellness,
             CoachHistory = history,
-            CalendarEvents = calendarEvents
+            CalendarEvents = calendarEvents,
+            RunReviews = runReviews
         };
     }
 }

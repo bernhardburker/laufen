@@ -35,6 +35,7 @@ public class CliRunnerTests
         Assert.That(exitCode, Is.EqualTo(0));
         Assert.That(stdout.ToString(), Does.Contain("report"));
         Assert.That(stdout.ToString(), Does.Contain("markers"));
+        Assert.That(stdout.ToString(), Does.Contain("dossier"));
         Assert.That(stdout.ToString(), Does.Contain("athletes"));
     }
 
@@ -188,5 +189,48 @@ public class CliRunnerTests
 
         Assert.That(exitCode, Is.EqualTo(1));
         Assert.That(stderr.ToString(), Does.Contain("Expected YYYY-MM-DD"));
+    }
+
+    [TestCase("berni")]
+    [TestCase("berni-test")]
+    public void RunDossierJsonForTenantProducesValidSnapshot(string slug)
+    {
+        using var stdout = new StringWriter();
+        using var stderr = new StringWriter();
+
+        var exitCode = LaufenCliRunner.Run(
+            ["dossier", "--athlete", slug, "--ref-date", "2026-11-25", "--json"],
+            stdout,
+            stderr,
+            AppContext.BaseDirectory);
+
+        Assert.That(exitCode, Is.EqualTo(0), stderr.ToString());
+        using var doc = JsonDocument.Parse(stdout.ToString());
+        Assert.That(doc.RootElement.GetProperty("slug").GetString(), Is.EqualTo(slug));
+
+        var dossier = doc.RootElement.GetProperty("dossier");
+        Assert.That(dossier.GetProperty("referenceDate").GetString(), Is.EqualTo("2026-11-25"));
+        Assert.That(dossier.GetProperty("stimulusProgression").TryGetProperty("ledger", out _), Is.True);
+        Assert.That(dossier.GetProperty("readiness").TryGetProperty("medicalRedFlags", out _), Is.True);
+    }
+
+    [Test]
+    public void RunDossierTextFormatsReadableOutput()
+    {
+        using var stdout = new StringWriter();
+        using var stderr = new StringWriter();
+
+        var exitCode = LaufenCliRunner.Run(
+            ["dossier", "--athlete", "berni", "--ref-date", "2026-11-25"],
+            stdout,
+            stderr,
+            AppContext.BaseDirectory);
+
+        Assert.That(exitCode, Is.EqualTo(0), stderr.ToString());
+        var text = stdout.ToString();
+        Assert.That(text, Does.Contain("=== Intelligence Dossier:"));
+        Assert.That(text, Does.Contain("Base Progression Chain"));
+        Assert.That(text, Does.Contain("Quality Progression Chain"));
+        Assert.That(text, Does.Contain("Data Quality Notes"));
     }
 }

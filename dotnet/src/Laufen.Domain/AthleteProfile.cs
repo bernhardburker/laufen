@@ -48,6 +48,45 @@ public sealed record AthleteProfile
 
     [JsonPropertyName("pace_targets_min_per_km")]
     public IReadOnlyDictionary<string, string>? PaceTargetsMinPerKm { get; init; }
+
+    [JsonPropertyName("goals")]
+    public AthleteGoalsProfile? Goals { get; init; }
+
+    [JsonPropertyName("time_budgets")]
+    public AthleteTimeBudgets? TimeBudgets { get; init; }
+}
+
+/// <summary>
+/// Optional athlete training goals and block focus used by the agentic coach.
+/// </summary>
+public sealed record AthleteGoalsProfile
+{
+    [JsonPropertyName("primary_goal")]
+    public string? PrimaryGoal { get; init; }
+
+    [JsonPropertyName("target_horizon")]
+    public string? TargetHorizon { get; init; }
+
+    [JsonPropertyName("current_focus")]
+    public string? CurrentFocus { get; init; }
+}
+
+/// <summary>
+/// Optional weekday and weekend session duration budgets in minutes.
+/// </summary>
+public sealed record AthleteTimeBudgets
+{
+    [JsonPropertyName("typical_weekday_min_minutes")]
+    public int? TypicalWeekdayMinMinutes { get; init; }
+
+    [JsonPropertyName("typical_weekday_max_minutes")]
+    public int? TypicalWeekdayMaxMinutes { get; init; }
+
+    [JsonPropertyName("typical_weekend_min_minutes")]
+    public int? TypicalWeekendMinMinutes { get; init; }
+
+    [JsonPropertyName("typical_weekend_max_minutes")]
+    public int? TypicalWeekendMaxMinutes { get; init; }
 }
 
 /// <summary>
