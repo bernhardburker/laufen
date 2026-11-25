@@ -3,6 +3,7 @@
 **Date:** 2026-11-14  
 **Status:** Active (Discovery-Driven / Iterative)  
 **Authoritative Domain Reference:** [`SYSTEM_SPEC.md`](SYSTEM_SPEC.md)  
+**Agentic Coach & Planning Target Design (Post-Step 5):** [`DOTNET_AGENTIC_COACH_DESIGN.md`](DOTNET_AGENTIC_COACH_DESIGN.md)  
 **Existing Python Contracts:** [`../src/core/contracts.py`](../src/core/contracts.py)
 
 ---
@@ -66,10 +67,12 @@ Only **Step 1** is defined for immediate execution. Subsequent steps are rough p
   - Added `WorkspaceLayout.DiscoverFrom` and `AthleteDataRepository` in `Laufen.Infrastructure` to resolve tenant slugs (`--athlete`, `--all`, default) and load validated athlete datasets (gracefully handling optional `calendar_events.json`, `intervals_wellness.json`, `coach_history.json`).
   - Implemented `LaufenCliRunner` in `Laufen.Cli` with `athletes`, `report`, `markers`, `help`, and `--health`, supporting both human-readable terminal output and `--json`.
   - Added `dotnet/tests/Laufen.Tests/CliRunnerTests.cs`, updated `RunReviewRecord` for `zone_pace_stats` (`W-20`), and stabilized the future-date decay test in `PhysiologicalMetricsDifferentialTests`.
-- **Later Candidates**:
-  - Workout planning (`schedule_workout` / `daily_recommendation`).
-  - Post-run review (`run_reviewer`) & AI Coach (`ai_coach`).
-  - External API clients (Intervals.icu, Telegram, LLM).
+- **Later Candidates (Guided by [`DOTNET_AGENTIC_COACH_DESIGN.md`](DOTNET_AGENTIC_COACH_DESIGN.md))**:
+  - *Architectural Pivot Post-Step 5*: Instead of porting Python's rigid deterministic `if/else` workout selection (`schedule_workout.py` / `daily_recommendation.py`) or overloaded monolithic `ai_coach.py`, upcoming planning and coaching slices follow the rolling agentic-first architecture in [`DOTNET_AGENTIC_COACH_DESIGN.md`](DOTNET_AGENTIC_COACH_DESIGN.md):
+    - Structured `WorkoutDefinition` AST, HR-vs-Pace modality validator & Intervals.icu DSL compiler (`Laufen.Domain`).
+    - Curated intelligence dossier builders (`StimulusProgressionDossier` with rolling 14d stimulus ledger, `ReadinessSignalDossier`, optional `AthleteProfile` goals & time budgets).
+    - `ILlmClient` harness + rolling `NextSessionCoach` (`Laufen.Cli coach-next --dry-run`) behind a clean strategy seam.
+    - Multi-day sandbox simulation (`Laufen.Cli simulate`, including chaotic/irregular week trajectories) to empirically validate rolling planning before wiring `ProgressNarrator` and live Intervals.icu / Telegram sync.
 
 ---
 
