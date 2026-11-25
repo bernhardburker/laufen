@@ -42,6 +42,7 @@ public class CliRunnerTests
         Assert.That(stdout.ToString(), Does.Contain("simulate"));
         Assert.That(stdout.ToString(), Does.Contain("narrate"));
         Assert.That(stdout.ToString(), Does.Contain("review"));
+        Assert.That(stdout.ToString(), Does.Contain("sync-calendar"));
         Assert.That(stdout.ToString(), Does.Contain("athletes"));
     }
 
@@ -797,5 +798,87 @@ public class CliRunnerTests
         using var doc = JsonDocument.Parse(jsonOut.ToString());
         Assert.That(doc.RootElement.GetProperty("count").GetInt32(), Is.EqualTo(1));
         Assert.That(doc.RootElement.GetProperty("reviews")[0].GetProperty("id").GetString(), Is.EqualTo("i209021118"));
+    }
+
+    [Test]
+    public void RunSyncCalendarDryRunBuildsPlanAndBlocksProductionApplyWithoutOverride()
+    {
+        var tempDecision = Path.Combine(Path.GetTempPath(), $"laufen-sync-decision-{Guid.NewGuid():N}.json");
+        try
+        {
+            const string decisionJson = """
+                {
+                  "trigger": "morning_sync",
+                  "reference_date": "2026-11-25",
+                  "horizon_days": 14,
+                  "health_state": "ReEntry",
+                  "operations": [
+                    { "date": "2026-11-25", "operation": "delete", "event_id": 160591207 },
+                    {
+                      "date": "2026-11-25",
+                      "operation": "upsert",
+                      "workout": {
+                        "title": "Re-Entry Base 45m",
+                        "session_type": "easy_run",
+                        "steps": [
+                          { "kind": "warmup", "duration_seconds": 600, "target": { "modality": "hr_zone", "hr_zone_start": 1 } },
+                          { "kind": "steady", "duration_seconds": 1800, "target": { "modality": "hr_zone", "hr_zone_start": 2 } },
+                          { "kind": "cooldown", "duration_seconds": 300, "target": { "modality": "hr_zone", "hr_zone_start": 1 } }
+                        ]
+                      }
+                    }
+                  ],
+                  "rationale": {
+                    "observations": ["1 clean comeback run completed"],
+                    "tradeoff_weighed": "Base ramp-up",
+                    "progression_intent": "2nd base run today",
+                    "rejected_alternative": "Threshold today"
+                  },
+                  "updated_compass": {
+                    "updated_at": "2026-11-25",
+                    "current_block_focus": "Re-entry",
+                    "base_milestone": "60m Z2",
+                    "quality_milestone": "4x5m Z4",
+                    "observed_athlete_patterns": ["Clean comeback"],
+                    "last_decision_summary": "Easy 45m Z2 today",
+                    "health_state": "ReEntry",
+                    "auto_event_ids": [160591207, 160252764]
+                  }
+                }
+                """;
+            File.WriteAllText(tempDecision, decisionJson);
+
+            using var stdout = new StringWriter();
+            using var stderr = new StringWriter();
+            var exitCode = LaufenCliRunner.Run(
+                ["sync-calendar", "--athlete", "berni", "--input", tempDecision, "--ref-date", "2026-11-25", "--auto-event-ids", "160591207,160252764", "--dry-run", "--json"],
+                stdout,
+                stderr,
+                AppContext.BaseDirectory);
+
+            Assert.That(exitCode, Is.EqualTo(0), stderr.ToString());
+            using var doc = JsonDocument.Parse(stdout.ToString());
+            Assert.That(doc.RootElement.GetProperty("dryRun").GetBoolean(), Is.True);
+            Assert.That(doc.RootElement.GetProperty("result").GetProperty("applied").GetBoolean(), Is.False);
+            Assert.That(doc.RootElement.GetProperty("result").GetProperty("plan").GetProperty("createCount").GetInt32(), Is.EqualTo(1));
+
+            using var blockOut = new StringWriter();
+            using var blockErr = new StringWriter();
+            var blockExit = LaufenCliRunner.Run(
+                ["sync-calendar", "--athlete", "berni", "--input", tempDecision, "--ref-date", "2026-11-25", "--auto-event-ids", "160591207,160252764", "--apply"],
+                blockOut,
+                blockErr,
+                AppContext.BaseDirectory);
+
+            Assert.That(blockExit, Is.EqualTo(1));
+            Assert.That(blockErr.ToString(), Does.Contain("SAFETY BLOCK"));
+        }
+        finally
+        {
+            if (File.Exists(tempDecision))
+            {
+                File.Delete(tempDecision);
+            }
+        }
     }
 }

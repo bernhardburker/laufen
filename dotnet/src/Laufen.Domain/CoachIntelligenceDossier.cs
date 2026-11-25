@@ -1197,7 +1197,8 @@ public static class CoachIntelligenceDossierBuilder
                 {
                     ownership = "user_locked";
                 }
-                else if (autoEventIds is not null && autoEventIds.Contains(e.Id))
+                else if ((autoEventIds is not null && autoEventIds.Contains(e.Id))
+                    || (!string.IsNullOrEmpty(e.ExternalId) && e.ExternalId.StartsWith("laufen-auto-", StringComparison.Ordinal)))
                 {
                     ownership = "auto";
                 }

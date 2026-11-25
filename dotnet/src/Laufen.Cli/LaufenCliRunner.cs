@@ -75,6 +75,11 @@ public static class LaufenCliRunner
                 return ExecuteReview(parsed, stdout, stderr, workingDirectory);
             }
 
+            if (string.Equals(parsed.Command, "sync-calendar", StringComparison.Ordinal))
+            {
+                return ExecuteSyncCalendar(parsed, stdout, stderr, workingDirectory);
+            }
+
             var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
                 ? WorkspaceLayout.DiscoverFrom(workingDirectory)
                 : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
@@ -438,6 +443,7 @@ public static class LaufenCliRunner
         stdout.WriteLine("  simulate                  Run multi-day self-healing simulation scenarios & invariant auditor");
         stdout.WriteLine("  narrate                   Run decoupled Role 2 ProgressNarrator (--dry-run supported)");
         stdout.WriteLine("  review                    Compute deterministic 4-stage post-run reviews & stream GAP stats");
+        stdout.WriteLine("  sync-calendar             Build/apply idempotent 14d Intervals.icu sync plan (--dry-run default)");
         stdout.WriteLine("  help                      Show this help text");
         stdout.WriteLine();
         stdout.WriteLine("Options:");
@@ -463,6 +469,8 @@ public static class LaufenCliRunner
         stdout.WriteLine("  --output-dir <path>       Write isolated simulation report.md and timeline.json artifacts");
         stdout.WriteLine("  --retries <N>             Validation self-correction retries for 'coach-plan' / 'simulate' / 'narrate' (default: 1)");
         stdout.WriteLine("  --force                   Force narrative generation even when ProgressNarratorGate suppresses");
+        stdout.WriteLine("  --apply                   Execute live Intervals.icu calendar mutations (staging-guarded)");
+        stdout.WriteLine("  --allow-production-write  Explicitly authorize live external API writes to production tenants");
         stdout.WriteLine("  --dry-run                 Skip writing block_compass.json / decision_trace_dotnet.jsonl / narrative artifacts");
     }
 
@@ -492,6 +500,8 @@ public static class LaufenCliRunner
         bool dryRun = false;
         bool force = false;
         string? activityId = null;
+        bool apply = false;
+        bool allowProductionWrite = false;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -643,6 +653,12 @@ public static class LaufenCliRunner
                         return false;
                     }
                     break;
+                case "--apply":
+                    apply = true;
+                    break;
+                case "--allow-production-write":
+                    allowProductionWrite = true;
+                    break;
                 default:
                     if (arg.StartsWith('-') && arg is not ("-h" or "--help"))
                     {
@@ -697,7 +713,9 @@ public static class LaufenCliRunner
             retries,
             dryRun,
             force,
-            activityId);
+            activityId,
+            apply,
+            allowProductionWrite);
         return true;
     }
 
@@ -1076,6 +1094,166 @@ public static class LaufenCliRunner
             stdout.WriteLine($"    Stage 1: {r.DistanceKm:F2}km | {r.MovingTimeText} | HR {r.AverageHeartRate:F0} (max {r.MaxHeartRate}) | Z1/Z2 {r.Z1Z2Percentage:F1}% | AEF {r.AerobicEf?.ToString("F3", CultureInfo.InvariantCulture) ?? "-"} | Z2-GAP {z2Gap}");
             stdout.WriteLine($"    Stage 2: [{r.Review.Stages.Stage2Compliance.StatusLabel}] {r.Review.Stages.Stage2Compliance.PlannedSlot} -> {r.Review.Stages.Stage2Compliance.TargetComparison}");
             stdout.WriteLine($"    Stage 4: recovery={r.Review.Stages.Stage4NextRun.RecoveryHours}h | {r.Review.Stages.Stage4NextRun.Directive}");
+        }
+    }
+
+    private static int ExecuteSyncCalendar(
+        ParsedCliArgs parsed,
+        TextWriter stdout,
+        TextWriter stderr,
+        string? workingDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(parsed.InputPath))
+        {
+            stderr.WriteLine("Missing required '--input <path>' option for 'sync-calendar'.");
+            return 1;
+        }
+
+        var decision = StrictJsonLoader.LoadFromFile<AutopilotPlanDecision>(parsed.InputPath);
+        var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
+            ? WorkspaceLayout.DiscoverFrom(workingDirectory)
+            : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
+        var registry = AthleteDataRepository.LoadRegistry(layout);
+        var slugs = AthleteDataRepository.ResolveTargetSlugs(registry, parsed.AthleteSlug, allActive: false);
+        var slug = slugs[0];
+        var data = AthleteDataRepository.LoadAthleteData(layout, registry, slug);
+        var refDate = parsed.RefDate ?? decision.ReferenceDate;
+        var existingCompass = AutopilotStateStore.LoadBlockCompass(layout, slug);
+
+        var dossier = CoachIntelligenceDossierBuilder.Build(
+            data.Profile,
+            data.Activities,
+            data.WellnessRecords,
+            data.RunReviews,
+            data.CalendarEvents,
+            refDate,
+            parsed.TargetDate ?? refDate,
+            parsed.AutoEventIds,
+            parsed.LockedDates,
+            currentCompass: existingCompass);
+
+        var validation = AutopilotScheduleGatekeeper.Validate(decision, dossier);
+        if (!validation.IsValid)
+        {
+            stderr.WriteLine($"Cannot build calendar sync plan from invalid decision ({validation.Errors.Count} error(s)):");
+            foreach (var err in validation.Errors)
+            {
+                stderr.WriteLine($"  [{err.Code}] {err.Field}: {err.Message}");
+            }
+
+            return 1;
+        }
+
+        var effectiveDryRun = parsed.DryRun || !parsed.Apply;
+        var reconciled = AutopilotScheduleGatekeeper.Reconcile(decision, dossier);
+        var autoIds = dossier.Calendar.UpcomingEventsNext14Days
+            .Where(e => string.Equals(e.Ownership, "auto", StringComparison.Ordinal))
+            .Select(e => e.Id)
+            .ToHashSet();
+        var lockedDates = dossier.Calendar.UserLockedDates.ToHashSet();
+
+        var plan = IntervalsCalendarSyncPlanner.BuildPlan(
+            slug,
+            data.RegistryEntry.IntervalsId,
+            reconciled,
+            data.CalendarEvents,
+            autoIds,
+            lockedDates,
+            isDryRun: effectiveDryRun);
+
+        CalendarSyncExecutionResult result;
+        if (effectiveDryRun)
+        {
+            var retainedAuto = plan.Actions
+                .Where(a => string.Equals(a.Kind, "skip_unchanged", StringComparison.Ordinal)
+                    && string.Equals(a.Ownership, "auto", StringComparison.Ordinal)
+                    && a.ExistingEventId.HasValue)
+                .Select(a => a.ExistingEventId!.Value)
+                .Distinct()
+                .ToList();
+            result = new CalendarSyncExecutionResult
+            {
+                Plan = plan,
+                Applied = false,
+                DeletedEventIds = [],
+                CreatedEventIds = [],
+                RetainedAutoEventIds = retainedAuto,
+                ResultingAutoEventIds = retainedAuto,
+                Errors = []
+            };
+        }
+        else
+        {
+            var permission = StagingSafetyGuard.EvaluateWritePermission(slug, data.RegistryEntry, parsed.AllowProductionWrite);
+            if (!permission.Allowed)
+            {
+                stderr.WriteLine(permission.Reason);
+                return 1;
+            }
+
+            var apiKey = DotEnvLoader.ResolveSecret(layout, "INTERVALS_API_KEY");
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                stderr.WriteLine("Error: INTERVALS_API_KEY is not set in environment or .env.");
+                return 1;
+            }
+
+            var apiBase = DotEnvLoader.ResolveSecret(layout, "INTERVALS_API_BASE") ?? "https://intervals.icu/api/v1";
+            var client = new IntervalsIcuHttpClient(apiKey, apiBase);
+            result = IntervalsCalendarSyncExecutor.ExecuteAsync(
+                plan,
+                data.RegistryEntry,
+                client,
+                parsed.AllowProductionWrite).GetAwaiter().GetResult();
+
+            if (result.Applied)
+            {
+                var updatedCompass = decision.UpdatedCompass with
+                {
+                    UpdatedAt = refDate,
+                    AutoEventIds = result.ResultingAutoEventIds
+                };
+                AutopilotStateStore.SaveBlockCompass(layout, slug, updatedCompass);
+            }
+        }
+
+        if (parsed.AsJson)
+        {
+            var payload = new
+            {
+                slug,
+                dryRun = effectiveDryRun,
+                result
+            };
+            stdout.WriteLine(JsonSerializer.Serialize(payload, JsonOptions));
+            return result.Errors.Count == 0 ? 0 : 1;
+        }
+
+        WriteSyncCalendarText(stdout, result);
+        if (result.Errors.Count > 0)
+        {
+            foreach (var err in result.Errors)
+            {
+                stderr.WriteLine($"Error: {err}");
+            }
+
+            return 1;
+        }
+
+        return 0;
+    }
+
+    private static void WriteSyncCalendarText(TextWriter stdout, CalendarSyncExecutionResult result)
+    {
+        var plan = result.Plan;
+        stdout.WriteLine($"=== Intervals.icu 14d Calendar Sync: {plan.AthleteSlug} ({plan.IntervalsAthleteId}, dryRun={plan.IsDryRun}, applied={result.Applied}) ===");
+        stdout.WriteLine($"Actions: delete={plan.DeleteCount}, create={plan.CreateCount}, skip_unchanged={plan.UnchangedCount}, skip_protected={plan.ProtectedSkippedCount}");
+        foreach (var action in plan.Actions)
+        {
+            var target = action.ExistingEventId.HasValue
+                ? $"event={action.ExistingEventId.Value}"
+                : (action.Request is not null ? $"ext={action.Request.ExternalId}" : "-");
+            stdout.WriteLine($"  {action.Date:yyyy-MM-dd} | {action.Kind,-14} | [{action.Ownership,-11}] | {target} | {action.Reason}");
         }
     }
 
@@ -1604,5 +1782,7 @@ public static class LaufenCliRunner
         int Retries,
         bool DryRun,
         bool Force,
-        string? ActivityId);
+        string? ActivityId,
+        bool Apply,
+        bool AllowProductionWrite);
 }
