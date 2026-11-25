@@ -110,6 +110,7 @@ public static class AutopilotScenarioCatalog
     public const string SpontaneousOnWatchWorkoutSwap = "spontaneous_on_watch_workout_swap";
     public const string IllnessSickholdAndReentry = "illness_sickhold_and_reentry";
     public const string TelegramUserLockedOverride = "telegram_user_locked_override";
+    public const string AntiChurnStableWeekHysteresis = "anti_churn_stable_week_hysteresis";
 
     private static readonly DateOnly DefaultStartDate = new(2026, 12, 1);
 
@@ -118,7 +119,8 @@ public static class AutopilotScenarioCatalog
         MissedWorkdaysAutoRollover,
         SpontaneousOnWatchWorkoutSwap,
         IllnessSickholdAndReentry,
-        TelegramUserLockedOverride
+        TelegramUserLockedOverride,
+        AntiChurnStableWeekHysteresis
     ];
 
     public static IReadOnlyList<string> GetAllNames() => ScenarioNames;
@@ -133,6 +135,7 @@ public static class AutopilotScenarioCatalog
             SpontaneousOnWatchWorkoutSwap => BuildSpontaneousSwapScenario(),
             IllnessSickholdAndReentry => BuildIllnessSickholdScenario(),
             TelegramUserLockedOverride => BuildTelegramUserLockedOverrideScenario(),
+            AntiChurnStableWeekHysteresis => BuildAntiChurnStableWeekHysteresisScenario(),
             _ => throw new ArgumentException(
                 $"Unknown simulation scenario '{name}'. Expected one of: {string.Join(", ", ScenarioNames)}.",
                 nameof(name))
@@ -536,6 +539,83 @@ public static class AutopilotScenarioCatalog
                 TimeOfDay = new TimeOnly(8, 30),
                 AthleteMessage = "Beine sind heute ziemlich schwer, bitte das heutige Training streichen und einen Ruhetag einplanen.",
                 WellnessBeforeStep = new() { DayOffset = 2, RestingHr = 48, Hrv = 71.0, SleepHours = 7.2, SleepScore = 76.0 }
+            }
+        ]
+    };
+
+    private static SimulationScenario BuildAntiChurnStableWeekHysteresisScenario() => new()
+    {
+        Name = AntiChurnStableWeekHysteresis,
+        Description = "Stable normal week with minor readiness jitter preserves existing watch plan until post_run triggers rebalance.",
+        StartDate = DefaultStartDate,
+        InitialHealthState = "Normal",
+        InitialWellness = BuildBaselineWellness(),
+        InitialRuns = BuildBaselineRuns(),
+        InitialCalendar =
+        [
+            new()
+            {
+                EventId = 820001,
+                DayOffset = 1,
+                Name = "Easy Base 45m",
+                Description = "Warmup\n- 10m Z1 HR\n\nMain Set\n- 30m Z2 HR\n\nCooldown\n- 5m Z1 HR\n",
+                Ownership = "auto",
+                DurationSeconds = 2700,
+                EstimatedLoad = 40.0
+            },
+            new()
+            {
+                EventId = 820002,
+                DayOffset = 3,
+                Name = "Easy Base 45m",
+                Description = "Warmup\n- 10m Z1 HR\n\nMain Set\n- 30m Z2 HR\n\nCooldown\n- 5m Z1 HR\n",
+                Ownership = "auto",
+                DurationSeconds = 2700,
+                EstimatedLoad = 40.0
+            },
+            new()
+            {
+                EventId = 820003,
+                DayOffset = 5,
+                Name = "Aerober Long Run (60m Z2)",
+                Description = "Warmup\n- 10m Z1 HR\n\nMain Set\n- 45m Z2 HR\n\nCooldown\n- 5m Z1 HR\n",
+                Ownership = "auto",
+                DurationSeconds = 3600,
+                EstimatedLoad = 54.0
+            }
+        ],
+        Steps =
+        [
+            new()
+            {
+                DayOffset = 0,
+                Trigger = "morning_sync",
+                TimeOfDay = new TimeOnly(6, 0),
+                WellnessBeforeStep = new() { DayOffset = 0, RestingHr = 47, Hrv = 75.0, SleepHours = 7.9, SleepScore = 84.0 }
+            },
+            new()
+            {
+                DayOffset = 1,
+                Trigger = "morning_sync",
+                TimeOfDay = new TimeOnly(6, 0),
+                WellnessBeforeStep = new() { DayOffset = 1, RestingHr = 48, Hrv = 72.0, SleepHours = 7.5, SleepScore = 80.0 }
+            },
+            new()
+            {
+                DayOffset = 2,
+                Trigger = "post_run",
+                TimeOfDay = new TimeOnly(8, 0),
+                WellnessBeforeStep = new() { DayOffset = 2, RestingHr = 47, Hrv = 74.0, SleepHours = 7.8, SleepScore = 83.0 },
+                RunBeforeStep = new()
+                {
+                    DayOffset = 1,
+                    Name = "Easy Base 45m",
+                    DurationSeconds = 2700,
+                    DistanceMeters = 6500,
+                    AverageHeartRate = 151,
+                    MaxHeartRate = 158,
+                    HrZoneTimesSeconds = [600, 2080, 20, 0, 0]
+                }
             }
         ]
     };

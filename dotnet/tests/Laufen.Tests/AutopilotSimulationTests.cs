@@ -13,6 +13,7 @@ public class AutopilotSimulationTests
     [TestCase(AutopilotScenarioCatalog.SpontaneousOnWatchWorkoutSwap)]
     [TestCase(AutopilotScenarioCatalog.IllnessSickholdAndReentry)]
     [TestCase(AutopilotScenarioCatalog.TelegramUserLockedOverride)]
+    [TestCase(AutopilotScenarioCatalog.AntiChurnStableWeekHysteresis)]
     public async Task AllBuiltInMultiDayScenariosPassWithZeroAuditFailures(string scenarioName)
     {
         var layout = ResolveRepositoryLayout();

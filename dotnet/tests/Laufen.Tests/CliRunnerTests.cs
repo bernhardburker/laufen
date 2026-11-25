@@ -45,6 +45,7 @@ public class CliRunnerTests
         Assert.That(stdout.ToString(), Does.Contain("sync-calendar"));
         Assert.That(stdout.ToString(), Does.Contain("telegram-briefing"));
         Assert.That(stdout.ToString(), Does.Contain("telegram-override"));
+        Assert.That(stdout.ToString(), Does.Contain("autopilot-run"));
         Assert.That(stdout.ToString(), Does.Contain("athletes"));
     }
 
@@ -686,7 +687,7 @@ public class CliRunnerTests
             Assert.That(exitCode, Is.EqualTo(0), stderr.ToString());
             var text = stdout.ToString();
             Assert.That(text, Does.Contain("Autopilot Multi-Day Simulation: berni"));
-            Assert.That(text, Does.Contain("passed=4/4"));
+            Assert.That(text, Does.Contain("passed=5/5"));
 
             using var jsonOut = new StringWriter();
             using var jsonErr = new StringWriter();
@@ -1005,5 +1006,38 @@ public class CliRunnerTests
                 File.Delete(tempStub);
             }
         }
+    }
+
+    [Test]
+    public void RunAutopilotRunExecutesUnifiedCycleInDryRunAndBlocksProductionApply()
+    {
+        using var dryOut = new StringWriter();
+        using var dryErr = new StringWriter();
+        var dryExit = LaufenCliRunner.Run(
+            ["autopilot-run", "--athlete", "berni", "--ref-date", "2026-11-25", "--provider", "stub", "--dry-run", "--json"],
+            dryOut,
+            dryErr,
+            AppContext.BaseDirectory);
+
+        Assert.That(dryExit, Is.EqualTo(0), dryErr.ToString() + dryOut.ToString());
+        using (var doc = JsonDocument.Parse(dryOut.ToString()))
+        {
+            Assert.That(doc.RootElement.GetProperty("dryRun").GetBoolean(), Is.True);
+            var cycleResult = doc.RootElement.GetProperty("cycleResult");
+            Assert.That(cycleResult.GetProperty("succeeded").GetBoolean(), Is.True);
+            Assert.That(cycleResult.GetProperty("hysteresis").GetProperty("shouldReplan").GetBoolean(), Is.True);
+            Assert.That(cycleResult.GetProperty("telegramPreview").GetProperty("messageKind").GetString(), Is.EqualTo("morning_briefing"));
+        }
+
+        using var blockOut = new StringWriter();
+        using var blockErr = new StringWriter();
+        var blockExit = LaufenCliRunner.Run(
+            ["autopilot-run", "--athlete", "berni", "--ref-date", "2026-11-25", "--apply"],
+            blockOut,
+            blockErr,
+            AppContext.BaseDirectory);
+
+        Assert.That(blockExit, Is.EqualTo(1));
+        Assert.That(blockErr.ToString(), Does.Contain("SAFETY BLOCK"));
     }
 }

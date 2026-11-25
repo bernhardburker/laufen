@@ -90,6 +90,11 @@ public static class LaufenCliRunner
                 return ExecuteTelegramOverride(parsed, stdout, stderr, workingDirectory);
             }
 
+            if (string.Equals(parsed.Command, "autopilot-run", StringComparison.Ordinal))
+            {
+                return ExecuteAutopilotRun(parsed, stdout, stderr, workingDirectory);
+            }
+
             var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
                 ? WorkspaceLayout.DiscoverFrom(workingDirectory)
                 : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
@@ -457,6 +462,7 @@ public static class LaufenCliRunner
         stdout.WriteLine("  sync-calendar             Build/apply idempotent 14d Intervals.icu sync plan (--dry-run default)");
         stdout.WriteLine("  telegram-briefing         Render/send Telegram morning briefing HTML + inline keyboard");
         stdout.WriteLine("  telegram-override         Route Telegram callback/text override to lock or RollingAutopilotCoach");
+        stdout.WriteLine("  autopilot-run             Run unified Hysteresis -> Planner -> SyncPlan -> Narrator -> Telegram cycle");
         stdout.WriteLine("  help                      Show this help text");
         stdout.WriteLine();
         stdout.WriteLine("Options:");
@@ -483,6 +489,8 @@ public static class LaufenCliRunner
         stdout.WriteLine("  --output-dir <path>       Write isolated simulation report.md and timeline.json artifacts");
         stdout.WriteLine("  --retries <N>             Validation self-correction retries for 'coach-plan' / 'simulate' / 'narrate' (default: 1)");
         stdout.WriteLine("  --force                   Force narrative generation or briefing dispatch when gated/idempotent");
+        stdout.WriteLine("  --force-replan            Bypass anti-churn hysteresis and force Role 1 replanning");
+        stdout.WriteLine("  --force-narrate           Force Role 2 ProgressNarrator inside 'autopilot-run'");
         stdout.WriteLine("  --apply                   Execute live Intervals.icu calendar mutations (staging-guarded)");
         stdout.WriteLine("  --send                    Send live Telegram briefing message (staging-guarded)");
         stdout.WriteLine("  --allow-production-write  Explicitly authorize live external API writes to production tenants");
@@ -519,6 +527,8 @@ public static class LaufenCliRunner
         bool allowProductionWrite = false;
         string? callbackData = null;
         bool send = false;
+        bool forceReplan = false;
+        bool forceNarrate = false;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -686,6 +696,12 @@ public static class LaufenCliRunner
                 case "--send":
                     send = true;
                     break;
+                case "--force-replan":
+                    forceReplan = true;
+                    break;
+                case "--force-narrate":
+                    forceNarrate = true;
+                    break;
                 default:
                     if (arg.StartsWith('-') && arg is not ("-h" or "--help"))
                     {
@@ -744,7 +760,9 @@ public static class LaufenCliRunner
             apply,
             allowProductionWrite,
             callbackData,
-            send);
+            send,
+            forceReplan,
+            forceNarrate);
         return true;
     }
 
@@ -2069,6 +2087,195 @@ public static class LaufenCliRunner
         return 0;
     }
 
+    private static int ExecuteAutopilotRun(
+        ParsedCliArgs parsed,
+        TextWriter stdout,
+        TextWriter stderr,
+        string? workingDirectory)
+    {
+        var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
+            ? WorkspaceLayout.DiscoverFrom(workingDirectory)
+            : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
+        var registry = AthleteDataRepository.LoadRegistry(layout);
+        var slugs = AthleteDataRepository.ResolveTargetSlugs(registry, parsed.AthleteSlug, allActive: false);
+        var slug = slugs[0];
+        var data = AthleteDataRepository.LoadAthleteData(layout, registry, slug);
+
+        var wantsExternalWrite = (parsed.Apply || parsed.Send) && !parsed.DryRun;
+        if (wantsExternalWrite)
+        {
+            var permission = StagingSafetyGuard.EvaluateWritePermission(slug, data.RegistryEntry, parsed.AllowProductionWrite);
+            if (!permission.Allowed)
+            {
+                stderr.WriteLine(permission.Reason);
+                return 1;
+            }
+        }
+
+        string? stubJson = null;
+        if (!string.IsNullOrWhiteSpace(parsed.StubResponsePath))
+        {
+            stubJson = File.ReadAllText(parsed.StubResponsePath);
+        }
+
+        var effectiveProvider = string.IsNullOrWhiteSpace(parsed.Provider) ? "agy" : parsed.Provider;
+        ILlmClient plannerLlm;
+        ILlmClient narratorLlm;
+        try
+        {
+            var isDefaultStub = effectiveProvider.Trim().ToLowerInvariant() is "stub" or "mock" or "test" && stubJson is null;
+            plannerLlm = isDefaultStub
+                ? new SimulationStubLlmClient()
+                : LlmClientFactory.Create(effectiveProvider, parsed.Model, stubJson);
+            narratorLlm = isDefaultStub
+                ? new NarrativeStubLlmClient()
+                : LlmClientFactory.Create(effectiveProvider, parsed.Model, stubJson);
+        }
+        catch (ArgumentException ex)
+        {
+            stderr.WriteLine($"Error: {ex.Message}");
+            return 1;
+        }
+
+        var refDate = parsed.RefDate ?? DateOnly.FromDateTime(DateTime.Today);
+        var targetDate = parsed.TargetDate ?? refDate;
+        var existingCompass = AutopilotStateStore.LoadBlockCompass(layout, slug);
+        var latestTrace = AutopilotStateStore.LoadLatestDecisionTrace(layout, slug);
+        var dotnetState = AutopilotStateStore.LoadDotNetTelegramState(layout, slug);
+        var mergedLocks = AutopilotStateStore.MergeUserLockedDates(data.TelegramState, dotnetState, parsed.LockedDates);
+        var effectiveDryRun = parsed.DryRun || (!parsed.Apply && !parsed.Send);
+
+        var orchestrator = new AutopilotCycleOrchestrator(
+            new RollingAutopilotStrategy(plannerLlm),
+            new LlmProgressNarrator(narratorLlm));
+
+        var cycleResult = orchestrator.RunCycleAsync(new AutopilotCycleRequest
+        {
+            AthleteSlug = slug,
+            RegistryEntry = data.RegistryEntry,
+            Profile = data.Profile,
+            Activities = data.Activities,
+            WellnessRecords = data.WellnessRecords,
+            RunReviews = data.RunReviews,
+            CalendarEvents = data.CalendarEvents,
+            ReferenceDate = refDate,
+            TargetDate = targetDate,
+            AutoEventIds = parsed.AutoEventIds,
+            LockedDates = mergedLocks,
+            CurrentCompass = existingCompass,
+            PreviousHealthState = latestTrace?.HealthState,
+            PreviousBlockFocus = existingCompass?.CurrentBlockFocus,
+            Trigger = parsed.Trigger,
+            AthleteMessage = parsed.Message,
+            MaxValidationRetries = parsed.Retries,
+            ForceReplan = parsed.ForceReplan,
+            ForceNarrate = parsed.ForceNarrate,
+            IsDryRun = effectiveDryRun
+        }).GetAwaiter().GetResult();
+
+        if (!cycleResult.Succeeded)
+        {
+            stderr.WriteLine($"Autopilot cycle failed: {cycleResult.FailureReason}");
+            return 1;
+        }
+
+        if (!effectiveDryRun)
+        {
+            if (cycleResult.PlanningOutcome?.Decision is not null)
+            {
+                AutopilotStateStore.SaveBlockCompass(layout, slug, cycleResult.PlanningOutcome.Decision.UpdatedCompass);
+                AutopilotStateStore.AppendDecisionTrace(layout, slug, cycleResult.PlanningOutcome.TraceEntry);
+            }
+
+            if (cycleResult.NarrativeOutcome?.Report is not null)
+            {
+                AutopilotStateStore.SaveNarrativeArtifacts(layout, slug, cycleResult.NarrativeOutcome.Report);
+            }
+        }
+
+        CalendarSyncExecutionResult? syncExecution = null;
+        if (parsed.Apply && !parsed.DryRun && cycleResult.CalendarSyncPlan is not null)
+        {
+            var apiKey = DotEnvLoader.ResolveSecret(layout, "INTERVALS_API_KEY");
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                stderr.WriteLine("Error: INTERVALS_API_KEY is not set in environment or .env.");
+                return 1;
+            }
+
+            var apiBase = DotEnvLoader.ResolveSecret(layout, "INTERVALS_API_BASE") ?? "https://intervals.icu/api/v1";
+            var icuClient = new IntervalsIcuHttpClient(apiKey, apiBase);
+            syncExecution = IntervalsCalendarSyncExecutor.ExecuteAsync(
+                cycleResult.CalendarSyncPlan,
+                data.RegistryEntry,
+                icuClient,
+                parsed.AllowProductionWrite).GetAwaiter().GetResult();
+
+            if (syncExecution.Applied && cycleResult.UpdatedCompass is not null)
+            {
+                var updatedCompass = cycleResult.UpdatedCompass with
+                {
+                    UpdatedAt = refDate,
+                    AutoEventIds = syncExecution.ResultingAutoEventIds
+                };
+                AutopilotStateStore.SaveBlockCompass(layout, slug, updatedCompass);
+            }
+        }
+
+        var telegramSent = false;
+        long? telegramMessageId = null;
+        if (parsed.Send && !parsed.DryRun && cycleResult.TelegramPreview is not null)
+        {
+            var stateForIdempotency = dotnetState ?? data.TelegramState;
+            var shouldSend = TelegramInteractionRouter.ShouldSendMorningBriefing(stateForIdempotency, targetDate, parsed.Force);
+            if (shouldSend && !string.IsNullOrWhiteSpace(data.RegistryEntry.TelegramChatId))
+            {
+                var botToken = DotEnvLoader.ResolveSecret(layout, "TELEGRAM_BOT_TOKEN");
+                if (string.IsNullOrWhiteSpace(botToken))
+                {
+                    stderr.WriteLine("Error: TELEGRAM_BOT_TOKEN is not set in environment or .env.");
+                    return 1;
+                }
+
+                var tgClient = new TelegramBotHttpClient(botToken);
+                telegramMessageId = tgClient.SendMessageAsync(cycleResult.TelegramPreview).GetAwaiter().GetResult();
+                telegramSent = true;
+                var updatedTgState = TelegramInteractionRouter.MarkMorningBriefingSent(stateForIdempotency, targetDate);
+                AutopilotStateStore.SaveDotNetTelegramState(layout, slug, updatedTgState);
+            }
+        }
+
+        if (parsed.AsJson)
+        {
+            var payload = new
+            {
+                slug,
+                dryRun = effectiveDryRun,
+                provider = effectiveProvider,
+                cycleResult,
+                syncExecution,
+                telegramSent,
+                telegramMessageId
+            };
+            stdout.WriteLine(JsonSerializer.Serialize(payload, JsonOptions));
+            return 0;
+        }
+
+        stdout.WriteLine($"=== Autopilot Unified Cycle: {slug} (trigger={parsed.Trigger}, dryRun={effectiveDryRun}, provider={effectiveProvider}) ===");
+        stdout.WriteLine($"Hysteresis: shouldReplan={cycleResult.Hysteresis.ShouldReplan} ({cycleResult.Hysteresis.ReasonCode})");
+        if (cycleResult.PlanningOutcome is not null)
+        {
+            stdout.WriteLine($"Planner: success={cycleResult.PlanningOutcome.Success}, health={cycleResult.UpdatedCompass?.HealthState ?? "-"}");
+        }
+        if (cycleResult.CalendarSyncPlan is not null)
+        {
+            stdout.WriteLine($"Calendar Sync Plan: delete={cycleResult.CalendarSyncPlan.DeleteCount}, create={cycleResult.CalendarSyncPlan.CreateCount}, skip_unchanged={cycleResult.CalendarSyncPlan.UnchangedCount}, skip_protected={cycleResult.CalendarSyncPlan.ProtectedSkippedCount}");
+        }
+        stdout.WriteLine($"Narrator: shouldNarrate={cycleResult.NarrativeGate.ShouldNarrate} ({cycleResult.NarrativeGate.TriggerReason}), error={cycleResult.NarrativeError ?? "-"}");
+        stdout.WriteLine($"Telegram: previewReady={cycleResult.TelegramPreview is not null}, sent={telegramSent}");
+        return 0;
+    }
+
     private sealed record ParsedCliArgs(
         string Command,
         string? AthleteSlug,
@@ -2097,5 +2304,7 @@ public static class LaufenCliRunner
         bool Apply,
         bool AllowProductionWrite,
         string? CallbackData,
-        bool Send);
+        bool Send,
+        bool ForceReplan,
+        bool ForceNarrate);
 }
