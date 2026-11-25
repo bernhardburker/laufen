@@ -37,6 +37,7 @@ public class CliRunnerTests
         Assert.That(stdout.ToString(), Does.Contain("markers"));
         Assert.That(stdout.ToString(), Does.Contain("dossier"));
         Assert.That(stdout.ToString(), Does.Contain("validate-workout"));
+        Assert.That(stdout.ToString(), Does.Contain("project-plan"));
         Assert.That(stdout.ToString(), Does.Contain("athletes"));
     }
 
@@ -358,6 +359,182 @@ public class CliRunnerTests
             if (File.Exists(tempFile))
             {
                 File.Delete(tempFile);
+            }
+        }
+    }
+
+    [Test]
+    public void RunProjectPlanValidatesReconcilesAndRejectsPrematureReentryQualityOnBerni()
+    {
+        var tempValid = Path.Combine(Path.GetTempPath(), $"laufen-autopilot-valid-{Guid.NewGuid():N}.json");
+        var tempInvalid = Path.Combine(Path.GetTempPath(), $"laufen-autopilot-invalid-{Guid.NewGuid():N}.json");
+        try
+        {
+            const string validJson = """
+                {
+                  "trigger": "morning_sync",
+                  "reference_date": "2026-11-25",
+                  "horizon_days": 14,
+                  "health_state": "ReEntry",
+                  "operations": [
+                    { "date": "2026-11-25", "operation": "delete", "event_id": 160591207 },
+                    {
+                      "date": "2026-11-25",
+                      "operation": "upsert",
+                      "workout": {
+                        "title": "Re-Entry Aerobic Base 45m",
+                        "session_type": "easy_run",
+                        "steps": [
+                          { "kind": "warmup", "duration_seconds": 600, "target": { "modality": "hr_zone", "hr_zone_start": 1 } },
+                          { "kind": "steady", "duration_seconds": 1800, "target": { "modality": "hr_zone", "hr_zone_start": 2 } },
+                          { "kind": "cooldown", "duration_seconds": 300, "target": { "modality": "hr_zone", "hr_zone_start": 1 } }
+                        ]
+                      }
+                    },
+                    {
+                      "date": "2026-11-28",
+                      "operation": "upsert",
+                      "workout": {
+                        "title": "Aerobic Long Run 60m",
+                        "session_type": "long_run",
+                        "steps": [
+                          { "kind": "warmup", "duration_seconds": 600, "target": { "modality": "hr_zone", "hr_zone_start": 1 } },
+                          { "kind": "steady", "duration_seconds": 2700, "target": { "modality": "hr_zone", "hr_zone_start": 2 } },
+                          { "kind": "cooldown", "duration_seconds": 300, "target": { "modality": "hr_zone", "hr_zone_start": 1 } }
+                        ]
+                      }
+                    },
+                    {
+                      "date": "2026-12-01",
+                      "operation": "upsert",
+                      "workout": {
+                        "title": "Threshold 4x5m Z4",
+                        "session_type": "threshold_intervals",
+                        "steps": [
+                          { "kind": "warmup", "duration_seconds": 600, "target": { "modality": "hr_zone", "hr_zone_start": 1, "hr_zone_end": 2 } },
+                          {
+                            "kind": "repeat",
+                            "reps": 4,
+                            "work": { "duration_seconds": 300, "target": { "modality": "hr_zone", "hr_zone_start": 4 } },
+                            "recovery": { "duration_seconds": 120, "target": { "modality": "hr_zone", "hr_zone_start": 1 } }
+                          },
+                          { "kind": "cooldown", "duration_seconds": 600, "target": { "modality": "hr_zone", "hr_zone_start": 1 } }
+                        ]
+                      }
+                    }
+                  ],
+                  "rationale": {
+                    "observations": ["1 clean comeback run completed after 10d back break"],
+                    "tradeoff_weighed": "Post-break consolidation before threshold",
+                    "progression_intent": "Complete 2nd clean Z2 run today, 60m long run Saturday, threshold next Tuesday",
+                    "rejected_alternative": "Threshold today rejected due to single post-break session"
+                  },
+                  "updated_compass": {
+                    "updated_at": "2026-11-25",
+                    "current_block_focus": "Re-entry aerobic build",
+                    "base_milestone": "60m Z2 Long Run",
+                    "quality_milestone": "4x5m Z4 Threshold on Dec 1",
+                    "observed_athlete_patterns": ["Clean comeback Z1/Z2"],
+                    "last_decision_summary": "Deferred threshold to Dec 1 after 2 clean base runs",
+                    "health_state": "ReEntry",
+                    "auto_event_ids": [160591207, 160252764]
+                  }
+                }
+                """;
+            File.WriteAllText(tempValid, validJson);
+
+            using var stdout = new StringWriter();
+            using var stderr = new StringWriter();
+            var exitCode = LaufenCliRunner.Run(
+                ["project-plan", "--input", tempValid, "--athlete", "berni", "--ref-date", "2026-11-25", "--auto-event-ids", "160591207,160252764"],
+                stdout,
+                stderr,
+                AppContext.BaseDirectory);
+
+            Assert.That(exitCode, Is.EqualTo(0), stderr.ToString());
+            var text = stdout.ToString();
+            Assert.That(text, Does.Contain("14-Day Autopilot Projection: berni"));
+            Assert.That(text, Does.Contain("Days 1-7 Watch Commit Window (3 session(s))"));
+            Assert.That(text, Does.Contain("Banister 14d Projection: CTL"));
+
+            using var jsonOut = new StringWriter();
+            using var jsonErr = new StringWriter();
+            var jsonExit = LaufenCliRunner.Run(
+                ["project-plan", "--input", tempValid, "--athlete", "berni", "--ref-date", "2026-11-25", "--auto-event-ids", "160591207,160252764", "--json"],
+                jsonOut,
+                jsonErr,
+                AppContext.BaseDirectory);
+
+            Assert.That(jsonExit, Is.EqualTo(0), jsonErr.ToString());
+            using var doc = JsonDocument.Parse(jsonOut.ToString());
+            Assert.That(doc.RootElement.GetProperty("isValid").GetBoolean(), Is.True);
+            Assert.That(doc.RootElement.GetProperty("schedule").GetProperty("watchCommitWindow").GetArrayLength(), Is.EqualTo(3));
+
+            const string invalidJson = """
+                {
+                  "trigger": "morning_sync",
+                  "reference_date": "2026-11-25",
+                  "horizon_days": 14,
+                  "health_state": "ReEntry",
+                  "operations": [
+                    { "date": "2026-11-25", "operation": "delete", "event_id": 160252764 },
+                    {
+                      "date": "2026-11-25",
+                      "operation": "upsert",
+                      "workout": {
+                        "title": "Premature Threshold 4x5m Z4",
+                        "session_type": "threshold_intervals",
+                        "steps": [
+                          { "kind": "warmup", "duration_seconds": 600, "target": { "modality": "hr_zone", "hr_zone_start": 1, "hr_zone_end": 2 } },
+                          {
+                            "kind": "repeat",
+                            "reps": 4,
+                            "work": { "duration_seconds": 300, "target": { "modality": "hr_zone", "hr_zone_start": 4 } },
+                            "recovery": { "duration_seconds": 120, "target": { "modality": "hr_zone", "hr_zone_start": 1 } }
+                          },
+                          { "kind": "cooldown", "duration_seconds": 600, "target": { "modality": "hr_zone", "hr_zone_start": 1 } }
+                        ]
+                      }
+                    }
+                  ],
+                  "rationale": {
+                    "observations": ["1 clean comeback run completed"],
+                    "tradeoff_weighed": "Immediate threshold",
+                    "progression_intent": "Force threshold on day 0",
+                    "rejected_alternative": "Base run"
+                  },
+                  "updated_compass": {
+                    "updated_at": "2026-11-25",
+                    "current_block_focus": "Test",
+                    "base_milestone": "Test",
+                    "quality_milestone": "Test",
+                    "observed_athlete_patterns": [],
+                    "last_decision_summary": "Premature threshold"
+                  }
+                }
+                """;
+            File.WriteAllText(tempInvalid, invalidJson);
+
+            using var errOut = new StringWriter();
+            using var errStderr = new StringWriter();
+            var invalidExit = LaufenCliRunner.Run(
+                ["project-plan", "--input", tempInvalid, "--athlete", "berni", "--ref-date", "2026-11-25", "--auto-event-ids", "160591207,160252764"],
+                errOut,
+                errStderr,
+                AppContext.BaseDirectory);
+
+            Assert.That(invalidExit, Is.EqualTo(1));
+            Assert.That(errStderr.ToString(), Does.Contain("reentry_requires_base_before_quality"));
+        }
+        finally
+        {
+            if (File.Exists(tempValid))
+            {
+                File.Delete(tempValid);
+            }
+            if (File.Exists(tempInvalid))
+            {
+                File.Delete(tempInvalid);
             }
         }
     }

@@ -133,7 +133,7 @@ public static partial class WorkoutModalityValidator
         return new WorkoutValidationResult(errors.Count == 0, errors);
     }
 
-    private static void ValidateRationale(CoachDecisionRationale? rationale, List<WorkoutValidationError> errors)
+    internal static void ValidateRationale(CoachDecisionRationale? rationale, List<WorkoutValidationError> errors)
     {
         if (rationale is null)
         {
@@ -162,7 +162,7 @@ public static partial class WorkoutModalityValidator
         }
     }
 
-    private static void ValidateCompass(BlockCompassSnapshot? compass, List<WorkoutValidationError> errors)
+    internal static void ValidateCompass(BlockCompassSnapshot? compass, List<WorkoutValidationError> errors)
     {
         if (compass is null)
         {
@@ -320,7 +320,7 @@ public static partial class WorkoutModalityValidator
         }
     }
 
-    private static void ValidateWorkoutInternal(
+    internal static void ValidateWorkoutInternal(
         WorkoutDefinition workout,
         string prefix,
         List<WorkoutValidationError> errors)

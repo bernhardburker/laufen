@@ -54,6 +54,12 @@ public sealed record AthleteProfile
 
     [JsonPropertyName("time_budgets")]
     public AthleteTimeBudgets? TimeBudgets { get; init; }
+
+    [JsonPropertyName("preferred_run_days")]
+    public IReadOnlyList<string>? PreferredRunDays { get; init; }
+
+    [JsonPropertyName("location")]
+    public AthleteLocationProfile? Location { get; init; }
 }
 
 /// <summary>
@@ -87,6 +93,21 @@ public sealed record AthleteTimeBudgets
 
     [JsonPropertyName("typical_weekend_max_minutes")]
     public int? TypicalWeekendMaxMinutes { get; init; }
+}
+
+/// <summary>
+/// Optional geographic coordinates used for zero-dependency 5-day weather snapshots.
+/// </summary>
+public sealed record AthleteLocationProfile
+{
+    [JsonPropertyName("latitude")]
+    public double? Latitude { get; init; }
+
+    [JsonPropertyName("longitude")]
+    public double? Longitude { get; init; }
+
+    [JsonPropertyName("label")]
+    public string? Label { get; init; }
 }
 
 /// <summary>

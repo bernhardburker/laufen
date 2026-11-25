@@ -17,6 +17,8 @@ public sealed record AthleteDossierSummary
     public required int ProfileRestingHr { get; init; }
     public AthleteGoalsProfile? Goals { get; init; }
     public AthleteTimeBudgets? TimeBudgets { get; init; }
+    public IReadOnlyList<string>? PreferredRunDays { get; init; }
+    public AthleteLocationProfile? Location { get; init; }
 }
 
 public sealed record RollingStimulusLedger
@@ -158,6 +160,25 @@ public sealed record ReadinessSignalDossier
     public required IReadOnlyList<MedicalRedFlag> MedicalRedFlags { get; init; }
 }
 
+public sealed record DailyWeatherForecast
+{
+    public required DateOnly Date { get; init; }
+    public required double TempMaxC { get; init; }
+    public required double TempMinC { get; init; }
+    public required double PrecipitationMm { get; init; }
+    public required double MaxWindGustKmh { get; init; }
+    public required string Summary { get; init; }
+    public bool PaceIntervalFriendly => TempMaxC < 24.0 && MaxWindGustKmh < 40.0 && PrecipitationMm < 8.0;
+}
+
+public sealed record WeatherForecastDossier
+{
+    public required string Source { get; init; }
+    public DateTimeOffset? FetchedAt { get; init; }
+    public string? LocationLabel { get; init; }
+    public required IReadOnlyList<DailyWeatherForecast> Days { get; init; }
+}
+
 public sealed record ScheduledCalendarItem
 {
     public required long Id { get; init; }
@@ -167,12 +188,16 @@ public sealed record ScheduledCalendarItem
     public string? Description { get; init; }
     public bool IsCompleted => !string.IsNullOrEmpty(PairedActivityId);
     public string? PairedActivityId { get; init; }
+    public required string Ownership { get; init; }
+    public double? EstimatedLoad { get; init; }
 }
 
 public sealed record UpcomingCalendarDossier
 {
     public required IReadOnlyList<ScheduledCalendarItem> EventsOnTargetDate { get; init; }
     public required IReadOnlyList<ScheduledCalendarItem> UpcomingEventsNext7Days { get; init; }
+    public required IReadOnlyList<ScheduledCalendarItem> UpcomingEventsNext14Days { get; init; }
+    public required IReadOnlyList<DateOnly> UserLockedDates { get; init; }
     public required bool HasCompletedRunOnTargetDate { get; init; }
     public required bool HasUncompletedPlannedWorkoutOnTargetDate { get; init; }
 }
@@ -186,6 +211,8 @@ public sealed record CoachIntelligenceDossier
     public required StimulusProgressionDossier StimulusProgression { get; init; }
     public required ReadinessSignalDossier Readiness { get; init; }
     public required UpcomingCalendarDossier Calendar { get; init; }
+    public WeatherForecastDossier? Weather { get; init; }
+    public BlockCompassSnapshot? CurrentCompass { get; init; }
     public required IReadOnlyList<string> DataQualityNotes { get; init; }
 }
 
@@ -224,7 +251,11 @@ public static class CoachIntelligenceDossierBuilder
         IReadOnlyDictionary<string, RunReviewRecord>? runReviews,
         IReadOnlyList<CalendarEventEntry>? calendarEvents,
         DateOnly refDate,
-        DateOnly? targetDate = null)
+        DateOnly? targetDate = null,
+        IReadOnlySet<long>? autoEventIds = null,
+        IReadOnlySet<DateOnly>? userLockedDates = null,
+        WeatherForecastDossier? weatherForecast = null,
+        BlockCompassSnapshot? currentCompass = null)
     {
         ArgumentNullException.ThrowIfNull(profile);
         ArgumentNullException.ThrowIfNull(activities);
@@ -247,6 +278,12 @@ public static class CoachIntelligenceDossierBuilder
             .OrderByDescending(w => w.Id)
             .ToList();
 
+        var effectiveAutoIds = autoEventIds;
+        if (effectiveAutoIds is null && currentCompass?.AutoEventIds is { Count: > 0 } compassAutoIds)
+        {
+            effectiveAutoIds = compassAutoIds.ToHashSet();
+        }
+
         var contextClues = CollectRecentContextClues(projectedRunsDesc, refDate);
         var breakReentry = BuildBreakReentryContext(projectedRunsDesc, contextClues, refDate);
         var ledger = BuildStimulusLedger(projectedRunsDesc, refDate);
@@ -257,7 +294,13 @@ public static class CoachIntelligenceDossierBuilder
             filteredActivitiesUpToRef,
             contextClues,
             refDate);
-        var calendar = BuildUpcomingCalendar(calendarEvents, effectiveTargetDate, refDate);
+        var calendar = BuildUpcomingCalendar(
+            calendarEvents,
+            effectiveTargetDate,
+            refDate,
+            effectiveAutoIds,
+            userLockedDates);
+        var filteredWeather = FilterWeatherForecast(weatherForecast, refDate);
         var dataQualityNotes = BuildDataQualityNotes(
             profile,
             projectedRunsDesc,
@@ -281,6 +324,8 @@ public static class CoachIntelligenceDossierBuilder
             },
             Readiness = readiness,
             Calendar = calendar,
+            Weather = filteredWeather,
+            CurrentCompass = currentCompass,
             DataQualityNotes = dataQualityNotes
         };
     }
@@ -304,7 +349,9 @@ public static class CoachIntelligenceDossierBuilder
             Lthr = profile.HeartRate.Lthr,
             ProfileRestingHr = profile.HeartRate.RestingHr,
             Goals = profile.Goals,
-            TimeBudgets = profile.TimeBudgets
+            TimeBudgets = profile.TimeBudgets,
+            PreferredRunDays = profile.PreferredRunDays,
+            Location = profile.Location
         };
     }
 
@@ -1127,39 +1174,93 @@ public static class CoachIntelligenceDossierBuilder
         return flags;
     }
 
+    private static WeatherForecastDossier? FilterWeatherForecast(
+        WeatherForecastDossier? weatherForecast,
+        DateOnly refDate)
+    {
+        if (weatherForecast is null)
+        {
+            return null;
+        }
+
+        var endWeather = refDate.AddDays(5);
+        var filteredDays = weatherForecast.Days
+            .Where(d => d.Date >= refDate && d.Date <= endWeather)
+            .OrderBy(d => d.Date)
+            .ToList();
+
+        return weatherForecast with { Days = filteredDays };
+    }
+
     private static UpcomingCalendarDossier BuildUpcomingCalendar(
         IReadOnlyList<CalendarEventEntry>? calendarEvents,
         DateOnly targetDate,
-        DateOnly refDate)
+        DateOnly refDate,
+        IReadOnlySet<long>? autoEventIds,
+        IReadOnlySet<DateOnly>? userLockedDates)
     {
+        var horizonEnd = refDate.AddDays(13);
+        var lockedInHorizon = userLockedDates?
+            .Where(d => d >= refDate && d <= horizonEnd)
+            .OrderBy(d => d)
+            .ToList() ?? [];
+
         if (calendarEvents is null || calendarEvents.Count == 0)
         {
             return new UpcomingCalendarDossier
             {
                 EventsOnTargetDate = [],
                 UpcomingEventsNext7Days = [],
+                UpcomingEventsNext14Days = [],
+                UserLockedDates = lockedInHorizon,
                 HasCompletedRunOnTargetDate = false,
                 HasUncompletedPlannedWorkoutOnTargetDate = false
             };
         }
 
-        var endDate = refDate.AddDays(7);
+        var end7 = refDate.AddDays(7);
         var mapped = calendarEvents
-            .Select(e => new ScheduledCalendarItem
+            .Select(e =>
             {
-                Id = e.Id,
-                Date = DateOnly.FromDateTime(e.StartDateLocal),
-                Category = e.Category,
-                Name = string.IsNullOrWhiteSpace(e.Name) ? e.Category : e.Name.Trim(),
-                Description = string.IsNullOrWhiteSpace(e.Description) ? null : e.Description.Trim(),
-                PairedActivityId = e.PairedActivityId
+                var evtDate = DateOnly.FromDateTime(e.StartDateLocal);
+                var isCompleted = !string.IsNullOrEmpty(e.PairedActivityId);
+                string ownership;
+                if (isCompleted)
+                {
+                    ownership = "completed";
+                }
+                else if (userLockedDates is not null && userLockedDates.Contains(evtDate))
+                {
+                    ownership = "user_locked";
+                }
+                else if (autoEventIds is not null && autoEventIds.Contains(e.Id))
+                {
+                    ownership = "auto";
+                }
+                else
+                {
+                    ownership = "user_locked";
+                }
+
+                return new ScheduledCalendarItem
+                {
+                    Id = e.Id,
+                    Date = evtDate,
+                    Category = e.Category,
+                    Name = string.IsNullOrWhiteSpace(e.Name) ? e.Category : e.Name.Trim(),
+                    Description = string.IsNullOrWhiteSpace(e.Description) ? null : e.Description.Trim(),
+                    PairedActivityId = e.PairedActivityId,
+                    Ownership = ownership,
+                    EstimatedLoad = e.IcuTrainingLoad
+                };
             })
             .OrderBy(e => e.Date)
             .ThenBy(e => e.Id)
             .ToList();
 
         var onTarget = mapped.Where(e => e.Date == targetDate).ToList();
-        var next7 = mapped.Where(e => e.Date >= refDate && e.Date <= endDate).ToList();
+        var next7 = mapped.Where(e => e.Date >= refDate && e.Date <= end7).ToList();
+        var next14 = mapped.Where(e => e.Date >= refDate && e.Date <= horizonEnd).ToList();
 
         var hasCompleted = onTarget.Any(e =>
             string.Equals(e.Category, "WORKOUT", StringComparison.OrdinalIgnoreCase)
@@ -1172,6 +1273,8 @@ public static class CoachIntelligenceDossierBuilder
         {
             EventsOnTargetDate = onTarget,
             UpcomingEventsNext7Days = next7,
+            UpcomingEventsNext14Days = next14,
+            UserLockedDates = lockedInHorizon,
             HasCompletedRunOnTargetDate = hasCompleted,
             HasUncompletedPlannedWorkoutOnTargetDate = hasUncompleted
         };

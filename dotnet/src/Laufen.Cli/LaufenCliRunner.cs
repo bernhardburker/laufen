@@ -50,6 +50,11 @@ public static class LaufenCliRunner
                 return ExecuteValidateWorkout(parsed, stdout, stderr, workingDirectory);
             }
 
+            if (string.Equals(parsed.Command, "project-plan", StringComparison.Ordinal))
+            {
+                return ExecuteProjectPlan(parsed, stdout, stderr, workingDirectory);
+            }
+
             var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
                 ? WorkspaceLayout.DiscoverFrom(workingDirectory)
                 : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
@@ -204,7 +209,9 @@ public static class LaufenCliRunner
                 data.RunReviews,
                 data.CalendarEvents,
                 refDate,
-                parsed.TargetDate);
+                parsed.TargetDate,
+                parsed.AutoEventIds,
+                parsed.LockedDates);
 
             if (parsed.AsJson)
             {
@@ -331,11 +338,22 @@ public static class LaufenCliRunner
             stdout.WriteLine($"  {q.Date:yyyy-MM-dd} | {q.StimulusKind,-9} | {q.DurationMinutes,4:F0}m | {q.DistanceKm,5:F2}km | maxHR {FormatNullableInt(q.MaxHeartRate)} | Z4={q.Z4Minutes:F1}m Z5={q.Z5PlusMinutes:F1}m | cad {FormatNullableDouble(q.CadenceSpm, "F1")} | [{intSummary}] | {q.Name}");
         }
 
-        stdout.WriteLine($"Calendar Target ({dossier.Calendar.EventsOnTargetDate.Count}) / Next 7d ({dossier.Calendar.UpcomingEventsNext7Days.Count}):");
-        foreach (var evt in dossier.Calendar.UpcomingEventsNext7Days)
+        stdout.WriteLine($"Calendar Target ({dossier.Calendar.EventsOnTargetDate.Count}) / Next 14d ({dossier.Calendar.UpcomingEventsNext14Days.Count}):");
+        foreach (var evt in dossier.Calendar.UpcomingEventsNext14Days)
         {
             var status = evt.IsCompleted ? "completed" : "planned";
-            stdout.WriteLine($"  {evt.Date:yyyy-MM-dd} | {evt.Category,-7} | {status,-9} | {evt.Name}");
+            var load = evt.EstimatedLoad.HasValue ? $", {evt.EstimatedLoad.Value:F0} TSS" : string.Empty;
+            stdout.WriteLine($"  {evt.Date:yyyy-MM-dd} | {evt.Category,-7} | {status,-9} | [{evt.Ownership}{load}] | {evt.Name}");
+        }
+
+        if (dossier.Weather is not null)
+        {
+            stdout.WriteLine($"Weather Forecast ({dossier.Weather.Source}, {dossier.Weather.Days.Count}d):");
+            foreach (var day in dossier.Weather.Days)
+            {
+                var paceTag = day.PaceIntervalFriendly ? "pace-ok" : "pace-caution";
+                stdout.WriteLine($"  {day.Date:yyyy-MM-dd} | {day.TempMinC:F0}-{day.TempMaxC:F0}C | rain {day.PrecipitationMm:F1}mm | gust {day.MaxWindGustKmh:F0}km/h | {paceTag} | {day.Summary}");
+            }
         }
 
         stdout.WriteLine($"Recent Notes & Context Clues ({r.RecentRunNotes.Count}, daysSinceComplaint={FormatNullableDays(r.DaysSinceLastComplaint)}):");
@@ -396,6 +414,7 @@ public static class LaufenCliRunner
         stdout.WriteLine("  markers                   Extract planning markers & safety guardrails");
         stdout.WriteLine("  dossier                   Build curated stimulus progression & readiness dossier");
         stdout.WriteLine("  validate-workout          Validate a CoachPlanDecision JSON & compile Intervals.icu DSL");
+        stdout.WriteLine("  project-plan              Validate & reconcile a 14-day AutopilotPlanDecision + Banister curve");
         stdout.WriteLine("  help                      Show this help text");
         stdout.WriteLine();
         stdout.WriteLine("Options:");
@@ -406,9 +425,11 @@ public static class LaufenCliRunner
         stdout.WriteLine("  --limit <N>               Recent runs limit for 'report' (default: 5)");
         stdout.WriteLine("  --weeks <N>               Max weeks for 'report' (default: 12)");
         stdout.WriteLine("  --as-of <YYYY-MM-DD>      Reference date for 'report' CTL/ATL decay");
-        stdout.WriteLine("  --ref-date <YYYY-MM-DD>   Reference date for 'markers', 'dossier', and 'validate-workout'");
+        stdout.WriteLine("  --ref-date <YYYY-MM-DD>   Reference date for 'markers', 'dossier', 'validate-workout', and 'project-plan'");
         stdout.WriteLine("  --target-date <YYYY-MM-DD> Target planning date for 'markers' and 'dossier'");
-        stdout.WriteLine("  --input <path>            Input CoachPlanDecision JSON file for 'validate-workout'");
+        stdout.WriteLine("  --input <path>            Input decision JSON file for 'validate-workout' and 'project-plan'");
+        stdout.WriteLine("  --auto-event-ids <csv>    Comma-separated calendar event IDs managed as 'auto' ownership");
+        stdout.WriteLine("  --locked-dates <csv>      Comma-separated YYYY-MM-DD dates marked as 'user_locked'");
     }
 
     private static bool TryParseArgs(IReadOnlyList<string> args, out ParsedCliArgs parsed, out string error)
@@ -424,6 +445,8 @@ public static class LaufenCliRunner
         DateOnly? refDate = null;
         DateOnly? targetDate = null;
         string? inputPath = null;
+        IReadOnlySet<long>? autoEventIds = null;
+        IReadOnlySet<DateOnly>? lockedDates = null;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -492,6 +515,20 @@ public static class LaufenCliRunner
                         return false;
                     }
                     break;
+                case "--auto-event-ids":
+                    if (!TryReadLongSet(args, ref i, arg, out autoEventIds, out error))
+                    {
+                        parsed = default!;
+                        return false;
+                    }
+                    break;
+                case "--locked-dates":
+                    if (!TryReadDateSet(args, ref i, arg, out lockedDates, out error))
+                    {
+                        parsed = default!;
+                        return false;
+                    }
+                    break;
                 default:
                     if (arg.StartsWith('-') && arg is not ("-h" or "--help"))
                     {
@@ -533,8 +570,126 @@ public static class LaufenCliRunner
             asOfDate,
             refDate,
             targetDate,
-            inputPath);
+            inputPath,
+            autoEventIds,
+            lockedDates);
         return true;
+    }
+
+    private static int ExecuteProjectPlan(
+        ParsedCliArgs parsed,
+        TextWriter stdout,
+        TextWriter stderr,
+        string? workingDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(parsed.InputPath))
+        {
+            stderr.WriteLine("Missing required '--input <path>' option for 'project-plan'.");
+            return 1;
+        }
+
+        var decision = StrictJsonLoader.LoadFromFile<AutopilotPlanDecision>(parsed.InputPath);
+        var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
+            ? WorkspaceLayout.DiscoverFrom(workingDirectory)
+            : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
+        var registry = AthleteDataRepository.LoadRegistry(layout);
+        var slugs = AthleteDataRepository.ResolveTargetSlugs(registry, parsed.AthleteSlug, allActive: false);
+        var slug = slugs[0];
+        var data = AthleteDataRepository.LoadAthleteData(layout, registry, slug);
+        var refDate = parsed.RefDate ?? decision.ReferenceDate;
+
+        var dossier = CoachIntelligenceDossierBuilder.Build(
+            data.Profile,
+            data.Activities,
+            data.WellnessRecords,
+            data.RunReviews,
+            data.CalendarEvents,
+            refDate,
+            parsed.TargetDate ?? refDate,
+            parsed.AutoEventIds,
+            parsed.LockedDates);
+
+        var validation = AutopilotScheduleGatekeeper.Validate(decision, dossier);
+        if (!validation.IsValid)
+        {
+            if (parsed.AsJson)
+            {
+                var errPayload = new
+                {
+                    slug,
+                    isValid = false,
+                    errors = validation.Errors,
+                    schedule = (ReconciledAutopilotSchedule?)null
+                };
+                stdout.WriteLine(JsonSerializer.Serialize(errPayload, JsonOptions));
+            }
+            else
+            {
+                stderr.WriteLine($"Autopilot plan validation failed ({validation.Errors.Count} error(s)):");
+                foreach (var err in validation.Errors)
+                {
+                    stderr.WriteLine($"  [{err.Code}] {err.Field}: {err.Message}");
+                }
+            }
+
+            return 1;
+        }
+
+        var reconciled = AutopilotScheduleGatekeeper.Reconcile(decision, dossier);
+
+        if (parsed.AsJson)
+        {
+            var okPayload = new
+            {
+                slug,
+                isValid = true,
+                errors = validation.Errors,
+                schedule = reconciled
+            };
+            stdout.WriteLine(JsonSerializer.Serialize(okPayload, JsonOptions));
+        }
+        else
+        {
+            WriteProjectedPlanText(stdout, slug, reconciled);
+        }
+
+        return 0;
+    }
+
+    private static void WriteProjectedPlanText(
+        TextWriter stdout,
+        string slug,
+        ReconciledAutopilotSchedule schedule)
+    {
+        stdout.WriteLine($"=== 14-Day Autopilot Projection: {slug} (ref={schedule.ReferenceDate:yyyy-MM-dd}, trigger={schedule.Trigger}, health={schedule.HealthState}) ===");
+        stdout.WriteLine($"Deleted Event IDs ({schedule.DeletedEventIds.Count}): {(schedule.DeletedEventIds.Count == 0 ? "none" : string.Join(", ", schedule.DeletedEventIds))}");
+
+        stdout.WriteLine($"Days 1-7 Watch Commit Window ({schedule.WatchCommitWindow.Count} session(s)):");
+        foreach (var item in schedule.WatchCommitWindow)
+        {
+            var dur = item.TotalDurationSeconds.HasValue ? $"{item.TotalDurationSeconds.Value / 60}m" : "-";
+            stdout.WriteLine($"  {item.Date:yyyy-MM-dd (ddd)} | [{item.Ownership}] | {item.SessionType ?? item.Source,-19} | {dur,4} | {item.EstimatedLoad,4:F1} TSS | {item.Title}");
+        }
+
+        stdout.WriteLine($"Days 8-14 Preview Window ({schedule.PreviewWindow.Count} session(s)):");
+        foreach (var item in schedule.PreviewWindow)
+        {
+            var dur = item.TotalDurationSeconds.HasValue ? $"{item.TotalDurationSeconds.Value / 60}m" : "-";
+            stdout.WriteLine($"  {item.Date:yyyy-MM-dd (ddd)} | [{item.Ownership}] | {item.SessionType ?? item.Source,-19} | {dur,4} | {item.EstimatedLoad,4:F1} TSS | {item.Title}");
+        }
+
+        if (schedule.BanisterProjection is { } banister)
+        {
+            stdout.WriteLine(
+                $"Banister 14d Projection: CTL {banister.StartingCtl:F1} -> {banister.EndingCtl:F1} | " +
+                $"ATL {banister.StartingAtl:F1} -> {banister.EndingAtl:F1} | " +
+                $"TSB {banister.StartingTsb:+0.0;-0.0;0.0} -> {banister.EndingTsb:+0.0;-0.0;0.0} " +
+                $"(min {banister.MinProjectedTsb:+0.0;-0.0;0.0} on {banister.MinTsbDate:yyyy-MM-dd}, total={banister.TotalProjectedLoad:F1} TSS)");
+        }
+        else
+        {
+            stdout.WriteLine("Banister 14d Projection: unavailable (no CTL/ATL baseline)");
+        }
     }
 
     private static int ExecuteValidateWorkout(
@@ -689,6 +844,66 @@ public static class LaufenCliRunner
         return true;
     }
 
+    private static bool TryReadLongSet(
+        IReadOnlyList<string> args,
+        ref int index,
+        string flag,
+        out IReadOnlySet<long>? values,
+        out string error)
+    {
+        if (!TryReadValue(args, ref index, flag, out var raw, out error))
+        {
+            values = null;
+            return false;
+        }
+
+        var set = new HashSet<long>();
+        foreach (var part in raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (!long.TryParse(part, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id))
+            {
+                values = null;
+                error = $"Invalid integer ID '{part}' for option '{flag}'.";
+                return false;
+            }
+
+            set.Add(id);
+        }
+
+        values = set;
+        return true;
+    }
+
+    private static bool TryReadDateSet(
+        IReadOnlyList<string> args,
+        ref int index,
+        string flag,
+        out IReadOnlySet<DateOnly>? values,
+        out string error)
+    {
+        if (!TryReadValue(args, ref index, flag, out var raw, out error))
+        {
+            values = null;
+            return false;
+        }
+
+        var set = new HashSet<DateOnly>();
+        foreach (var part in raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (!DateOnly.TryParseExact(part, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d))
+            {
+                values = null;
+                error = $"Invalid date '{part}' for option '{flag}'. Expected YYYY-MM-DD.";
+                return false;
+            }
+
+            set.Add(d);
+        }
+
+        values = set;
+        return true;
+    }
+
     private sealed record ParsedCliArgs(
         string Command,
         string? AthleteSlug,
@@ -700,5 +915,7 @@ public static class LaufenCliRunner
         DateOnly? AsOfDate,
         DateOnly? RefDate,
         DateOnly? TargetDate,
-        string? InputPath);
+        string? InputPath,
+        IReadOnlySet<long>? AutoEventIds,
+        IReadOnlySet<DateOnly>? LockedDates);
 }

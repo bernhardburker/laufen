@@ -72,6 +72,12 @@ public sealed record BlockCompassSnapshot
 
     [JsonPropertyName("last_decision_summary")]
     public required string LastDecisionSummary { get; init; }
+
+    [JsonPropertyName("health_state")]
+    public string? HealthState { get; init; }
+
+    [JsonPropertyName("auto_event_ids")]
+    public IReadOnlyList<long>? AutoEventIds { get; init; }
 }
 
 /// <summary>
