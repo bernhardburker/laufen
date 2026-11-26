@@ -8,7 +8,7 @@ namespace Laufen.Cli;
 /// <summary>
 /// Central CLI entrypoint for Laufen.Cli supporting health checks, athlete listing, reports, and planning markers.
 /// </summary>
-public static class LaufenCliRunner
+public static partial class LaufenCliRunner
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -95,6 +95,21 @@ public static class LaufenCliRunner
                 return ExecuteAutopilotRun(parsed, stdout, stderr, workingDirectory);
             }
 
+            if (string.Equals(parsed.Command, "sync-data", StringComparison.Ordinal))
+            {
+                return ExecuteSyncData(parsed, stdout, stderr, workingDirectory, profileOnly: false);
+            }
+
+            if (string.Equals(parsed.Command, "sync-profile", StringComparison.Ordinal))
+            {
+                return ExecuteSyncData(parsed, stdout, stderr, workingDirectory, profileOnly: true);
+            }
+
+            if (string.Equals(parsed.Command, "note", StringComparison.Ordinal))
+            {
+                return ExecuteNote(parsed, stdout, stderr, workingDirectory);
+            }
+
             var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
                 ? WorkspaceLayout.DiscoverFrom(workingDirectory)
                 : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
@@ -108,7 +123,7 @@ public static class LaufenCliRunner
                 _ => UnknownCommand(parsed.Command, stderr)
             };
         }
-        catch (Exception ex) when (ex is KeyNotFoundException or DirectoryNotFoundException or FileNotFoundException or FormatException or JsonException)
+        catch (Exception ex) when (ex is KeyNotFoundException or DirectoryNotFoundException or FileNotFoundException or FormatException or JsonException or InvalidOperationException)
         {
             stderr.WriteLine($"Error: {ex.Message}");
             return 1;
@@ -463,6 +478,9 @@ public static class LaufenCliRunner
         stdout.WriteLine("  telegram-briefing         Render/send Telegram morning briefing HTML + inline keyboard");
         stdout.WriteLine("  telegram-override         Route Telegram callback/text override to lock or RollingAutopilotCoach");
         stdout.WriteLine("  autopilot-run             Run unified Hysteresis -> Planner -> SyncPlan -> Narrator -> Telegram cycle");
+        stdout.WriteLine("  sync-data                 Pull activities, incremental streams, wellness, events & profile to .dotnet_sync/");
+        stdout.WriteLine("  sync-profile              Sync athlete profile & calibrated HR zones from Intervals.icu");
+        stdout.WriteLine("  note                      Attach subjective note/feel/RPE & recompute 4-stage post-run review");
         stdout.WriteLine("  help                      Show this help text");
         stdout.WriteLine();
         stdout.WriteLine("Options:");
@@ -491,7 +509,12 @@ public static class LaufenCliRunner
         stdout.WriteLine("  --force                   Force narrative generation or briefing dispatch when gated/idempotent");
         stdout.WriteLine("  --force-replan            Bypass anti-churn hysteresis and force Role 1 replanning");
         stdout.WriteLine("  --force-narrate           Force Role 2 ProgressNarrator inside 'autopilot-run'");
-        stdout.WriteLine("  --apply                   Execute live Intervals.icu calendar mutations (staging-guarded)");
+        stdout.WriteLine("  --apply                   Execute live Intervals.icu calendar mutations or write synced files (staging-guarded)");
+        stdout.WriteLine("  --write-workspace         Write synced files directly to athletes/<slug>/ instead of .dotnet_sync/ (staging-guarded)");
+        stdout.WriteLine("  --note <text>             Subjective run note text for 'note'");
+        stdout.WriteLine("  --feel <1-5>              Feel score (1-5) for 'note'");
+        stdout.WriteLine("  --rpe <1-10>              Perceived exertion (1-10) for 'note'");
+        stdout.WriteLine("  --push                    Push subjective note/feel/RPE remotely to Intervals.icu (staging-guarded)");
         stdout.WriteLine("  --send                    Send live Telegram briefing message (staging-guarded)");
         stdout.WriteLine("  --allow-production-write  Explicitly authorize live external API writes to production tenants");
         stdout.WriteLine("  --dry-run                 Skip writing block_compass.json / decision_trace_dotnet.jsonl / narrative / telegram state artifacts");
@@ -529,6 +552,11 @@ public static class LaufenCliRunner
         bool send = false;
         bool forceReplan = false;
         bool forceNarrate = false;
+        bool writeWorkspace = false;
+        int? feel = null;
+        int? rpe = null;
+        string? noteText = null;
+        bool push = false;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -702,6 +730,37 @@ public static class LaufenCliRunner
                 case "--force-narrate":
                     forceNarrate = true;
                     break;
+                case "--write-workspace":
+                    writeWorkspace = true;
+                    break;
+                case "--feel":
+                    if (!TryReadInt(args, ref i, arg, out var feelVal, out error) || feelVal is < 1 or > 5)
+                    {
+                        error = string.IsNullOrEmpty(error) ? "Invalid '--feel' value. Expected integer in 1..5." : error;
+                        parsed = default!;
+                        return false;
+                    }
+                    feel = feelVal;
+                    break;
+                case "--rpe":
+                    if (!TryReadInt(args, ref i, arg, out var rpeVal, out error) || rpeVal is < 1 or > 10)
+                    {
+                        error = string.IsNullOrEmpty(error) ? "Invalid '--rpe' value. Expected integer in 1..10." : error;
+                        parsed = default!;
+                        return false;
+                    }
+                    rpe = rpeVal;
+                    break;
+                case "--note":
+                    if (!TryReadValue(args, ref i, arg, out noteText, out error))
+                    {
+                        parsed = default!;
+                        return false;
+                    }
+                    break;
+                case "--push":
+                    push = true;
+                    break;
                 default:
                     if (arg.StartsWith('-') && arg is not ("-h" or "--help"))
                     {
@@ -713,6 +772,10 @@ public static class LaufenCliRunner
                     if (command is null)
                     {
                         command = arg;
+                    }
+                    else if (string.Equals(command, "note", StringComparison.Ordinal) && noteText is null)
+                    {
+                        noteText = arg;
                     }
                     else
                     {
@@ -762,7 +825,12 @@ public static class LaufenCliRunner
             callbackData,
             send,
             forceReplan,
-            forceNarrate);
+            forceNarrate,
+            writeWorkspace,
+            feel,
+            rpe,
+            noteText,
+            push);
         return true;
     }
 
@@ -2306,5 +2374,10 @@ public static class LaufenCliRunner
         string? CallbackData,
         bool Send,
         bool ForceReplan,
-        bool ForceNarrate);
+        bool ForceNarrate,
+        bool WriteWorkspace,
+        int? Feel,
+        int? Rpe,
+        string? NoteText,
+        bool Push);
 }

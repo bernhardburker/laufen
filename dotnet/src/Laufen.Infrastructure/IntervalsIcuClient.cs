@@ -40,6 +40,16 @@ public interface IIntervalsIcuClient
         string athleteId,
         long eventId,
         CancellationToken cancellationToken = default);
+
+    Task<IntervalsAthleteProfileDto> GetAthleteProfileAsync(
+        string athleteId,
+        CancellationToken cancellationToken = default);
+
+    Task<IntervalsActivityEntry> UpdateActivityNoteAsync(
+        string athleteId,
+        string activityId,
+        ActivityNoteUpdateRequest request,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -49,6 +59,11 @@ public sealed class IntervalsIcuHttpClient : IIntervalsIcuClient
 {
     private const string DefaultStreamTypes = "time,heartrate,velocity_smooth,cadence,fixed_altitude";
     private static readonly HttpClient SharedHttpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
+    private static readonly JsonSerializerOptions TolerantProfileOptions = new()
+    {
+        PropertyNameCaseInsensitive = false,
+        UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Skip
+    };
 
     private readonly string _apiKey;
     private readonly string _apiBaseUrl;
@@ -240,6 +255,38 @@ public sealed class IntervalsIcuHttpClient : IIntervalsIcuClient
         }
 
         return true;
+    }
+
+    public async Task<IntervalsAthleteProfileDto> GetAthleteProfileAsync(
+        string athleteId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(athleteId);
+
+        var url = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{_apiBaseUrl}/athlete/{Uri.EscapeDataString(athleteId.Trim())}");
+        var body = await SendAsync(HttpMethod.Get, url, payloadJson: null, cancellationToken).ConfigureAwait(false);
+        return JsonSerializer.Deserialize<IntervalsAthleteProfileDto>(body, TolerantProfileOptions)
+            ?? throw new JsonException("Deserialized Intervals.icu athlete profile resulted in null.");
+    }
+
+    public async Task<IntervalsActivityEntry> UpdateActivityNoteAsync(
+        string athleteId,
+        string activityId,
+        ActivityNoteUpdateRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(athleteId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(activityId);
+        ArgumentNullException.ThrowIfNull(request);
+
+        var url = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{_apiBaseUrl}/activity/{Uri.EscapeDataString(activityId.Trim())}");
+        var payloadJson = JsonSerializer.Serialize(request);
+        var body = await SendAsync(HttpMethod.Put, url, payloadJson, cancellationToken).ConfigureAwait(false);
+        return StrictJsonLoader.Deserialize<IntervalsActivityEntry>(body);
     }
 
     private async Task<string> SendAsync(

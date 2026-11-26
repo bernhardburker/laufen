@@ -46,6 +46,9 @@ public class CliRunnerTests
         Assert.That(stdout.ToString(), Does.Contain("telegram-briefing"));
         Assert.That(stdout.ToString(), Does.Contain("telegram-override"));
         Assert.That(stdout.ToString(), Does.Contain("autopilot-run"));
+        Assert.That(stdout.ToString(), Does.Contain("sync-data"));
+        Assert.That(stdout.ToString(), Does.Contain("sync-profile"));
+        Assert.That(stdout.ToString(), Does.Contain("note"));
         Assert.That(stdout.ToString(), Does.Contain("athletes"));
     }
 
@@ -1033,6 +1036,44 @@ public class CliRunnerTests
         using var blockErr = new StringWriter();
         var blockExit = LaufenCliRunner.Run(
             ["autopilot-run", "--athlete", "berni", "--ref-date", "2026-11-25", "--apply"],
+            blockOut,
+            blockErr,
+            AppContext.BaseDirectory);
+
+        Assert.That(blockExit, Is.EqualTo(1));
+        Assert.That(blockErr.ToString(), Does.Contain("SAFETY BLOCK"));
+    }
+
+    [Test]
+    public void RunNoteDryRunEvaluatesComplaintAndRejectsProductionPushWithoutFlag()
+    {
+        var root = ResolveWorkspaceRoot();
+        var dotNetReviewsPath = Path.Combine(root, "athletes", "berni", "run_reviews_dotnet.json");
+        var reviewsExisted = File.Exists(dotNetReviewsPath);
+
+        using var stdout = new StringWriter();
+        using var stderr = new StringWriter();
+        var exitCode = LaufenCliRunner.Run(
+            ["note", "--athlete", "berni", "--note", "Wadenkrampf ab km 5", "--feel", "2", "--rpe", "7", "--dry-run", "--json"],
+            stdout,
+            stderr,
+            AppContext.BaseDirectory);
+
+        Assert.That(exitCode, Is.EqualTo(0), stderr.ToString());
+        using (var doc = JsonDocument.Parse(stdout.ToString()))
+        {
+            Assert.That(doc.RootElement.GetProperty("dryRun").GetBoolean(), Is.True);
+            Assert.That(doc.RootElement.GetProperty("reviewRecomputed").GetBoolean(), Is.True);
+            Assert.That(
+                doc.RootElement.GetProperty("updatedReview").GetProperty("review").GetProperty("stages").GetProperty("stage4_next_run").GetProperty("recovery_hours").GetInt32(),
+                Is.EqualTo(48));
+        }
+        Assert.That(File.Exists(dotNetReviewsPath), Is.EqualTo(reviewsExisted));
+
+        using var blockOut = new StringWriter();
+        using var blockErr = new StringWriter();
+        var blockExit = LaufenCliRunner.Run(
+            ["note", "--athlete", "berni", "--note", "Test", "--push"],
             blockOut,
             blockErr,
             AppContext.BaseDirectory);

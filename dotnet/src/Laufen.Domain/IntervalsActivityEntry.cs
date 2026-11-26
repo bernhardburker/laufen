@@ -562,6 +562,9 @@ public sealed record IntervalsActivityEntry
 
     [JsonPropertyName("_note")]
     public string? Note { get; init; }
+
+    [JsonPropertyName("athlete_note")]
+    public string? AthleteNote { get; init; }
 }
 
 /// <summary>
