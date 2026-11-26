@@ -110,6 +110,11 @@ public static partial class LaufenCliRunner
                 return ExecuteNote(parsed, stdout, stderr, workingDirectory);
             }
 
+            if (string.Equals(parsed.Command, "dashboard", StringComparison.Ordinal))
+            {
+                return ExecuteDashboard(parsed, stdout, stderr, workingDirectory);
+            }
+
             var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
                 ? WorkspaceLayout.DiscoverFrom(workingDirectory)
                 : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
@@ -481,6 +486,7 @@ public static partial class LaufenCliRunner
         stdout.WriteLine("  sync-data                 Pull activities, incremental streams, wellness, events & profile to .dotnet_sync/");
         stdout.WriteLine("  sync-profile              Sync athlete profile & calibrated HR zones from Intervals.icu");
         stdout.WriteLine("  note                      Attach subjective note/feel/RPE & recompute 4-stage post-run review");
+        stdout.WriteLine("  dashboard                 Generate self-contained HTML5 dashboard under dist-dotnet/");
         stdout.WriteLine("  help                      Show this help text");
         stdout.WriteLine();
         stdout.WriteLine("Options:");
@@ -505,6 +511,7 @@ public static partial class LaufenCliRunner
         stdout.WriteLine("  --stub-response <path>    JSON response file for '--provider stub'");
         stdout.WriteLine("  --scenario <name|all>     Simulation scenario for 'simulate' (default: all)");
         stdout.WriteLine("  --output-dir <path>       Write isolated simulation report.md and timeline.json artifacts");
+        stdout.WriteLine("  --output <path>           Override output HTML path for 'dashboard'");
         stdout.WriteLine("  --retries <N>             Validation self-correction retries for 'coach-plan' / 'simulate' / 'narrate' (default: 1)");
         stdout.WriteLine("  --force                   Force narrative generation or briefing dispatch when gated/idempotent");
         stdout.WriteLine("  --force-replan            Bypass anti-churn hysteresis and force Role 1 replanning");
@@ -557,6 +564,7 @@ public static partial class LaufenCliRunner
         int? rpe = null;
         string? noteText = null;
         bool push = false;
+        string? outputPath = null;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -761,6 +769,13 @@ public static partial class LaufenCliRunner
                 case "--push":
                     push = true;
                     break;
+                case "--output":
+                    if (!TryReadValue(args, ref i, arg, out outputPath, out error))
+                    {
+                        parsed = default!;
+                        return false;
+                    }
+                    break;
                 default:
                     if (arg.StartsWith('-') && arg is not ("-h" or "--help"))
                     {
@@ -830,7 +845,8 @@ public static partial class LaufenCliRunner
             feel,
             rpe,
             noteText,
-            push);
+            push,
+            outputPath);
         return true;
     }
 
@@ -2379,5 +2395,6 @@ public static partial class LaufenCliRunner
         int? Feel,
         int? Rpe,
         string? NoteText,
-        bool Push);
+        bool Push,
+        string? OutputPath);
 }

@@ -49,6 +49,7 @@ public class CliRunnerTests
         Assert.That(stdout.ToString(), Does.Contain("sync-data"));
         Assert.That(stdout.ToString(), Does.Contain("sync-profile"));
         Assert.That(stdout.ToString(), Does.Contain("note"));
+        Assert.That(stdout.ToString(), Does.Contain("dashboard"));
         Assert.That(stdout.ToString(), Does.Contain("athletes"));
     }
 
