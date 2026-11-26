@@ -115,6 +115,11 @@ public static partial class LaufenCliRunner
                 return ExecuteDashboard(parsed, stdout, stderr, workingDirectory);
             }
 
+            if (string.Equals(parsed.Command, "daemon", StringComparison.Ordinal))
+            {
+                return ExecuteDaemon(parsed, stdout, stderr, workingDirectory);
+            }
+
             var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
                 ? WorkspaceLayout.DiscoverFrom(workingDirectory)
                 : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
@@ -487,6 +492,7 @@ public static partial class LaufenCliRunner
         stdout.WriteLine("  sync-profile              Sync athlete profile & calibrated HR zones from Intervals.icu");
         stdout.WriteLine("  note                      Attach subjective note/feel/RPE & recompute 4-stage post-run review");
         stdout.WriteLine("  dashboard                 Generate self-contained HTML5 dashboard under dist-dotnet/");
+        stdout.WriteLine("  daemon                    Run Telegram long-polling & scheduled autopilot worker (--once supported)");
         stdout.WriteLine("  help                      Show this help text");
         stdout.WriteLine();
         stdout.WriteLine("Options:");
@@ -512,6 +518,9 @@ public static partial class LaufenCliRunner
         stdout.WriteLine("  --scenario <name|all>     Simulation scenario for 'simulate' (default: all)");
         stdout.WriteLine("  --output-dir <path>       Write isolated simulation report.md and timeline.json artifacts");
         stdout.WriteLine("  --output <path>           Override output HTML path for 'dashboard'");
+        stdout.WriteLine("  --once                    Run a single daemon tick and exit");
+        stdout.WriteLine("  --poll-interval <sec>     Daemon Telegram/scheduler loop sleep seconds (default: 5)");
+        stdout.WriteLine("  --activity-poll-minutes <N> Interval in minutes for post-run activity polling (default: 10)");
         stdout.WriteLine("  --retries <N>             Validation self-correction retries for 'coach-plan' / 'simulate' / 'narrate' (default: 1)");
         stdout.WriteLine("  --force                   Force narrative generation or briefing dispatch when gated/idempotent");
         stdout.WriteLine("  --force-replan            Bypass anti-churn hysteresis and force Role 1 replanning");
@@ -565,6 +574,9 @@ public static partial class LaufenCliRunner
         string? noteText = null;
         bool push = false;
         string? outputPath = null;
+        bool once = false;
+        int pollIntervalSeconds = 5;
+        int activityPollMinutes = 10;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -776,6 +788,25 @@ public static partial class LaufenCliRunner
                         return false;
                     }
                     break;
+                case "--once":
+                    once = true;
+                    break;
+                case "--poll-interval":
+                    if (!TryReadInt(args, ref i, arg, out pollIntervalSeconds, out error) || pollIntervalSeconds < 1)
+                    {
+                        error = string.IsNullOrEmpty(error) ? "Invalid '--poll-interval'. Expected integer >= 1." : error;
+                        parsed = default!;
+                        return false;
+                    }
+                    break;
+                case "--activity-poll-minutes":
+                    if (!TryReadInt(args, ref i, arg, out activityPollMinutes, out error) || activityPollMinutes < 1)
+                    {
+                        error = string.IsNullOrEmpty(error) ? "Invalid '--activity-poll-minutes'. Expected integer >= 1." : error;
+                        parsed = default!;
+                        return false;
+                    }
+                    break;
                 default:
                     if (arg.StartsWith('-') && arg is not ("-h" or "--help"))
                     {
@@ -846,7 +877,10 @@ public static partial class LaufenCliRunner
             rpe,
             noteText,
             push,
-            outputPath);
+            outputPath,
+            once,
+            pollIntervalSeconds,
+            activityPollMinutes);
         return true;
     }
 
@@ -2396,5 +2430,8 @@ public static partial class LaufenCliRunner
         int? Rpe,
         string? NoteText,
         bool Push,
-        string? OutputPath);
+        string? OutputPath,
+        bool Once,
+        int PollIntervalSeconds,
+        int ActivityPollMinutes);
 }

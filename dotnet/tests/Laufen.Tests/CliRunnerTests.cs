@@ -50,6 +50,7 @@ public class CliRunnerTests
         Assert.That(stdout.ToString(), Does.Contain("sync-profile"));
         Assert.That(stdout.ToString(), Does.Contain("note"));
         Assert.That(stdout.ToString(), Does.Contain("dashboard"));
+        Assert.That(stdout.ToString(), Does.Contain("daemon"));
         Assert.That(stdout.ToString(), Does.Contain("athletes"));
     }
 
@@ -1081,5 +1082,23 @@ public class CliRunnerTests
 
         Assert.That(blockExit, Is.EqualTo(1));
         Assert.That(blockErr.ToString(), Does.Contain("SAFETY BLOCK"));
+    }
+
+    [Test]
+    public void RunDaemonOnceDryRunExecutesCleanTickAndReturnsJsonSummary()
+    {
+        using var stdout = new StringWriter();
+        using var stderr = new StringWriter();
+        var exitCode = LaufenCliRunner.Run(
+            ["daemon", "--once", "--dry-run", "--ref-date", "2026-11-25", "--provider", "stub", "--json"],
+            stdout,
+            stderr,
+            AppContext.BaseDirectory);
+
+        Assert.That(exitCode, Is.EqualTo(0), stderr.ToString());
+        using var doc = JsonDocument.Parse(stdout.ToString());
+        Assert.That(doc.RootElement.GetProperty("dryRun").GetBoolean(), Is.True);
+        Assert.That(doc.RootElement.GetProperty("errors").GetArrayLength(), Is.EqualTo(0));
+        Assert.That(doc.RootElement.GetProperty("morningBriefingsTriggered").GetInt32(), Is.GreaterThanOrEqualTo(1));
     }
 }

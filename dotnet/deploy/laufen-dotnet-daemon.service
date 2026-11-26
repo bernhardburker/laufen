@@ -1,0 +1,15 @@
+[Unit]
+Description=Laufen Hub (.NET 11) - Shadow Autopilot Daemon & Telegram Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/dockerContainer/laufen-dotnet
+EnvironmentFile=-%h/dockerContainer/laufen-dotnet/.env
+ExecStart=%h/dockerContainer/laufen-dotnet/bin/Laufen.Cli daemon --poll-interval 5 --activity-poll-minutes 10 --apply --send
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

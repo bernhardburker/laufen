@@ -64,6 +64,9 @@ public sealed record TelegramStateRecord
 
     [JsonPropertyName("initialized")]
     public bool? Initialized { get; init; }
+
+    [JsonPropertyName("last_update_id")]
+    public long? LastUpdateId { get; init; }
 }
 
 public sealed record TelegramInlineButton
@@ -722,6 +725,56 @@ public static class TelegramInteractionRouter
         return current with
         {
             NotifiedActivityIds = updatedIds
+        };
+    }
+
+    public static bool ShouldSendEveningPreview(TelegramStateRecord? state, DateOnly refDate, bool force = false)
+    {
+        if (force)
+        {
+            return true;
+        }
+
+        if (state is null)
+        {
+            return true;
+        }
+
+        var todayStr = refDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        return !string.Equals(state.LastEveningPreviewDate, todayStr, StringComparison.Ordinal)
+            && !string.Equals(state.LastDispatchedEveningDate, todayStr, StringComparison.Ordinal);
+    }
+
+    public static TelegramStateRecord MarkEveningPreviewSent(TelegramStateRecord? existing, DateOnly refDate)
+    {
+        var current = existing ?? new TelegramStateRecord();
+        var dateStr = refDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        return current with
+        {
+            LastEveningPreviewDate = dateStr,
+            LastDispatchedEveningDate = dateStr
+        };
+    }
+
+    public static TelegramStateRecord AdvanceUpdateOffset(TelegramStateRecord? existing, long updateId)
+    {
+        var current = existing ?? new TelegramStateRecord();
+        var nextId = current.LastUpdateId.HasValue
+            ? Math.Max(current.LastUpdateId.Value, updateId)
+            : updateId;
+
+        return current with
+        {
+            LastUpdateId = nextId
+        };
+    }
+
+    public static TelegramStateRecord MarkActivitiesPolled(TelegramStateRecord? existing, DateTimeOffset timestamp)
+    {
+        var current = existing ?? new TelegramStateRecord();
+        return current with
+        {
+            LastActivitiesPollTs = timestamp.ToUnixTimeSeconds()
         };
     }
 }
