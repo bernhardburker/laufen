@@ -125,6 +125,16 @@ public static partial class LaufenCliRunner
                 return ExecuteTrace(parsed, stdout, stderr, workingDirectory);
             }
 
+            if (string.Equals(parsed.Command, "parity-audit", StringComparison.Ordinal))
+            {
+                return ExecuteParityAudit(parsed, stdout, stderr, workingDirectory);
+            }
+
+            if (string.Equals(parsed.Command, "staging-soak", StringComparison.Ordinal))
+            {
+                return ExecuteStagingSoak(parsed, stdout, stderr, workingDirectory);
+            }
+
             var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
                 ? WorkspaceLayout.DiscoverFrom(workingDirectory)
                 : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
@@ -499,6 +509,8 @@ public static partial class LaufenCliRunner
         stdout.WriteLine("  dashboard                 Generate self-contained HTML5 dashboard under dist-dotnet/");
         stdout.WriteLine("  daemon                    Run Telegram long-polling & scheduled autopilot worker (--once supported)");
         stdout.WriteLine("  trace                     Inspect decision traces, v2 14-day milestones & North-Star trends");
+        stdout.WriteLine("  parity-audit              Run multi-tenant cutover parity & safety readiness audit");
+        stdout.WriteLine("  staging-soak              Run isolated 9-step end-to-end autopilot lifecycle soak");
         stdout.WriteLine("  help                      Show this help text");
         stdout.WriteLine();
         stdout.WriteLine("Options:");

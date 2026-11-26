@@ -1,7 +1,7 @@
 # .NET Agentic-First Coach & Self-Healing 14-Day Autopilot Architecture
 
-**Date:** 2026-11-25  
-**Status:** Target Architecture (v1 Autopilot + v2 Stage Milestones)  
+**Date:** 2026-11-26  
+**Status:** Target Architecture Implemented in `dotnet/` (v1 Autopilot + v2 Stage Milestones Verified; Shadow/Staging Ready)  
 **Parent Migration Plan:** [`DOTNET_MIGRATION_PLAN.md`](DOTNET_MIGRATION_PLAN.md)  
 **Domain & Coaching DNA Reference:** [`SYSTEM_SPEC.md`](SYSTEM_SPEC.md) (§3 Coaching DNA & Physiological Formulas)  
 **Load Projection & Simulation Companions:** [`FORESIGHT_ENGINE_PLAN.md`](FORESIGHT_ENGINE_PLAN.md), [`AGENTIC_SIMULATION_PLAN.md`](AGENTIC_SIMULATION_PLAN.md)
@@ -112,8 +112,8 @@ We keep reasoning unified per decision rather than fragmenting single choices ac
 2. **14-Day Ownership-Aware Calendar Snapshot**: Extends `UpcomingCalendarDossier` from 7 days to **14 days** (`refDate .. refDate + 13`), tagging each item with `Ownership` (`Auto` | `UserLocked` | `Completed`) plus Banister EWMA load projection for the planned sequence.
 3. **Compact State & Health Memory (`BlockCompass`)**: Persists `HealthState` (`Normal` | `SickHold` | `ReEntry`), current stimulus progression rung (e.g., Long Run `55m`, Threshold `4x 6m`), `auto_event_ids`, and concise observations.
 
-### 5.2 Phase 2 Extension (v2 — Explicitly Out of v1 Scope): Measurable 14-Day Stage Milestones
-Once the v1 self-healing 14-day Autopilot is validated in production, **v2** adds explicit, measurable target tracking without falling into short-term physiological noise:
+### 5.2 Phase 2 Extension (v2 — Implemented in `dotnet/src/Laufen.Domain/StageMilestones.cs`): Measurable 14-Day Stage Milestones
+Extending the validated v1 self-healing 14-day Autopilot, **v2** adds explicit, deterministic target tracking via `StageMilestoneEvaluator` (`CoachIntelligenceDossier.Milestones`, `DashboardHtmlRenderer`, and `Laufen.Cli trace`) without falling into short-term physiological noise:
 
 - **Why Pure Pace/HR Outcome Targets Fail on a 14-Day Horizon**: Aerobic adaptations require 4–8 weeks, while ambient temperature (`±5 °C`), hydration, and time of day shift Z2 pace by `10–15 s/km` overnight and tempt athletes to force pace.
 - **Two-Tier Measurable Goal Model (v2)**:
