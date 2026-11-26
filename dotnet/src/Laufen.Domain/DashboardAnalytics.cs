@@ -47,6 +47,7 @@ public sealed record DashboardSnapshot
     public required IReadOnlyList<VolumeForecastWeek> VolumeForecast { get; init; }
     public required CoachIntelligenceDossier Dossier { get; init; }
     public BlockCompassSnapshot? CurrentCompass { get; init; }
+    public MilestoneProgressSnapshot? Milestones { get; init; }
     public NarrativeReport? LatestNarrative { get; init; }
     public BanisterProjectionResult? Banister14DayProjection { get; init; }
     public required IReadOnlyList<RunReviewRecord> RecentReviews { get; init; }
@@ -462,6 +463,7 @@ public static class DashboardSnapshotBuilder
             VolumeForecast = volumeForecast,
             Dossier = dossier,
             CurrentCompass = currentCompass,
+            Milestones = dossier.Milestones,
             LatestNarrative = latestNarrative is not null && latestNarrative.ReferenceDate <= refDate ? latestNarrative : null,
             Banister14DayProjection = banister14d,
             RecentReviews = recentReviews,

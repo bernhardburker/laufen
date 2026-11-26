@@ -231,6 +231,7 @@ public static class AutopilotPromptBuilder
             stimulus_progression = d.StimulusProgression,
             calendar_14d = d.Calendar,
             current_compass = d.CurrentCompass,
+            milestones = d.Milestones,
             data_quality_notes = d.DataQualityNotes
         };
 

@@ -26,12 +26,11 @@ public static partial class LaufenCliRunner
             var data = AthleteDataRepository.LoadAthleteData(layout, registry, slug);
             var compass = AutopilotStateStore.LoadBlockCompass(layout, slug);
             var narrative = AutopilotStateStore.LoadNarrativeSummary(layout, slug);
-            var latestTrace = AutopilotStateStore.LoadLatestDecisionTrace(layout, slug);
+            var traces = AutopilotStateStore.LoadDecisionTraces(layout, slug, limit: 10);
             var dotnetReviews = AutopilotStateStore.LoadDotNetRunReviews(layout, slug);
             var mergedLocks = ResolveMergedLockedDates(layout, slug, data, parsed.LockedDates);
 
             var effectiveReviews = dotnetReviews.Count > 0 ? dotnetReviews : data.RunReviews;
-            IReadOnlyList<AutopilotDecisionTraceEntry> traces = latestTrace is not null ? [latestTrace] : [];
 
             var snapshot = DashboardSnapshotBuilder.Build(
                 slug,

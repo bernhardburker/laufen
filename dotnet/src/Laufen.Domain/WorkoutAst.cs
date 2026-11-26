@@ -78,6 +78,9 @@ public sealed record BlockCompassSnapshot
 
     [JsonPropertyName("auto_event_ids")]
     public IReadOnlyList<long>? AutoEventIds { get; init; }
+
+    [JsonPropertyName("active_milestones")]
+    public IReadOnlyList<StageMilestone>? ActiveMilestones { get; init; }
 }
 
 /// <summary>

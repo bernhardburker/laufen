@@ -50,6 +50,7 @@ public static partial class DashboardHtmlRenderer
         AppendHeader(sb, snapshot, title, healthState);
         AppendDataSourceBanner(sb, snapshot);
         AppendKpiStrip(sb, snapshot);
+        AppendMilestonesSection(sb, snapshot);
         AppendAutopilotScheduleSection(sb, snapshot);
         AppendNarratorSection(sb, snapshot);
         AppendTrendsAndZonePaceSection(sb, snapshot);
@@ -179,6 +180,7 @@ public static partial class DashboardHtmlRenderer
         sb.AppendLine("  </section>");
     }
 
+
     private static void AppendKpiCard(StringBuilder sb, string label, string value, string sub)
     {
         sb.AppendLine("    <div class=\"card\">");
@@ -186,6 +188,52 @@ public static partial class DashboardHtmlRenderer
         sb.Append("      <div class=\"kpi-value\">").Append(Enc(value)).AppendLine("</div>");
         sb.Append("      <div class=\"kpi-sub\">").Append(Enc(sub)).AppendLine("</div>");
         sb.AppendLine("    </div>");
+    }
+
+    private static void AppendMilestonesSection(StringBuilder sb, DashboardSnapshot snapshot)
+    {
+        if (snapshot.Milestones is not { } ms)
+        {
+            return;
+        }
+
+        sb.AppendLine("  <section class=\"card\">");
+        sb.AppendLine("    <h2>14-Tage-Etappenziele &amp; 6-12-Wochen-Nordstern</h2>");
+        sb.Append("    <p class=\"subtitle\" style=\"margin-bottom:10px;\">Nordstern-Trend (")
+            .Append(ms.NorthStar.WindowWeeks)
+            .Append("w): <strong>").Append(Enc(ms.NorthStar.TrendDirection)).Append("</strong>")
+            .Append(" | Z2 GAP: ").Append(Enc(ms.NorthStar.Z2GapEarlyPaceText ?? "-"))
+            .Append(" &rarr; ").Append(Enc(ms.NorthStar.Z2GapRecentPaceText ?? "-"))
+            .Append(" | Basis-AEF: ").Append(ms.NorthStar.BaseAefEarly?.ToString("F3", CultureInfo.InvariantCulture) ?? "-")
+            .Append(" &rarr; ").Append(ms.NorthStar.BaseAefRecent?.ToString("F3", CultureInfo.InvariantCulture) ?? "-")
+            .AppendLine("</p>");
+
+        sb.AppendLine("    <div class=\"insight-grid\">");
+        foreach (var item in ms.ActiveMilestones)
+        {
+            var badgeClass = item.Status switch
+            {
+                "achieved" => "sev-success",
+                "on_track" => "sev-info",
+                "paused_health" => "sev-warning",
+                _ => "sev-danger"
+            };
+            var pct = Math.Clamp((int)Math.Round(item.ProgressRatio * 100.0, MidpointRounding.AwayFromZero), 0, 100);
+            sb.AppendLine("      <div class=\"insight-item\">");
+            sb.Append("        <span class=\"badge ").Append(badgeClass).Append("\">").Append(Enc(item.Status)).AppendLine("</span>");
+            sb.Append("        <h3 style=\"margin-top:6px;\">").Append(Enc(item.Title)).AppendLine("</h3>");
+            sb.Append("        <div style=\"font-weight:700;margin-bottom:6px;\">")
+                .Append(item.CurrentValue.ToString("F1", CultureInfo.InvariantCulture))
+                .Append(" / ")
+                .Append(item.TargetValue.ToString("F1", CultureInfo.InvariantCulture))
+                .Append(' ').Append(Enc(item.Unit)).Append(" (").Append(pct).Append("%)</div>");
+            sb.Append("        <div style=\"height:6px;background:#0f172a;border-radius:999px;overflow:hidden;margin-bottom:6px;\"><div style=\"height:100%;width:")
+                .Append(pct).Append("%;background:var(--cyan);\"></div></div>");
+            sb.Append("        <p class=\"subtitle\">").Append(Enc(item.Evidence)).AppendLine("</p>");
+            sb.AppendLine("      </div>");
+        }
+        sb.AppendLine("    </div>");
+        sb.AppendLine("  </section>");
     }
 
     private static void AppendAutopilotScheduleSection(StringBuilder sb, DashboardSnapshot snapshot)
@@ -238,6 +286,7 @@ public static partial class DashboardHtmlRenderer
         sb.AppendLine("    </div>");
         sb.AppendLine("  </section>");
     }
+
 
     private static void AppendScheduleList(StringBuilder sb, List<ScheduledCalendarItem> items, string emptyText)
     {
@@ -309,6 +358,7 @@ public static partial class DashboardHtmlRenderer
         sb.AppendLine("  </section>");
     }
 
+
     private static void AppendTrendsAndZonePaceSection(StringBuilder sb, DashboardSnapshot snapshot)
     {
         sb.AppendLine("  <section class=\"two-col\">");
@@ -334,6 +384,7 @@ public static partial class DashboardHtmlRenderer
         sb.AppendLine("    </div>");
         sb.AppendLine("  </section>");
     }
+
 
     private static void AppendForecastAndZonesSection(StringBuilder sb, DashboardSnapshot snapshot)
     {
@@ -381,6 +432,7 @@ public static partial class DashboardHtmlRenderer
         sb.AppendLine("    </div>");
         sb.AppendLine("  </section>");
     }
+
 
     private static void AppendReviewsTableSection(StringBuilder sb, DashboardSnapshot snapshot)
     {
@@ -438,6 +490,7 @@ public static partial class DashboardHtmlRenderer
         sb.AppendLine("    </table>");
         sb.AppendLine("  </section>");
     }
+
 
     private static void AppendBanisterSparklineSvg(StringBuilder sb, IReadOnlyList<BanisterProjectedDay> points)
     {

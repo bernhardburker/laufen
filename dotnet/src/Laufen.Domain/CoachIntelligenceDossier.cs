@@ -194,6 +194,7 @@ public sealed record CoachIntelligenceDossier
     public required ReadinessSignalDossier Readiness { get; init; }
     public required UpcomingCalendarDossier Calendar { get; init; }
     public BlockCompassSnapshot? CurrentCompass { get; init; }
+    public MilestoneProgressSnapshot? Milestones { get; init; }
     public required IReadOnlyList<string> DataQualityNotes { get; init; }
 }
 
@@ -290,22 +291,35 @@ public static class CoachIntelligenceDossierBuilder
             readiness,
             refDate);
 
+        var stimulusProgression = new StimulusProgressionDossier
+        {
+            Ledger = ledger,
+            BreakReentry = breakReentry,
+            BaseProgressionChain = baseChain,
+            QualityProgressionChain = qualityChain
+        };
+
+        var milestones = StageMilestoneEvaluator.EvaluateComponents(
+            profile,
+            baseChain,
+            qualityChain,
+            ledger,
+            readiness,
+            refDate,
+            runReviews,
+            currentCompass);
+
         return new CoachIntelligenceDossier
         {
             ReferenceDate = refDate,
             TargetDate = effectiveTargetDate,
             TargetDayOfWeek = targetDayOfWeek,
             Athlete = BuildAthleteSummary(profile),
-            StimulusProgression = new StimulusProgressionDossier
-            {
-                Ledger = ledger,
-                BreakReentry = breakReentry,
-                BaseProgressionChain = baseChain,
-                QualityProgressionChain = qualityChain
-            },
+            StimulusProgression = stimulusProgression,
             Readiness = readiness,
             Calendar = calendar,
             CurrentCompass = currentCompass,
+            Milestones = milestones,
             DataQualityNotes = dataQualityNotes
         };
     }

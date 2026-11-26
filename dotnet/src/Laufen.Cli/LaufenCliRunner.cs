@@ -120,6 +120,11 @@ public static partial class LaufenCliRunner
                 return ExecuteDaemon(parsed, stdout, stderr, workingDirectory);
             }
 
+            if (string.Equals(parsed.Command, "trace", StringComparison.Ordinal))
+            {
+                return ExecuteTrace(parsed, stdout, stderr, workingDirectory);
+            }
+
             var layout = string.IsNullOrWhiteSpace(parsed.WorkspaceRoot)
                 ? WorkspaceLayout.DiscoverFrom(workingDirectory)
                 : WorkspaceLayout.FromRoot(parsed.WorkspaceRoot);
@@ -493,6 +498,7 @@ public static partial class LaufenCliRunner
         stdout.WriteLine("  note                      Attach subjective note/feel/RPE & recompute 4-stage post-run review");
         stdout.WriteLine("  dashboard                 Generate self-contained HTML5 dashboard under dist-dotnet/");
         stdout.WriteLine("  daemon                    Run Telegram long-polling & scheduled autopilot worker (--once supported)");
+        stdout.WriteLine("  trace                     Inspect decision traces, v2 14-day milestones & North-Star trends");
         stdout.WriteLine("  help                      Show this help text");
         stdout.WriteLine();
         stdout.WriteLine("Options:");
@@ -521,6 +527,8 @@ public static partial class LaufenCliRunner
         stdout.WriteLine("  --once                    Run a single daemon tick and exit");
         stdout.WriteLine("  --poll-interval <sec>     Daemon Telegram/scheduler loop sleep seconds (default: 5)");
         stdout.WriteLine("  --activity-poll-minutes <N> Interval in minutes for post-run activity polling (default: 10)");
+        stdout.WriteLine("  --trace-trigger <name>    Filter 'trace' history by trigger name");
+        stdout.WriteLine("  --markdown                Format 'trace' or 'parity-audit' output as Markdown");
         stdout.WriteLine("  --retries <N>             Validation self-correction retries for 'coach-plan' / 'simulate' / 'narrate' (default: 1)");
         stdout.WriteLine("  --force                   Force narrative generation or briefing dispatch when gated/idempotent");
         stdout.WriteLine("  --force-replan            Bypass anti-churn hysteresis and force Role 1 replanning");
@@ -552,6 +560,7 @@ public static partial class LaufenCliRunner
         IReadOnlySet<long>? autoEventIds = null;
         IReadOnlySet<DateOnly>? lockedDates = null;
         string trigger = "morning_sync";
+        string? explicitTrigger = null;
         string? provider = null;
         string? model = null;
         string? message = null;
@@ -577,6 +586,8 @@ public static partial class LaufenCliRunner
         bool once = false;
         int pollIntervalSeconds = 5;
         int activityPollMinutes = 10;
+        string? traceTriggerFilter = null;
+        bool markdown = false;
 
         for (var i = 0; i < args.Count; i++)
         {
@@ -665,6 +676,7 @@ public static partial class LaufenCliRunner
                         parsed = default!;
                         return false;
                     }
+                    explicitTrigger = trigger;
                     break;
                 case "--provider":
                     if (!TryReadValue(args, ref i, arg, out provider, out error))
@@ -807,6 +819,16 @@ public static partial class LaufenCliRunner
                         return false;
                     }
                     break;
+                case "--trace-trigger":
+                    if (!TryReadValue(args, ref i, arg, out traceTriggerFilter, out error))
+                    {
+                        parsed = default!;
+                        return false;
+                    }
+                    break;
+                case "--markdown":
+                    markdown = true;
+                    break;
                 default:
                     if (arg.StartsWith('-') && arg is not ("-h" or "--help"))
                     {
@@ -880,7 +902,9 @@ public static partial class LaufenCliRunner
             outputPath,
             once,
             pollIntervalSeconds,
-            activityPollMinutes);
+            activityPollMinutes,
+            traceTriggerFilter ?? explicitTrigger,
+            markdown);
         return true;
     }
 
@@ -2433,5 +2457,7 @@ public static partial class LaufenCliRunner
         string? OutputPath,
         bool Once,
         int PollIntervalSeconds,
-        int ActivityPollMinutes);
+        int ActivityPollMinutes,
+        string? TraceTriggerFilter,
+        bool Markdown);
 }

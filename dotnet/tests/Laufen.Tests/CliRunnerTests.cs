@@ -51,6 +51,7 @@ public class CliRunnerTests
         Assert.That(stdout.ToString(), Does.Contain("note"));
         Assert.That(stdout.ToString(), Does.Contain("dashboard"));
         Assert.That(stdout.ToString(), Does.Contain("daemon"));
+        Assert.That(stdout.ToString(), Does.Contain("trace"));
         Assert.That(stdout.ToString(), Does.Contain("athletes"));
     }
 

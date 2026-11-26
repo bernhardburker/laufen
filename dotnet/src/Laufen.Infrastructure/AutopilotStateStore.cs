@@ -77,6 +77,48 @@ public static class AutopilotStateStore
         return lastLine is null ? null : StrictJsonLoader.Deserialize<AutopilotDecisionTraceEntry>(lastLine);
     }
 
+    public static IReadOnlyList<AutopilotDecisionTraceEntry> LoadDecisionTraces(
+        WorkspaceLayout layout,
+        string slug,
+        int? limit = null,
+        string? triggerFilter = null)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentException.ThrowIfNullOrWhiteSpace(slug);
+
+        var path = Path.Combine(layout.AthletesDirectory, slug, "decision_trace_dotnet.jsonl");
+        if (!File.Exists(path))
+        {
+            return [];
+        }
+
+        var entries = new List<AutopilotDecisionTraceEntry>();
+        foreach (var line in File.ReadLines(path, Encoding.UTF8))
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+
+            var parsed = StrictJsonLoader.Deserialize<AutopilotDecisionTraceEntry>(line);
+            if (!string.IsNullOrWhiteSpace(triggerFilter)
+                && !string.Equals(parsed.Trigger, triggerFilter.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            entries.Add(parsed);
+        }
+
+        IEnumerable<AutopilotDecisionTraceEntry> ordered = entries.OrderByDescending(e => e.Timestamp);
+        if (limit is > 0)
+        {
+            ordered = ordered.Take(limit.Value);
+        }
+
+        return ordered.ToList();
+    }
+
     public static void SaveNarrativeArtifacts(WorkspaceLayout layout, string slug, NarrativeReport report)
     {
         ArgumentNullException.ThrowIfNull(layout);
