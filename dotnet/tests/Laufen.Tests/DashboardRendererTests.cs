@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Laufen.Cli;
 using Laufen.Domain;
@@ -172,6 +173,89 @@ public class DashboardRendererTests
             {
                 File.Delete(tempHtml);
             }
+        }
+    }
+
+    [Test]
+    public void RacePredictionsAndVolumeForecastMatchPythonForecastOnRealBerniData()
+    {
+        var layout = WorkspaceLayout.DiscoverFrom(AppContext.BaseDirectory);
+        var registry = AthleteDataRepository.LoadRegistry(layout);
+        var berni = AthleteDataRepository.LoadAthleteData(layout, registry, "berni");
+        var validMetrics = PhysiologicalCalculator.FilterValidRuns(berni.Activities)
+            .OrderByDescending(r => r.StartDateLocal)
+            .Select(PhysiologicalCalculator.CalculateRunMetrics)
+            .ToList();
+        var weeklyTrends = PhysiologicalCalculator.AggregateWeeklyTrends(berni.Activities, maxWeeks: 12);
+
+        var dnPredictions = RacePredictionCalculator.Predict(validMetrics, berni.Profile);
+        var dnForecast = VolumeForecastCalculator.Generate(weeklyTrends, new DateOnly(2026, 11, 26), weeks: 4);
+
+        var pythonExec = Path.Combine(layout.RootDirectory, ".venv", "bin", "python");
+        Assert.That(File.Exists(pythonExec), Is.True, $"Python executable not found at {pythonExec}");
+
+        const string script = """
+            import json, sys
+            from pathlib import Path
+            from src.analysis.trends import load_activities, filter_runs, calculate_run_metrics, aggregate_weekly_trends
+            from src.analysis.forecast import predict_race_times, generate_volume_forecast
+
+            athlete_dir = Path(sys.argv[1])
+            activities = load_activities(athlete_dir / "intervals_activities.json")
+            with open(athlete_dir / "athlete.json", "r", encoding="utf-8") as f:
+                profile = json.load(f)
+            processed = [calculate_run_metrics(r) for r in filter_runs(activities)]
+            trends = aggregate_weekly_trends(activities, max_weeks=12)
+            payload = {
+                "predictions": predict_race_times(processed, profile),
+                "volume_forecast": generate_volume_forecast(trends, num_weeks=4),
+            }
+            print(json.dumps(payload))
+            """;
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = pythonExec,
+            WorkingDirectory = layout.RootDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+        startInfo.ArgumentList.Add("-c");
+        startInfo.ArgumentList.Add(script);
+        startInfo.ArgumentList.Add(Path.Combine(layout.AthletesDirectory, "berni"));
+
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Failed to start Python process.");
+        var stdout = process.StandardOutput.ReadToEnd();
+        var stderr = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        Assert.That(process.ExitCode, Is.EqualTo(0), $"Python exited with {process.ExitCode}: {stderr}");
+        using var pyDoc = JsonDocument.Parse(stdout);
+        var pyPreds = pyDoc.RootElement.GetProperty("predictions");
+        var pyForecast = pyDoc.RootElement.GetProperty("volume_forecast");
+
+        Assert.That(dnPredictions.Count, Is.EqualTo(pyPreds.GetArrayLength()));
+        for (var i = 0; i < dnPredictions.Count; i++)
+        {
+            var dn = dnPredictions[i];
+            var py = pyPreds[i];
+            Assert.That(dn.Key, Is.EqualTo(py.GetProperty("key").GetString()));
+            Assert.That(dn.PredictedSeconds, Is.EqualTo(py.GetProperty("predicted_seconds").GetInt32()));
+            Assert.That(dn.PredictedTimeText, Is.EqualTo(py.GetProperty("predicted_time_str").GetString()));
+            Assert.That(dn.TargetPaceText, Is.EqualTo(py.GetProperty("target_pace_str").GetString()));
+            Assert.That(dn.Basis, Is.EqualTo(py.GetProperty("basis").GetString()));
+        }
+
+        Assert.That(dnForecast.Count, Is.EqualTo(pyForecast.GetArrayLength()));
+        for (var i = 0; i < dnForecast.Count; i++)
+        {
+            var dn = dnForecast[i];
+            var py = pyForecast[i];
+            Assert.That(dn.IsoWeek, Is.EqualTo(py.GetProperty("iso_week").GetString()));
+            Assert.That(dn.ProjectedDistanceKm, Is.EqualTo(py.GetProperty("projected_distance_km").GetDouble()).Within(0.05));
+            Assert.That(dn.ProjectedLoad, Is.EqualTo(py.GetProperty("projected_load").GetDouble()).Within(0.5));
         }
     }
 }

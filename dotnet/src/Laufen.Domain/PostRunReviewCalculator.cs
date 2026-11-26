@@ -376,16 +376,6 @@ public static class PostRunReviewCalculator
             plannedSlot = calName.Trim();
             intentSource = "calendar_event";
         }
-        else if (openCoachCycle is not null && openCoachCycle.Date <= runDate && !string.IsNullOrWhiteSpace(openCoachCycle.TargetType))
-        {
-            intendedType = openCoachCycle.TargetType.Contains("tempo", StringComparison.OrdinalIgnoreCase)
-                || openCoachCycle.TargetType.Contains("threshold", StringComparison.OrdinalIgnoreCase)
-                || openCoachCycle.TargetType.Contains("interval", StringComparison.OrdinalIgnoreCase)
-                ? "threshold"
-                : "easy_run";
-            plannedSlot = string.Create(CultureInfo.InvariantCulture, $"Slot {slotId} (Coach-Vorgabe)");
-            intentSource = "coach_history";
-        }
         else if (ContainsAny(runName, QualityKeywords))
         {
             intendedType = runName.Contains("schwell", StringComparison.OrdinalIgnoreCase)
@@ -401,6 +391,19 @@ public static class PostRunReviewCalculator
             intendedType = "easy_run";
             plannedSlot = string.Create(CultureInfo.InvariantCulture, $"Slot {slotId} (Aerobe Basis)");
             intentSource = "name";
+        }
+        else if (openCoachCycle is not null
+            && openCoachCycle.Date <= runDate
+            && (runDate.DayNumber - openCoachCycle.Date.DayNumber) <= 7
+            && !string.IsNullOrWhiteSpace(openCoachCycle.TargetType))
+        {
+            intendedType = openCoachCycle.TargetType.Contains("tempo", StringComparison.OrdinalIgnoreCase)
+                || openCoachCycle.TargetType.Contains("threshold", StringComparison.OrdinalIgnoreCase)
+                || openCoachCycle.TargetType.Contains("interval", StringComparison.OrdinalIgnoreCase)
+                ? "threshold"
+                : "easy_run";
+            plannedSlot = string.Create(CultureInfo.InvariantCulture, $"Slot {slotId} (Coach-Vorgabe)");
+            intentSource = "coach_history";
         }
         else if (string.Equals(slotRole, "base_anchor", StringComparison.OrdinalIgnoreCase))
         {

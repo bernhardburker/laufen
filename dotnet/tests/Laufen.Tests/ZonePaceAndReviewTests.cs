@@ -129,4 +129,90 @@ public class ZonePaceAndReviewTests
         Assert.That(trends.Summary["z2"].Count, Is.EqualTo(trends.Series["z2"].Count));
         Assert.That(trends.Summary["z2"].RecentAveragePaceText, Is.Not.Null);
     }
+
+    [Test]
+    public void PostRunReviewCalculatorMatchesAllRealBerniReviewsWithinStrictTolerances()
+    {
+        var layout = ResolveRepositoryLayout();
+        var registry = AthleteDataRepository.LoadRegistry(layout);
+        var berni = AthleteDataRepository.LoadAthleteData(layout, registry, "berni");
+        var validRuns = PhysiologicalCalculator.FilterValidRuns(berni.Activities).ToList();
+        var calendarById = berni.CalendarEvents.ToDictionary(e => e.Id);
+        var openCycle = berni.CoachHistory
+            .Where(c => string.Equals(c.Status, "offen", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(c => c.Date)
+            .FirstOrDefault();
+
+        var compared = 0;
+        var ratingMatches = 0;
+        var recoveryMatches = 0;
+        var z1Z2Drifts = 0;
+        var aefDrifts = 0;
+        var z2GapDrifts = 0;
+        RunReviewRecord? comebackReview = null;
+
+        foreach (var run in validRuns)
+        {
+            if (!berni.RunReviews.TryGetValue(run.Id, out var pyReview))
+            {
+                continue;
+            }
+
+            var stream = StrictJsonLoader.LoadActivityStream(layout, "berni", run.Id);
+            CalendarEventEntry? paired = null;
+            if (run.PairedEventId.HasValue)
+            {
+                calendarById.TryGetValue(run.PairedEventId.Value, out paired);
+            }
+
+            var dnReview = PostRunReviewCalculator.EvaluateRun(run, berni.Profile, stream, paired, openCycle);
+            compared++;
+
+            if (string.Equals(run.Id, "i213105633", StringComparison.Ordinal))
+            {
+                comebackReview = dnReview;
+            }
+
+            if (Math.Abs(dnReview.Z1Z2Percentage - pyReview.Z1Z2Percentage) > 0.1)
+            {
+                z1Z2Drifts++;
+            }
+
+            if (dnReview.AerobicEf.HasValue && pyReview.AerobicEf.HasValue
+                && Math.Abs(dnReview.AerobicEf.Value - pyReview.AerobicEf.Value) > 0.005)
+            {
+                aefDrifts++;
+            }
+
+            var dnZ2 = dnReview.ZonePaceStats?.Zones.Values.FirstOrDefault(z => z.Zone == 2);
+            var pyZ2 = pyReview.ZonePaceStats?.Zones.Values.FirstOrDefault(z => z.Zone == 2);
+            if (dnZ2 is { ValidForTrend: true } && pyZ2 is { ValidForTrend: true }
+                && Math.Abs(dnZ2.GapPaceSecondsPerKm - pyZ2.GapPaceSecondsPerKm) > 1.5)
+            {
+                z2GapDrifts++;
+            }
+
+            if (string.Equals(dnReview.Review.Rating, pyReview.Review.Rating, StringComparison.Ordinal))
+            {
+                ratingMatches++;
+            }
+
+            if (dnReview.Review.Stages.Stage4NextRun.RecoveryHours == pyReview.Review.Stages.Stage4NextRun.RecoveryHours)
+            {
+                recoveryMatches++;
+            }
+        }
+
+        Assert.That(compared, Is.GreaterThanOrEqualTo(75));
+        Assert.That(z1Z2Drifts, Is.EqualTo(0));
+        Assert.That(aefDrifts, Is.EqualTo(0));
+        Assert.That(z2GapDrifts, Is.EqualTo(0));
+        Assert.That(ratingMatches, Is.EqualTo(compared));
+        Assert.That(recoveryMatches, Is.EqualTo(compared));
+
+        Assert.That(comebackReview, Is.Not.Null);
+        Assert.That(comebackReview!.Review.Stages.Stage2Compliance.IntentSource, Is.EqualTo("name"));
+        Assert.That(comebackReview.Review.Stages.Stage2Compliance.IntendedType, Is.EqualTo("easy_run"));
+        Assert.That(comebackReview.Review.Stages.Stage2Compliance.Status, Is.EqualTo("erfüllt"));
+    }
 }

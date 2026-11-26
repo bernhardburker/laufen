@@ -202,11 +202,12 @@ public static partial class LaufenCliRunner
         foreach (var slug in slugs)
         {
             var data = AthleteDataRepository.LoadAthleteData(layout, registry, slug);
+            var asOfDate = parsed.AsOfDate ?? parsed.RefDate ?? DateOnly.FromDateTime(DateTime.Today);
             var snapshot = PhysiologicalCalculator.CreateReportSnapshot(
                 data.Profile,
                 data.Activities,
                 data.WellnessRecords,
-                parsed.AsOfDate,
+                asOfDate,
                 parsed.RecentLimit,
                 parsed.MaxWeeks);
 
@@ -326,21 +327,21 @@ public static partial class LaufenCliRunner
         foreach (var run in snapshot.RecentRuns)
         {
             var pace = FormatPace(run.PaceSecondsPerKm);
-            var z1z2 = run.Z1Z2Percentage.HasValue ? $"{run.Z1Z2Percentage.Value * 100:F0}%" : "-";
+            var z1z2 = run.Z1Z2Percentage.HasValue ? $"{run.Z1Z2Percentage.Value:F1}%" : "-";
             var aef = run.AerobicEfficiencyFactor.HasValue ? $"{run.AerobicEfficiencyFactor.Value:F2}" : "-";
             stdout.WriteLine(
                 $"  {run.StartDateLocal:yyyy-MM-dd} | {run.DistanceKm,5:F2} km | {pace}/km | " +
-                $"HR {run.AverageHeartRate,5:F1} | Z1-2 {z1z2,4} | AEF {aef,4} | {run.Name}");
+                $"HR {run.AverageHeartRate,5:F1} | Z1-2 {z1z2,6} | AEF {aef,4} | {run.Name}");
         }
 
         stdout.WriteLine($"Weekly Trends ({snapshot.WeeklyTrends.Count}):");
         foreach (var week in snapshot.WeeklyTrends)
         {
             var pace = FormatPace(week.AveragePaceSecondsPerKm);
-            var z1z2 = week.Z1Z2Percentage.HasValue ? $"{week.Z1Z2Percentage.Value * 100:F0}%" : "-";
+            var z1z2 = week.Z1Z2Percentage.HasValue ? $"{week.Z1Z2Percentage.Value:F1}%" : "-";
             stdout.WriteLine(
                 $"  {week.IsoWeek} | {week.RunsCount,2} runs | {week.TotalDistanceKm,5:F2} km | " +
-                $"avg {pace}/km | Z1-2 {z1z2,4} | load {week.TotalLoad,5:F0}");
+                $"avg {pace}/km | Z1-2 {z1z2,6} | load {week.TotalLoad,5:F0}");
         }
     }
 

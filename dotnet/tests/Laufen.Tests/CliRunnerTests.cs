@@ -115,6 +115,26 @@ public class CliRunnerTests
         Assert.That(text, Does.Contain("Fitness/Form:"));
         Assert.That(text, Does.Contain("Recent Runs"));
         Assert.That(text, Does.Contain("Weekly Trends"));
+        Assert.That(text, Does.Match(@"Z1-2\s+(?:\d{1,2}|100)\.\d%"));
+        Assert.That(text, Does.Not.Match(@"Z1-2\s+\d{4}%"));
+    }
+
+    [Test]
+    public void RunReportWithoutAsOfDateAppliesDailyDecayMatchingTodayState()
+    {
+        using var stdout = new StringWriter();
+        using var stderr = new StringWriter();
+
+        var exitCode = LaufenCliRunner.Run(
+            ["report", "--athlete", "berni", "--limit", "2", "--json"],
+            stdout,
+            stderr,
+            AppContext.BaseDirectory);
+
+        Assert.That(exitCode, Is.EqualTo(0), stderr.ToString());
+        using var doc = JsonDocument.Parse(stdout.ToString());
+        var dataSource = doc.RootElement.GetProperty("report").GetProperty("fitnessForm").GetProperty("dataSource").GetString();
+        Assert.That(dataSource, Is.EqualTo("decayed").Or.EqualTo("wellness"));
     }
 
     [Test]
