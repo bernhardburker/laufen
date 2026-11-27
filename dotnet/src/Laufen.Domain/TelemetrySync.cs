@@ -71,7 +71,8 @@ public sealed record ActivityNoteUpdateRequest
 
 public sealed record TelemetrySyncOptions
 {
-    public int ActivitiesLookbackDays { get; init; } = 180;
+    public DateOnly? ActivitiesOldest { get; init; }
+    public int? ActivitiesLookbackDays { get; init; }
     public int WellnessLookbackDays { get; init; } = 90;
     public int CalendarPastDays { get; init; } = 14;
     public int CalendarFutureDays { get; init; } = 21;
@@ -79,6 +80,7 @@ public sealed record TelemetrySyncOptions
     public bool SyncStreams { get; init; } = true;
     public bool DryRun { get; init; } = true;
     public bool WriteToWorkspace { get; init; }
+    public string? OutputDirectory { get; init; }
 }
 
 public sealed record TelemetrySyncSummary

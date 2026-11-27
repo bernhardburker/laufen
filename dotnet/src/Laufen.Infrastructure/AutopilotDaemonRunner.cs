@@ -581,7 +581,7 @@ public sealed class AutopilotDaemonRunner(IDaemonClock? clock = null)
                     {
                         var streamPath = Path.Combine(layout.AthletesDirectory, slug, "streams", $"{run.Id}.json");
                         Directory.CreateDirectory(Path.GetDirectoryName(streamPath)!);
-                        File.WriteAllText(streamPath, JsonSerializer.Serialize(stream, CompactJsonOptions) + "\n", Encoding.UTF8);
+                        File.WriteAllText(streamPath, JsonSerializer.Serialize(stream, CompactJsonOptions) + "\n", new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
                     }
                 }
                 catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException && !cancellationToken.IsCancellationRequested)
@@ -761,12 +761,13 @@ public sealed class AutopilotDaemonRunner(IDaemonClock? clock = null)
         var html = DashboardHtmlRenderer.Render(snapshot);
         var outputFile = Path.Combine(layout.RootDirectory, "dist-dotnet", data.RegistryEntry.DashboardSlug, "index.html");
         Directory.CreateDirectory(Path.GetDirectoryName(outputFile)!);
-        File.WriteAllText(outputFile, html, Encoding.UTF8);
+        var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+        File.WriteAllText(outputFile, html, utf8NoBom);
 
         if (string.Equals(slug, registry.DefaultAthlete, StringComparison.Ordinal))
         {
             var rootIndex = Path.Combine(layout.RootDirectory, "dist-dotnet", "index.html");
-            File.WriteAllText(rootIndex, html, Encoding.UTF8);
+            File.WriteAllText(rootIndex, html, utf8NoBom);
         }
     }
 }

@@ -223,7 +223,7 @@ public static class StagingSoakHarness
             var html = DashboardHtmlRenderer.Render(dashSnapshot);
             var htmlPath = Path.Combine(layout.RootDirectory, "dist-dotnet", entry.DashboardSlug, "index.html");
             Directory.CreateDirectory(Path.GetDirectoryName(htmlPath)!);
-            File.WriteAllText(htmlPath, html, Encoding.UTF8);
+            File.WriteAllText(htmlPath, html, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             sw.Stop();
             steps.Add(new StagingSoakStepResult(
                 "dashboard",
@@ -342,7 +342,7 @@ public static class StagingSoakHarness
         File.WriteAllText(
             Path.Combine(destRoot, "athletes", "registry.json"),
             System.Text.Json.JsonSerializer.Serialize(isolatedRegistry) + "\n",
-            Encoding.UTF8);
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
         var srcAthleteDir = Path.Combine(source.AthletesDirectory, slug);
         foreach (var file in Directory.GetFiles(srcAthleteDir))

@@ -25,6 +25,31 @@ public sealed record VolumeForecastWeek
     public required string Description { get; init; }
 }
 
+public sealed record DashboardRunRow
+{
+    public required string Id { get; init; }
+    public required DateOnly Date { get; init; }
+    public required string IsoWeek { get; init; }
+    public required string Name { get; init; }
+    public required double DistanceKm { get; init; }
+    public required int MovingTimeSeconds { get; init; }
+    public required string MovingTimeText { get; init; }
+    public required double PaceSecondsPerKm { get; init; }
+    public required string PaceText { get; init; }
+    public required double AverageHeartRate { get; init; }
+    public required double TrainingLoad { get; init; }
+    public required int Z1Z2Seconds { get; init; }
+    public required int TotalZoneSeconds { get; init; }
+    public required double? Z1Z2Percentage { get; init; }
+    public required double? AerobicEf { get; init; }
+    public required IReadOnlyList<int> ZoneTimes { get; init; }
+    public string? Z2GapPaceText { get; init; }
+    public required string RatingLabel { get; init; }
+    public string? Directive { get; init; }
+    public string? AthleteNote { get; init; }
+    public required string IntensityBucket { get; init; }
+}
+
 public sealed record DashboardSnapshot
 {
     public required string Slug { get; init; }
@@ -52,6 +77,7 @@ public sealed record DashboardSnapshot
     public BanisterProjectionResult? Banister14DayProjection { get; init; }
     public required IReadOnlyList<RunReviewRecord> RecentReviews { get; init; }
     public required IReadOnlyList<AutopilotDecisionTraceEntry> RecentTraces { get; init; }
+    public IReadOnlyList<DashboardRunRow> AllRuns { get; init; } = [];
 }
 
 /// <summary>
@@ -435,6 +461,57 @@ public static class DashboardSnapshotBuilder
             .Take(25)
             .ToList();
 
+        var actById = validRunsDesc.ToDictionary(a => a.Id, StringComparer.Ordinal);
+        var allRunRows = new List<DashboardRunRow>(allRunMetrics.Count);
+        foreach (var metric in allRunMetrics)
+        {
+            reviewsUpToRef.TryGetValue(metric.Id, out var rev);
+            actById.TryGetValue(metric.Id, out var rawAct);
+
+            var z2Gap = rev?.ZonePaceStats?.Zones.Values.FirstOrDefault(z => z.Zone == 2)?.GapPaceText;
+            var ratingLabel = rev?.Review.RatingLabel ?? (metric.Z1Z2Percentage switch
+            {
+                >= 80.0 => "Aerobe Basis",
+                >= 60.0 => "Ueberwiegend aerob",
+                _ => "Intensiv / Gemischt"
+            });
+            var bucket = metric.Z1Z2Percentage switch
+            {
+                >= 80.0 => "base",
+                >= 60.0 => "mixed",
+                null => "mixed",
+                _ => "quality"
+            };
+            var note = !string.IsNullOrWhiteSpace(rev?.AthleteNote)
+                ? rev.AthleteNote
+                : rawAct?.AthleteNote;
+
+            allRunRows.Add(new DashboardRunRow
+            {
+                Id = metric.Id,
+                Date = DateOnly.FromDateTime(metric.StartDateLocal),
+                IsoWeek = metric.IsoWeek,
+                Name = metric.Name,
+                DistanceKm = metric.DistanceKm,
+                MovingTimeSeconds = metric.MovingTimeSeconds,
+                MovingTimeText = rev?.MovingTimeText ?? FormatDurationMmSs(metric.MovingTimeSeconds),
+                PaceSecondsPerKm = metric.PaceSecondsPerKm,
+                PaceText = FormatPace(metric.PaceSecondsPerKm),
+                AverageHeartRate = metric.AverageHeartRate,
+                TrainingLoad = metric.TrainingLoad,
+                Z1Z2Seconds = metric.Z1Z2Seconds,
+                TotalZoneSeconds = metric.TotalZoneSeconds,
+                Z1Z2Percentage = metric.Z1Z2Percentage,
+                AerobicEf = metric.AerobicEfficiencyFactor,
+                ZoneTimes = metric.ZoneTimes,
+                Z2GapPaceText = z2Gap,
+                RatingLabel = ratingLabel,
+                Directive = rev?.Review.Stages.Stage4NextRun.Directive,
+                AthleteNote = note,
+                IntensityBucket = bucket
+            });
+        }
+
         var filteredTraces = (recentTraces ?? [])
             .Where(t => t.ReferenceDate <= refDate)
             .OrderByDescending(t => t.Timestamp)
@@ -467,8 +544,20 @@ public static class DashboardSnapshotBuilder
             LatestNarrative = latestNarrative is not null && latestNarrative.ReferenceDate <= refDate ? latestNarrative : null,
             Banister14DayProjection = banister14d,
             RecentReviews = recentReviews,
-            RecentTraces = filteredTraces
+            RecentTraces = filteredTraces,
+            AllRuns = allRunRows
         };
+    }
+
+    private static string FormatDurationMmSs(int totalSeconds)
+    {
+        var secs = Math.Max(0, totalSeconds);
+        var hrs = secs / 3600;
+        var mins = (secs % 3600) / 60;
+        var rem = secs % 60;
+        return hrs > 0
+            ? string.Create(CultureInfo.InvariantCulture, $"{hrs}:{mins:D2}:{rem:D2}")
+            : string.Create(CultureInfo.InvariantCulture, $"{mins}:{rem:D2}");
     }
 
     private static string FormatPace(double secondsPerKm)

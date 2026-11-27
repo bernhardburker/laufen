@@ -535,7 +535,7 @@ public static partial class LaufenCliRunner
         stdout.WriteLine("  --callback <data>         Inline button callback data for 'telegram-override' (e.g. accept:2026-12-01)");
         stdout.WriteLine("  --stub-response <path>    JSON response file for '--provider stub'");
         stdout.WriteLine("  --scenario <name|all>     Simulation scenario for 'simulate' (default: all)");
-        stdout.WriteLine("  --output-dir <path>       Write isolated simulation report.md and timeline.json artifacts");
+        stdout.WriteLine("  --output-dir <path>       Override isolated artifact output directory for 'simulate', 'sync-data', 'sync-profile', and 'autopilot-run'");
         stdout.WriteLine("  --output <path>           Override output HTML path for 'dashboard'");
         stdout.WriteLine("  --once                    Run a single daemon tick and exit");
         stdout.WriteLine("  --poll-interval <sec>     Daemon Telegram/scheduler loop sleep seconds (default: 5)");
@@ -2294,8 +2294,11 @@ public static partial class LaufenCliRunner
 
         var refDate = parsed.RefDate ?? DateOnly.FromDateTime(DateTime.Today);
         var targetDate = parsed.TargetDate ?? refDate;
-        var existingCompass = AutopilotStateStore.LoadBlockCompass(layout, slug);
-        var latestTrace = AutopilotStateStore.LoadLatestDecisionTrace(layout, slug);
+        var shadowDir = !string.IsNullOrWhiteSpace(parsed.OutputDir) ? Path.GetFullPath(parsed.OutputDir) : null;
+        var existingCompass = (shadowDir is not null ? AutopilotStateStore.LoadBlockCompassFromDirectory(shadowDir) : null)
+            ?? AutopilotStateStore.LoadBlockCompass(layout, slug);
+        var latestTrace = (shadowDir is not null ? AutopilotStateStore.LoadLatestDecisionTraceFromDirectory(shadowDir) : null)
+            ?? AutopilotStateStore.LoadLatestDecisionTrace(layout, slug);
         var dotnetState = AutopilotStateStore.LoadDotNetTelegramState(layout, slug);
         var mergedLocks = AutopilotStateStore.MergeUserLockedDates(data.TelegramState, dotnetState, parsed.LockedDates);
         var effectiveDryRun = parsed.DryRun || (!parsed.Apply && !parsed.Send);
@@ -2332,6 +2335,11 @@ public static partial class LaufenCliRunner
         {
             stderr.WriteLine($"Autopilot cycle failed: {cycleResult.FailureReason}");
             return 1;
+        }
+
+        if (shadowDir is not null)
+        {
+            AutopilotStateStore.WriteShadowRunArtifacts(shadowDir, refDate, parsed.Trigger, effectiveProvider, cycleResult);
         }
 
         if (!effectiveDryRun)
@@ -2407,6 +2415,7 @@ public static partial class LaufenCliRunner
                 slug,
                 dryRun = effectiveDryRun,
                 provider = effectiveProvider,
+                shadowOutputDir = shadowDir,
                 cycleResult,
                 syncExecution,
                 telegramSent,
@@ -2428,6 +2437,10 @@ public static partial class LaufenCliRunner
         }
         stdout.WriteLine($"Narrator: shouldNarrate={cycleResult.NarrativeGate.ShouldNarrate} ({cycleResult.NarrativeGate.TriggerReason}), error={cycleResult.NarrativeError ?? "-"}");
         stdout.WriteLine($"Telegram: previewReady={cycleResult.TelegramPreview is not null}, sent={telegramSent}");
+        if (shadowDir is not null)
+        {
+            stdout.WriteLine($"Shadow Logs: {shadowDir}");
+        }
         return 0;
     }
 

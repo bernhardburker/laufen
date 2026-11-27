@@ -56,7 +56,9 @@ public static partial class LaufenCliRunner
 
                 var targetDir = parsed.WriteWorkspace
                     ? Path.Combine(layout.AthletesDirectory, slug)
-                    : Path.Combine(layout.AthletesDirectory, slug, ".dotnet_sync");
+                    : (!string.IsNullOrWhiteSpace(parsed.OutputDir) && !parsed.AllAthletes
+                        ? Path.GetFullPath(parsed.OutputDir)
+                        : Path.Combine(layout.AthletesDirectory, slug, ".dotnet_sync"));
                 var targetFile = Path.Combine(targetDir, "athlete.json");
 
                 if (!effectiveDryRun)
@@ -89,7 +91,8 @@ public static partial class LaufenCliRunner
                     SyncProfile = true,
                     SyncStreams = true,
                     DryRun = effectiveDryRun,
-                    WriteToWorkspace = parsed.WriteWorkspace
+                    WriteToWorkspace = parsed.WriteWorkspace,
+                    OutputDirectory = !parsed.AllAthletes ? parsed.OutputDir : null
                 };
                 var summary = TelemetrySyncService.SyncAthleteAsync(
                     layout,

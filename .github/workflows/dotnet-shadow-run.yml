@@ -1,0 +1,192 @@
+name: .NET 11 Daily Shadow Run
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: '15 6 * * *'
+  workflow_dispatch:
+    inputs:
+      athlete:
+        description: 'Target athlete slug'
+        required: false
+        type: string
+        default: 'berni'
+      provider:
+        description: 'LLM provider (agy, gemini, stub)'
+        required: false
+        type: string
+        default: 'agy'
+      force_replan:
+        description: 'Bypass anti-churn hysteresis and force planning'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: dotnet-shadow-run-${{ inputs.athlete || 'berni' }}
+  cancel-in-progress: false
+
+jobs:
+  shadow-run:
+    name: 🌗 .NET Shadow Run (${{ inputs.athlete || 'berni' }})
+    runs-on: self-hosted
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 11 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: dotnet/global.json
+
+      - name: Locate or build Laufen.Cli binary
+        run: |
+          set -euo pipefail
+          if [ -x "$HOME/dockerContainer/laufen-dotnet/bin/Laufen.Cli" ]; then
+            echo "CLI_BIN=$HOME/dockerContainer/laufen-dotnet/bin/Laufen.Cli" >> "$GITHUB_ENV"
+          else
+            dotnet build dotnet/src/Laufen.Cli/Laufen.Cli.csproj -c Release
+            echo "CLI_BIN=$GITHUB_WORKSPACE/dotnet/src/Laufen.Cli/bin/Release/net11.0/Laufen.Cli" >> "$GITHUB_ENV"
+          fi
+
+      - name: Prepare isolated temp workspace and persistent shadow directory
+        env:
+          ATHLETE: ${{ inputs.athlete || 'berni' }}
+        run: |
+          set -euo pipefail
+          TMP_WS="/tmp/laufen-dotnet-shadow-$GITHUB_RUN_ID"
+          SHADOW_DIR="$HOME/dockerContainer/laufen-dotnet/shadow/$ATHLETE"
+          PROD_DIR="$HOME/dockerContainer/laufen"
+
+          rm -rf "$TMP_WS"
+          mkdir -p "$TMP_WS/athletes/$ATHLETE/streams" "$SHADOW_DIR/sync/streams" "$SHADOW_DIR/history"
+
+          cp -f "$GITHUB_WORKSPACE/athletes/registry.json" "$TMP_WS/athletes/registry.json"
+          if [ -d "$PROD_DIR/athletes/$ATHLETE" ]; then
+            cp -rf "$PROD_DIR/athletes/$ATHLETE/"* "$TMP_WS/athletes/$ATHLETE/" 2>/dev/null || true
+          else
+            cp -rf "$GITHUB_WORKSPACE/athletes/$ATHLETE/"* "$TMP_WS/athletes/$ATHLETE/" 2>/dev/null || true
+          fi
+          if [ -f "$PROD_DIR/.env" ]; then
+            cp -f "$PROD_DIR/.env" "$TMP_WS/.env"
+          fi
+
+          echo "TMP_WS=$TMP_WS" >> "$GITHUB_ENV"
+          echo "SHADOW_DIR=$SHADOW_DIR" >> "$GITHUB_ENV"
+          echo "PROD_DIR=$PROD_DIR" >> "$GITHUB_ENV"
+
+      - name: Pull read-only live Intervals.icu telemetry into shadow sync folder
+        env:
+          INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
+          ATHLETE: ${{ inputs.athlete || 'berni' }}
+        run: |
+          set -euo pipefail
+          "$CLI_BIN" sync-data --athlete "$ATHLETE" --apply --output-dir "$SHADOW_DIR/sync" --workspace "$TMP_WS"
+          cp -f "$SHADOW_DIR/sync/"*.json "$TMP_WS/athletes/$ATHLETE/" 2>/dev/null || true
+          cp -rf "$SHADOW_DIR/sync/streams/"* "$TMP_WS/athletes/$ATHLETE/streams/" 2>/dev/null || true
+
+      - name: Compute 4-stage reviews and run .NET Autopilot shadow cycle
+        env:
+          ATHLETE: ${{ inputs.athlete || 'berni' }}
+          PROVIDER: ${{ inputs.provider || 'agy' }}
+          FORCE_REPLAN: ${{ inputs.force_replan || false }}
+        run: |
+          set -euo pipefail
+          "$CLI_BIN" review --athlete "$ATHLETE" --limit 5 --workspace "$TMP_WS"
+          EXTRA_ARGS=()
+          if [ "$FORCE_REPLAN" = "true" ]; then
+            EXTRA_ARGS+=(--force-replan)
+          fi
+          "$CLI_BIN" autopilot-run --athlete "$ATHLETE" --provider "$PROVIDER" --dry-run --workspace "$TMP_WS" --output-dir "$SHADOW_DIR" "${EXTRA_ARGS[@]}"
+          "$CLI_BIN" dashboard --athlete "$ATHLETE" --workspace "$TMP_WS" --output "$SHADOW_DIR/index.html"
+
+      - name: Generate Python Live vs .NET Shadow Comparison Log
+        if: always()
+        env:
+          ATHLETE: ${{ inputs.athlete || 'berni' }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import datetime, json, os
+          from pathlib import Path
+
+          athlete = os.environ["ATHLETE"]
+          prod_dir = Path(os.environ["PROD_DIR"]) / "athletes" / athlete
+          shadow_dir = Path(os.environ["SHADOW_DIR"])
+          today = datetime.date.today().isoformat()
+
+          def load_json(path):
+              if not path.is_file():
+                  return None
+              try:
+                  return json.loads(path.read_text(encoding="utf-8-sig"))
+              except Exception:
+                  return None
+
+          def load_last_jsonl(path):
+              if not path.is_file():
+                  return None
+              lines = [l.strip() for l in path.read_text(encoding="utf-8-sig").splitlines() if l.strip()]
+              return json.loads(lines[-1]) if lines else None
+
+          py_summary = load_json(prod_dir / "ai_coach_summary.json") or {}
+          py_trace = load_last_jsonl(prod_dir / "decision_trace.jsonl") or {}
+          py_events = load_json(prod_dir / "calendar_events.json") or []
+          dn_trace = load_last_jsonl(shadow_dir / "decision_trace_dotnet.jsonl") or {}
+          dn_compass = load_json(shadow_dir / "block_compass.json") or {}
+          dn_narr = load_json(shadow_dir / "narrative_summary_dotnet.json") or {}
+          tg_preview = (shadow_dir / "telegram_preview_latest.txt").read_text(encoding="utf-8-sig") if (shadow_dir / "telegram_preview_latest.txt").is_file() else "-"
+
+          py_workouts = [
+              f"{str(e.get('start_date_local', ''))[:10]}: {e.get('name', '-')}"
+              for e in py_events
+              if isinstance(e, dict) and e.get("category") == "WORKOUT" and not e.get("paired_activity_id")
+          ][:4]
+
+          report = [
+              f"## Python Live vs. .NET Shadow ({athlete} - {today})",
+              "",
+              "| Dimension | Python Live (`dockerContainer/laufen`) | .NET Shadow (`laufen-dotnet/shadow`) |",
+              "| :--- | :--- | :--- |",
+              f"| **Health / Block Status** | `{py_summary.get('status_title', '-')}` | `{dn_compass.get('health_state', dn_trace.get('health_state', '-'))}` / `{dn_narr.get('status_title', '-')}` |",
+              f"| **Latest Trace** | `{py_trace.get('timestamp', '-')}` | `{dn_trace.get('timestamp', '-')}` (`{dn_trace.get('model', '-')}`) |",
+              f"| **Recommendation / Focus** | {py_summary.get('history_evaluation', {}).get('next_recommendation', '-') } | {dn_compass.get('last_decision_summary', '-')} |",
+              f"| **Target HR / Compass** | `Z2 <= {py_summary.get('history_evaluation', {}).get('next_target_hr', '-')}` | `{dn_compass.get('base_milestone', '-')}` |",
+              f"| **Upcoming Watch Window** | {'; '.join(py_workouts) if py_workouts else '-'} | Watch dates: `{', '.join(dn_trace.get('watch_window_dates', [])[:4])}` |",
+              "",
+              "### .NET Shadow Telegram Preview",
+              "```text",
+              tg_preview.strip(),
+              "```",
+              "",
+              "### Recent Shadow Log Tail",
+              "```markdown",
+          ]
+          shadow_log = shadow_dir / "shadow_log.md"
+          if shadow_log.is_file():
+              tail = shadow_log.read_text(encoding="utf-8").splitlines()[-35:]
+              report.extend(tail)
+          else:
+              report.append("(no shadow_log.md entries yet)")
+          report.extend(["```", ""])
+
+          text = "\n".join(report)
+          summary_file = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary_file:
+              with open(summary_file, "a", encoding="utf-8") as f:
+                  f.write(text + "\n")
+
+          comp_file = shadow_dir / "comparison_history.md"
+          with open(comp_file, "a", encoding="utf-8") as f:
+              f.write(text + "\n---\n")
+          PY
+
+      - name: Cleanup isolated temp workspace
+        if: always()
+        run: |
+          if [ -n "${TMP_WS:-}" ] && [ -d "$TMP_WS" ]; then
+            rm -rf "$TMP_WS"
+          fi

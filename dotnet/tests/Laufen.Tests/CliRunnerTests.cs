@@ -1124,4 +1124,77 @@ public class CliRunnerTests
         Assert.That(doc.RootElement.GetProperty("errors").GetArrayLength(), Is.EqualTo(0));
         Assert.That(doc.RootElement.GetProperty("morningBriefingsTriggered").GetInt32(), Is.GreaterThanOrEqualTo(1));
     }
+
+    [Test]
+    public void RunAutopilotDryRunWithOutputDirPersistsBomFreeShadowLogsWithoutTouchingWorkspace()
+    {
+        var root = ResolveWorkspaceRoot();
+        var compassInWorkspace = Path.Combine(root, "athletes", "berni", "block_compass.json");
+        var traceInWorkspace = Path.Combine(root, "athletes", "berni", "decision_trace_dotnet.jsonl");
+        var compassExisted = File.Exists(compassInWorkspace);
+        var traceExisted = File.Exists(traceInWorkspace);
+
+        var shadowDir = Path.Combine(Path.GetTempPath(), $"laufen-shadow-{Guid.NewGuid():N}");
+        try
+        {
+            using var stdout = new StringWriter();
+            using var stderr = new StringWriter();
+            var exitCode = LaufenCliRunner.Run(
+                [
+                    "autopilot-run",
+                    "--athlete", "berni",
+                    "--ref-date", "2026-11-26",
+                    "--provider", "stub",
+                    "--force-replan",
+                    "--force-narrate",
+                    "--dry-run",
+                    "--output-dir", shadowDir
+                ],
+                stdout,
+                stderr,
+                AppContext.BaseDirectory);
+
+            Assert.That(exitCode, Is.EqualTo(0), stderr.ToString());
+            Assert.That(stdout.ToString(), Does.Contain("Shadow Logs:"));
+            Assert.That(File.Exists(compassInWorkspace), Is.EqualTo(compassExisted));
+            Assert.That(File.Exists(traceInWorkspace), Is.EqualTo(traceExisted));
+
+            string[] expectedFiles =
+            [
+                Path.Combine(shadowDir, "block_compass.json"),
+                Path.Combine(shadowDir, "decision_trace_dotnet.jsonl"),
+                Path.Combine(shadowDir, "narrative_summary_dotnet.json"),
+                Path.Combine(shadowDir, "narrative_commentary_dotnet.md"),
+                Path.Combine(shadowDir, "telegram_preview_latest.txt"),
+                Path.Combine(shadowDir, "shadow_log.md"),
+                Path.Combine(shadowDir, "history", "2026-11-26_morning_sync.json")
+            ];
+
+            foreach (var file in expectedFiles)
+            {
+                Assert.That(File.Exists(file), Is.True, $"Missing shadow artifact '{file}'.");
+                var bytes = File.ReadAllBytes(file);
+                var hasBom = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
+                Assert.That(hasBom, Is.False, $"Unexpected UTF-8 BOM in '{file}'.");
+            }
+
+            // Second run reads existing block_compass.json from shadowDir cleanly
+            using var secondOut = new StringWriter();
+            using var secondErr = new StringWriter();
+            var secondExit = LaufenCliRunner.Run(
+                ["autopilot-run", "--athlete", "berni", "--ref-date", "2026-11-26", "--provider", "stub", "--dry-run", "--output-dir", shadowDir],
+                secondOut,
+                secondErr,
+                AppContext.BaseDirectory);
+
+            Assert.That(secondExit, Is.EqualTo(0), secondErr.ToString());
+        }
+        finally
+        {
+            if (Directory.Exists(shadowDir))
+            {
+                Directory.Delete(shadowDir, recursive: true);
+            }
+        }
+    }
 }

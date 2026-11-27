@@ -83,10 +83,25 @@ public class DashboardRendererTests
             refDate);
 
         var html = DashboardHtmlRenderer.Render(snapshot);
+        Assert.That(snapshot.AllRuns, Has.Count.EqualTo(snapshot.TotalRuns));
         Assert.That(html, Does.StartWith("<!DOCTYPE html>"));
         Assert.That(html, Does.Contain("<html lang=\"de\">"));
         Assert.That(html, Does.Contain("<svg"));
         Assert.That(html, Does.Contain("Kalibrierte Herzfrequenzzonen"));
+        Assert.That(html, Does.Contain("data-range=\"12w\""));
+        Assert.That(html, Does.Contain("data-range=\"4w\""));
+        Assert.That(html, Does.Contain("data-range=\"custom\""));
+        Assert.That(html, Does.Contain("id=\"zone-filter\""));
+        Assert.That(html, Does.Contain("id=\"chart-tooltip\""));
+        Assert.That(html, Does.Contain("id=\"dashboard-data\""));
+        Assert.That(html, Does.Contain("id=\"chart-weekly-volume\""));
+        Assert.That(html, Does.Contain("id=\"chart-zone-dist\""));
+        Assert.That(html, Does.Contain("id=\"chart-form-history\""));
+        Assert.That(html, Does.Contain("id=\"chart-ef-pace\""));
+        Assert.That(html, Does.Contain("id=\"chart-zone-pace\""));
+        Assert.That(html, Does.Contain("class=\"table-wrap\""));
+        Assert.That(html, Does.Contain("min-width: 0"));
+        Assert.That(html, Does.Contain("minmax(min(100%,"));
         Assert.That(html, Does.Not.Contain("cdn.jsdelivr.net"));
         Assert.That(html, Does.Not.Contain("tag-amber"));
 
@@ -113,7 +128,15 @@ public class DashboardRendererTests
         var safeHtml = DashboardHtmlRenderer.Render(safeSnapshot);
         Assert.That(safeHtml, Does.Not.Contain("<script>alert(1)</script>"));
         Assert.That(safeHtml, Does.Contain("&lt;script&gt;alert(1)&lt;/script&gt;"));
-        Assert.That(safeHtml, Does.Not.Contain("06:45/km"));
+
+        var scheduleStart = safeHtml.IndexOf("14-Tage Autopilot", StringComparison.Ordinal);
+        var scheduleEnd = safeHtml.IndexOf("14-Tage Banister", StringComparison.Ordinal);
+        Assert.That(scheduleStart, Is.GreaterThan(0));
+        Assert.That(scheduleEnd, Is.GreaterThan(scheduleStart));
+        var scheduleHtml = safeHtml[scheduleStart..scheduleEnd];
+        Assert.That(scheduleHtml, Does.Contain("Easy Z2 &lt;img src=x&gt;"));
+        Assert.That(scheduleHtml, Does.Not.Contain("<img src=x>"));
+        Assert.That(scheduleHtml, Does.Not.Contain("06:45/km"));
 
         // Verify graceful empty state on berni-test
         var berniTest = AthleteDataRepository.LoadAthleteData(layout, registry, "berni-test");

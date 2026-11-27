@@ -12,6 +12,8 @@ namespace Laufen.Infrastructure;
 /// </summary>
 public static class TelemetrySyncService
 {
+    private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
+
     private static readonly JsonSerializerOptions IndentedJsonOptions = new()
     {
         WriteIndented = true,
@@ -43,7 +45,9 @@ public static class TelemetrySyncService
         var workspaceAthleteDir = Path.Combine(layout.AthletesDirectory, slug);
         var targetDir = options.WriteToWorkspace
             ? workspaceAthleteDir
-            : Path.Combine(workspaceAthleteDir, ".dotnet_sync");
+            : (!string.IsNullOrWhiteSpace(options.OutputDirectory)
+                ? Path.GetFullPath(options.OutputDirectory)
+                : Path.Combine(workspaceAthleteDir, ".dotnet_sync"));
 
         if (options.WriteToWorkspace && !options.DryRun)
         {
@@ -71,7 +75,10 @@ public static class TelemetrySyncService
             profileSynced = true;
         }
 
-        var activitiesOldest = refDate.AddDays(-Math.Max(1, options.ActivitiesLookbackDays));
+        var activitiesOldest = options.ActivitiesOldest
+            ?? (options.ActivitiesLookbackDays.HasValue
+                ? refDate.AddDays(-Math.Max(1, options.ActivitiesLookbackDays.Value))
+                : new DateOnly(2000, 1, 1));
         var activitiesNewest = refDate.AddDays(1);
         var activities = await client.GetActivitiesAsync(entry.IntervalsId, activitiesOldest, activitiesNewest, cancellationToken).ConfigureAwait(false);
 
@@ -288,7 +295,7 @@ public static class TelemetrySyncService
     {
         var tempPath = destinationPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
         var json = JsonSerializer.Serialize(payload, options) + "\n";
-        File.WriteAllText(tempPath, json, Encoding.UTF8);
+        File.WriteAllText(tempPath, json, Utf8NoBom);
         File.Move(tempPath, destinationPath, overwrite: true);
     }
 }

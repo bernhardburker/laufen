@@ -39,6 +39,14 @@ jobs:
       - name: 🧪 Tests ausführen
         run: dotnet test dotnet/Laufen.sln -c Release --no-build --verbosity normal
 
+      - name: 🎯 Cutover Parity Audit
+        run: |
+          dotnet run --project dotnet/src/Laufen.Cli/Laufen.Cli.csproj -c Release --no-build -- parity-audit --all --markdown >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 🧪 Offline 9-Step Staging Soak
+        run: |
+          dotnet run --project dotnet/src/Laufen.Cli/Laufen.Cli.csproj -c Release --no-build -- staging-soak --athlete berni
+
   cd:
     name: 🚀 Deploy .NET Shadow Bundle to Burkerserver
     needs: [ci]

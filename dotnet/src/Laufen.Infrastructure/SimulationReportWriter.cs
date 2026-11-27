@@ -11,6 +11,8 @@ namespace Laufen.Infrastructure;
 /// </summary>
 public static class SimulationReportWriter
 {
+    private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -122,8 +124,8 @@ public static class SimulationReportWriter
         var reportPath = Path.Combine(scenarioDir, "report.md");
         var timelinePath = Path.Combine(scenarioDir, "timeline.json");
 
-        File.WriteAllText(reportPath, FormatMarkdown(result), Encoding.UTF8);
-        File.WriteAllText(timelinePath, JsonSerializer.Serialize(result, JsonOptions) + "\n", Encoding.UTF8);
+        File.WriteAllText(reportPath, FormatMarkdown(result), Utf8NoBom);
+        File.WriteAllText(timelinePath, JsonSerializer.Serialize(result, JsonOptions) + "\n", Utf8NoBom);
 
         return (reportPath, timelinePath);
     }

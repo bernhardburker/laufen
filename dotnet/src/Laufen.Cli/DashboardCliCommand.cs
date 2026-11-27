@@ -60,13 +60,14 @@ public static partial class LaufenCliRunner
                 {
                     Directory.CreateDirectory(dir);
                 }
-                File.WriteAllText(outputFile, html, Encoding.UTF8);
+                var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+                File.WriteAllText(outputFile, html, utf8NoBom);
 
                 if (string.IsNullOrWhiteSpace(parsed.OutputPath)
                     && string.Equals(slug, registry.DefaultAthlete, StringComparison.Ordinal))
                 {
                     var rootIndex = Path.Combine(layout.RootDirectory, "dist-dotnet", "index.html");
-                    File.WriteAllText(rootIndex, html, Encoding.UTF8);
+                    File.WriteAllText(rootIndex, html, utf8NoBom);
                 }
             }
 

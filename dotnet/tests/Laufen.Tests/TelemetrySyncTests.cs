@@ -168,6 +168,7 @@ public class TelemetrySyncTests
             var originalActivities = File.ReadAllText(Path.Combine(layout.AthletesDirectory, "berni", "intervals_activities.json"));
 
             var streamRequests = new List<string>();
+            string? activitiesRequestUri = null;
             using var handler = new MockHttpMessageHandler(req =>
             {
                 var url = req.RequestUri!.ToString();
@@ -188,6 +189,7 @@ public class TelemetrySyncTests
 
                 if (url.Contains("/activities", StringComparison.Ordinal))
                 {
+                    activitiesRequestUri = url;
                     const string actsJson = """
                         [
                           { "id": "run_cached", "icu_athlete_id": "i697752", "source": "GARMIN_CONNECT", "start_date_local": "2026-11-24T08:00:00", "type": "Run", "name": "Cached", "average_heartrate": 144 },
@@ -258,6 +260,7 @@ public class TelemetrySyncTests
                 new TelemetrySyncOptions { DryRun = false, WriteToWorkspace = false });
 
             Assert.That(summary.TargetDirectory, Does.EndWith(Path.Combine("berni", ".dotnet_sync")));
+            Assert.That(activitiesRequestUri, Does.Contain("oldest=2000-01-01"));
             Assert.That(summary.ProfileSynced, Is.True);
             Assert.That(summary.ActivitiesCount, Is.EqualTo(3));
             Assert.That(summary.WellnessCount, Is.EqualTo(1));
@@ -275,6 +278,39 @@ public class TelemetrySyncTests
             // Verify synced profile preserved weekly_slots from workspace athlete.json
             var syncedProfile = StrictJsonLoader.LoadFromFile<AthleteProfileDocument>(Path.Combine(summary.TargetDirectory, "athlete.json"));
             Assert.That(syncedProfile.Athlete.WeeklySlots, Is.Not.Null.And.Not.Empty);
+
+            // 3. Explicit OutputDirectory writes externally without creating nested .dotnet_sync inside external target
+            var externalDir = Path.Combine(Path.GetTempPath(), $"laufen-ext-sync-{Guid.NewGuid():N}");
+            try
+            {
+                var extSummary = await TelemetrySyncService.SyncAthleteAsync(
+                    layout,
+                    berniEntry,
+                    "berni",
+                    client,
+                    refDate,
+                    new TelemetrySyncOptions
+                    {
+                        DryRun = false,
+                        WriteToWorkspace = false,
+                        OutputDirectory = externalDir
+                    });
+
+                Assert.That(extSummary.TargetDirectory, Is.EqualTo(Path.GetFullPath(externalDir)));
+                var extActivitiesPath = Path.Combine(externalDir, "intervals_activities.json");
+                var extAthletePath = Path.Combine(externalDir, "athlete.json");
+                Assert.That(File.Exists(extActivitiesPath), Is.True);
+                Assert.That(File.Exists(extAthletePath), Is.True);
+                AssertHasNoUtf8Bom(extActivitiesPath);
+                AssertHasNoUtf8Bom(extAthletePath);
+            }
+            finally
+            {
+                if (Directory.Exists(externalDir))
+                {
+                    Directory.Delete(externalDir, recursive: true);
+                }
+            }
         }
         finally
         {
@@ -325,6 +361,13 @@ public class TelemetrySyncTests
                 Directory.Delete(tempRoot, recursive: true);
             }
         }
+    }
+
+    private static void AssertHasNoUtf8Bom(string path)
+    {
+        var bytes = File.ReadAllBytes(path);
+        var hasBom = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
+        Assert.That(hasBom, Is.False, $"Unexpected UTF-8 BOM in '{path}'.");
     }
 
     private static HttpResponseMessage JsonResponse(string json) => new(HttpStatusCode.OK)
